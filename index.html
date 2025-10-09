@@ -569,28 +569,6 @@
     <img id="solana-qr" src="" alt="Deposit QR" class="mx-auto w-40 h-40 mb-4 rounded-lg border border-[var(--border-color)]">
     <p class="text-xs text-gray-400 break-all" id="solana-wallet-address">...</p>
     <button id="refresh-qr" class="mt-4 w-full purple-gradient-bg text-white font-bold py-2 rounded-lg hover:opacity-90 transition-all">Refresh QR</button>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
-<script>
-  const merchantWallet = "6MX2SNsqyFbbwBQhuYngVXUXs4MseEpz3abiyN9pDZfA";
-  const tokenMint = "EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump";
-  const qrImage = document.getElementById("solana-qr");
-  const walletText = document.getElementById("solana-wallet-address");
-  const refreshBtn = document.getElementById("refresh-qr");
-
-  function generateSolanaPayQR() {
-    const amount = 5; // monto fijo de prueba (puedes hacerlo dinámico)
-    const solanaUrl = `solana:${merchantWallet}?amount=${amount}&spl-token=${tokenMint}&label=LivePayout&message=Depósito%20de%20${amount}%20BITS`;
-    walletText.textContent = merchantWallet;
-    QRCode.toDataURL(solanaUrl, { width: 200, colorDark: "#14F195", colorLight: "#00000000" }, (err, url) => {
-      if (!err) qrImage.src = url;
-    });
-  }
-
-  generateSolanaPayQR();
-  refreshBtn.addEventListener("click", generateSolanaPayQR);
-  setInterval(generateSolanaPayQR, 120000);
-</script>
-    
   </div>
 </div>
                     <div class="lg:col-span-2 bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)]"><h3 class="font-semibold text-lg mb-4" data-key="balance_withdrawal">Balance & Withdrawal</h3>
@@ -1213,6 +1191,7 @@
     </script>
 </body>
 </html>
+
 
 
 
