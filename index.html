@@ -562,7 +562,15 @@
                         </div>         
 
                     </div>
-                    <div class="bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)] mb-6 text-white text-center"><div class="flex items-center justify-center mb-4"><img src="https://cryptologos.cc/logos/solana-sol-logo.png?v=025" alt="Solana" class="w-10 mr-2"><h3 class="text-xl font-bold">Depositar BITS</h3></div><p class="text-[var(--text-secondary)] mb-4">Envía tus tokens BITS mediante Solana Pay. Escanea el código QR o abre el enlace en tu wallet Phantom o Solflare.</p><div class="mb-4"><input id="bits-amount" type="number" min="0.01" step="0.01" placeholder="Monto en BITS" class="w-full bg-[var(--background-tertiary)] text-center text-white py-2 rounded-lg border border-[var(--border-color)] focus:outline-none"></div><button id="bits-generate" class="purple-gradient-bg w-full py-3 font-semibold rounded-lg mb-4">Generar código de pago</button><div id="bits-qr-area" style="display:none;"><canvas id="bits-qr" class="mx-auto mb-3"></canvas><a id="bits-link" href="#" target="_blank" class="block w-full py-2 border border-purple-400 rounded-lg hover:bg-purple-600 transition">Abrir en mi wallet</a><p id="bits-status" class="text-sm text-green-400 mt-3">Esperando pago...</p></div></div><script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script><script>const merchantWallet="6MX2SNsqyFbbwBQhuYngVXUXs4MseEpz3abiyN9pDZfA";const tokenMint="EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump";const btn=document.getElementById("bits-generate");const qrCanvas=document.getElementById("bits-qr");const qrArea=document.getElementById("bits-qr-area");const link=document.getElementById("bits-link");const status=document.getElementById("bits-status");btn.addEventListener("click",()=>{const amount=parseFloat(document.getElementById("bits-amount").value);if(isNaN(amount)||amount<=0){alert("Por favor ingresa un monto válido en BITS.");return;}const solanaUrl=`solana:${merchantWallet}?amount=${amount}&spl-token=${tokenMint}&label=LivePayout&message=Depósito%20de%20${amount}%20BITS`;link.href=solanaUrl;qrArea.style.display="block";QRCode.toCanvas(qrCanvas,solanaUrl,{width:220,colorDark:"#14F195",colorLight:"#00000000"});status.textContent="QR generado. Esperando pago...";});</script>
+                    <div class="lg:col-span-2 bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)] mb-6">
+  <h3 class="font-semibold text-lg mb-4 text-purple-400" data-key="deposit_funds">Deposit Funds (Solana Pay)</h3>
+  <div class="bg-[var(--background-tertiary)] p-6 rounded-lg text-center">
+    <p class="text-sm text-[var(--text-secondary)] mb-2">Scan to deposit using Solana Pay:</p>
+    <img id="solana-qr" src="" alt="Deposit QR" class="mx-auto w-40 h-40 mb-4 rounded-lg border border-[var(--border-color)]">
+    <p class="text-xs text-gray-400 break-all" id="solana-wallet-address">...</p>
+    <button id="refresh-qr" class="mt-4 w-full purple-gradient-bg text-white font-bold py-2 rounded-lg hover:opacity-90 transition-all">Refresh QR</button>
+  </div>
+</div>
                     <div class="lg:col-span-2 bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)]"><h3 class="font-semibold text-lg mb-4" data-key="balance_withdrawal">Balance & Withdrawal</h3>
                         <div class="bg-[var(--background-tertiary)] p-6 rounded-lg mb-6">
                             <p class="text-sm text-[var(--text-secondary)]" data-key="current_balance">Your Current Balance</p>
@@ -1183,6 +1191,7 @@
     </script>
 </body>
 </html>
+
 
 
 
