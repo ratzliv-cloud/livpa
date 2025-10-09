@@ -567,8 +567,37 @@
   <div class="bg-[var(--background-tertiary)] p-6 rounded-lg text-center">
     <p class="text-sm text-[var(--text-secondary)] mb-2">Scan to deposit using Solana Pay:</p>
     <img id="solana-qr" src="" alt="Deposit QR" class="mx-auto w-40 h-40 mb-4 rounded-lg border border-[var(--border-color)]">
-    <p class="text-xs text-gray-400 break-all" id="solana-wallet-address">...</p>
-    <button id="refresh-qr" class="mt-4 w-full purple-gradient-bg text-white font-bold py-2 rounded-lg hover:opacity-90 transition-all">Refresh QR</button>
+    <p class="text-xs text-gray-400 break-all" id="solana-wallet-address">6MX2SNsqyFbbwBQhuYngVXUXs4MseEpz3abiyN9pDZfA</p>
+    <div class="mt-3 grid grid-cols-2 gap-3">
+      <button id="refresh-qr" class="py-2 purple-gradient-bg text-white font-bold rounded-lg">Refresh QR</button>
+      <button id="create-deposit" class="py-2 border border-purple-400 text-white rounded-lg">Create Deposit</button>
+    </div>
+    <p id="deposit-info" class="text-sm text-green-400 mt-3">Waiting for deposit...</p>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+<script>
+  (function(){
+    const merchantWallet = "6MX2SNsqyFbbwBQhuYngVXUXs4MseEpz3abiyN9pDZfA";
+    const tokenMint = "EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump";
+    const qrImg = document.getElementById('solana-qr');
+    const addr = document.getElementById('solana-wallet-address');
+    const refreshBtn = document.getElementById('refresh-qr');
+    const createBtn = document.getElementById('create-deposit');
+    const info = document.getElementById('deposit-info');
+    function genQR(amount=1){
+      const solUrl = `solana:${merchantWallet}?amount=${amount}&spl-token=${tokenMint}&label=LivePayout&message=Deposit`;
+      QRCode.toDataURL(solUrl,{width:200,colorDark:"#14F195",colorLight:"#00000000"},(err,url)=>{ if(!err) qrImg.src = url; });
+      addr.textContent = merchantWallet;
+      info.textContent = 'QR generated. Waiting for deposit...';
+    }
+    refreshBtn.addEventListener('click', ()=>genQR(1));
+    // Create deposit button will open the same solana url (front only) – backend integration comes later
+    createBtn.addEventListener('click', ()=>{ genQR(1); window.open(`solana:${merchantWallet}?amount=1&spl-token=${tokenMint}`,'_blank'); });
+    genQR(1);
+    setInterval(()=>genQR(1),120000);
+  })();
+</script>
   </div>
 </div>
                     <div class="lg:col-span-2 bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)]"><h3 class="font-semibold text-lg mb-4" data-key="balance_withdrawal">Balance & Withdrawal</h3>
@@ -1191,6 +1220,7 @@
     </script>
 </body>
 </html>
+
 
 
 
