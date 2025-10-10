@@ -563,7 +563,53 @@
 
                     </div>
   </div>
-</div>    
+</div> 
+<div class="lg:col-span-2 bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)] mb-6">
+  <h3 class="font-semibold text-lg mb-4 text-purple-400" data-key="deposit_funds">Depositar BITS (Solana Pay)</h3>
+  <div class="bg-[var(--background-tertiary)] p-6 rounded-lg text-center">
+    <p class="text-sm text-[var(--text-secondary)] mb-3">Envía BITS con Solana Pay. Escanea el QR o abre el enlace en Phantom.</p>
+    <div class="flex items-center justify-center mb-3">
+      <img id="solana-qr-img" src="" alt="QR deposit" class="w-36 h-36 rounded-lg border border-[var(--border-color)]">
+    </div>
+    <p id="solana-wallet-address" class="text-xs text-gray-400 break-all mb-3">6MX2SNsqyFbbwBQhuYngVXUXs4MseEpz3abiyN9pDZfA</p>
+    <div class="grid grid-cols-2 gap-3">
+      <input id="bits-amount" type="number" min="0.01" step="0.01" placeholder="Monto BITS" class="bg-[var(--background-secondary)] p-2 rounded-lg text-center">
+      <button id="bits-gen-btn" class="py-2 purple-gradient-bg text-white font-bold rounded-lg">Generar QR</button>
+    </div>
+    <div class="mt-3">
+      <button id="bits-open-btn" class="w-full border border-purple-400 text-white py-2 rounded-lg" disabled>Abrir en wallet</button>
+    </div>
+    <p id="bits-status" class="text-sm text-green-400 mt-3">Estado: esperando</p>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+<script>
+(function(){
+  const CENTRAL = "6MX2SNsqyFbbwBQhuYngVXUXs4MseEpz3abiyN9pDZfA";
+  const MINT = "EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump";
+  const img = document.getElementById('solana-qr-img');
+  const addr = document.getElementById('solana-wallet-address');
+  const btn = document.getElementById('bits-gen-btn');
+  const openBtn = document.getElementById('bits-open-btn');
+  const status = document.getElementById('bits-status');
+  const amountInput = document.getElementById('bits-amount');
+
+  function gen(amount){
+    const a = (Number(amount) || 0);
+    if(!(a>0)){ alert('Ingresa un monto válido'); return; }
+    const url = `solana:${CENTRAL}?amount=${encodeURIComponent(a)}&spl-token=${encodeURIComponent(MINT)}&label=LivePayout&message=Depósito%20${a}%20BITS`;
+    QRCode.toDataURL(url, { width: 320, colorDark: "#14F195", colorLight: "#00000000" }, function(err,dataUrl){
+      if(!err){ img.src = dataUrl; openBtn.disabled = false; openBtn.dataset.url = url; status.textContent = 'QR generado. Esperando pago...'; }
+    });
+    addr.textContent = CENTRAL;
+  }
+
+  btn.addEventListener('click', function(){ gen(amountInput.value); });
+  openBtn.addEventListener('click', function(){ const u = this.dataset.url; if(u) window.open(u,'_blank'); });
+  // Gen a sample QR at load (optional)
+  // gen(1);
+})();
+</script>
                     <div class="lg:col-span-2 bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)]"><h3 class="font-semibold text-lg mb-4" data-key="balance_withdrawal">Balance & Withdrawal</h3>
                         <div class="bg-[var(--background-tertiary)] p-6 rounded-lg mb-6">
                             <p class="text-sm text-[var(--text-secondary)]" data-key="current_balance">Your Current Balance</p>
@@ -1184,6 +1230,7 @@
     </script>
 </body>
 </html>
+
 
 
 
