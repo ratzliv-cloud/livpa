@@ -1198,34 +1198,43 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const CENTRAL = "6MX2SNsqyFbbwBQhuYngVXUXs4MseEpz3abiyN9pDZfA";
-  const MINT = "EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump";
-  const img = document.getElementById('solana-qr-img');
+(function waitForDepositUI(){
   const btn = document.getElementById('bits-gen-btn');
-  const amountInput = document.getElementById('bits-amount');
+  const img = document.getElementById('solana-qr-img');
+  const input = document.getElementById('bits-amount');
   const status = document.getElementById('bits-status');
 
-  function generate(amount) {
+  // Si el bloque aún no existe, reintenta cada 300ms
+  if(!btn || !img || !input || !status){
+    setTimeout(waitForDepositUI, 300);
+    return;
+  }
+
+  const CENTRAL = "6MX2SNsqyFbbwBQhuYngVXUXs4MseEpz3abiyN9pDZfA";
+  const MINT = "EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump";
+
+  function generate(amount){
     const a = Number(amount);
-    if (!a || a <= 0) {
+    if(!a || a<=0){
       status.textContent = "❌ Ingresa un monto válido.";
       return;
     }
     const url = `solana:${CENTRAL}?amount=${a}&spl-token=${MINT}&label=LivePayout&message=Depósito%20de%20${a}%20BITS`;
-    QRCode.toDataURL(url, { width: 320, colorDark: "#14F195", colorLight: "#00000000" }, (err, dataUrl) => {
-      if (!err) {
+    QRCode.toDataURL(url, { width: 320, colorDark: "#14F195", colorLight: "#00000000" }, (err, dataUrl)=>{
+      if(!err){
         img.src = dataUrl;
         status.textContent = "✅ QR generado. Escanéalo para pagar.";
       }
     });
   }
 
-  btn.addEventListener('click', () => generate(amountInput.value));
-});
+  btn.addEventListener('click', ()=> generate(input.value));
+})();
 </script>
+
 </body>
 </html>
+
 
 
 
