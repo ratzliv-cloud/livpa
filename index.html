@@ -577,6 +577,48 @@
   </div>
                     </div>
 </div>
+<div class="lg:col-span-2 bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)] mb-6">
+  <h3 class="font-semibold text-lg mb-4 text-purple-400">Depositar BITS (Solana Pay)</h3>
+
+  <div class="bg-[var(--background-tertiary)] p-6 rounded-lg text-center">
+    <p class="text-sm text-[var(--text-secondary)] mb-3">Selecciona un monto y paga usando Phantom o QR.</p>
+
+    <div class="flex items-center justify-center mb-3">
+      <img id="qr-solana" class="w-36 h-36 hidden rounded-lg border border-[var(--border-color)] transition-opacity" alt="QR de pago">
+    </div>
+
+    <div class="grid grid-cols-2 gap-3 mb-3">
+      <input id="bits-amount" type="number" min="0.01" step="0.01" placeholder="Monto en BITS" class="bg-[var(--background-secondary)] p-2 rounded-lg text-center">
+      <button id="generate-qr" class="purple-gradient-bg text-white font-semibold py-2 rounded-lg">Generar QR</button>
+    </div>
+
+    <button id="phantom-connect" class="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-2 rounded-lg transition-all">Abrir Phantom</button>
+
+    <p id="deposit-status" class="text-sm text-green-400 mt-3">Estado: esperando...</p>
+  </div>
+</div>
+
+<!-- Script Phantom + QR -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const CENTRAL = "6MX2SNsqyFbbwBQhuYngVXUXs4MseEpz3abiyN9pDZfA";
+  const MINT = "EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump";
+
+  const qrImg = document.getElementById("qr-solana");
+  const btnQR = document.getElementById("generate-qr");
+  const btnPhantom = document.getElementById("phantom-connect");
+  const amountInput = document.getElementById("bits-amount");
+  const status = document.getElementById("deposit-status");
+
+  // Generar QR
+  btnQR.addEventListener("click", () => {
+    const amount = parseFloat(amountInput.value);
+    if (!amount || amount <= 0) {
+      status.textContent = "❌ Ingresa un monto válido.";
+      return;
+    }
+    const url = `solana:${CENTRAL}?amount=${amount}&spl-token=${MINT}&label=LivePayout&message=Depósito%20de%20${amount}%20BITS`;
 </div> 
                     <div class="lg:col-span-2 bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)]"><h3 class="font-semibold text-lg mb-4" data-key="balance_withdrawal">Balance & Withdrawal</h3>
                         <div class="bg-[var(--background-tertiary)] p-6 rounded-lg mb-6">
@@ -1234,6 +1276,7 @@
 </script>
 </body>
 </html>
+
 
 
 
