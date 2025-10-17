@@ -561,91 +561,6 @@
                             <button id="logout-button" class="mt-3 w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 rounded-lg transition-all" data-key="logout">Log Out</button>
                         </div>         
   </div>
-  <div class="lg:col-span-2 bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)] mb-6">
-  <h3 class="font-semibold text-lg mb-4 text-purple-400">Depositar BITS (Solana Pay)</h3>
-  <div class="bg-[var(--background-tertiary)] p-6 rounded-lg text-center">
-    <p class="text-sm text-[var(--text-secondary)] mb-3">Paga usando tu wallet Phantom o QR Solana Pay.</p>
-
-    <!-- QR Code -->
-    <div class="flex items-center justify-center mb-4">
-      <img id="solana-qr-img" src="" alt="QR" class="w-36 h-36 rounded-lg border border-[var(--border-color)] hidden opacity-0 transition-opacity duration-300">
-    </div>
-
-    <p class="text-xs text-gray-400 break-all mb-3" id="solana-wallet-text">Wallet central: 6MX2SNsqyFbbwBQhuYngVXUXs4MseEpz3abiyN9pDZfA</p>
-
-    <div class="grid grid-cols-2 gap-3 mb-3">
-      <input id="bits-amount" type="number" min="0.01" step="0.01" placeholder="Monto BITS" class="bg-[var(--background-secondary)] p-2 rounded-lg text-center">
-      <button id="bits-gen-btn" class="py-2 purple-gradient-bg text-white font-bold rounded-lg">Generar QR</button>
-    </div>
-
-    <!-- Botón para abrir Phantom -->
-    <button id="phantom-btn" class="w-full mt-2 bg-purple-700 hover:bg-purple-800 text-white font-semibold py-2 px-4 rounded-lg transition-all">Abrir Phantom</button>
-
-    <p id="bits-status" class="text-sm text-green-400 mt-3">Estado: esperando...</p>
-  </div>
-</div>
-
-<!-- === SCRIPT DE FUNCIONALIDAD === -->
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
-<script>
-(function(){
-  const CENTRAL = '6MX2SNsqyFbbwBQhuYngVXUXs4MseEpz3abiyN9pDZfA';
-  const MINT = 'EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump';
-
-  const btnQR = document.getElementById('bits-gen-btn');
-  const btnPhantom = document.getElementById('phantom-btn');
-  const input = document.getElementById('bits-amount');
-  const img = document.getElementById('solana-qr-img');
-  const status = document.getElementById('bits-status');
-
-  function showQR(dataUrl){
-    img.src = dataUrl;
-    img.classList.remove('hidden');
-    requestAnimationFrame(()=> img.classList.add('opacity-100'));
-  }
-
-  btnQR.addEventListener('click', ()=>{
-    const amount = parseFloat(input.value);
-    if(!amount || amount <= 0){
-      status.textContent = '❌ Ingresa un monto válido.';
-      return;
-    }
-    const url = `solana:${CENTRAL}?amount=${amount}&spl-token=${MINT}&label=LivePayout&message=Depósito%20de%20${amount}%20BITS`;
-    QRCode.toDataURL(url, { width:320, colorDark:'#14F195', colorLight:'#00000000' }, (err, dataUrl)=>{
-      if(!err){
-        showQR(dataUrl);
-        status.textContent = '✅ QR generado. Escanéalo o usa Phantom.';
-      }
-    });
-  });
-
-  // Detectar Phantom
-  const provider = window.solana;
-  if(!provider){
-    btnPhantom.textContent = 'Instalar Phantom Wallet';
-    btnPhantom.onclick = ()=> window.open('https://phantom.app/', '_blank');
-  } else {
-    btnPhantom.onclick = async ()=>{
-      try{
-        const resp = await provider.connect();
-        const addr = resp.publicKey.toString();
-        status.textContent = `✅ Phantom conectado: ${addr.slice(0,4)}...${addr.slice(-4)}`;
-        // abrir modal de pago
-        const amount = parseFloat(input.value);
-        if(!amount || amount <= 0){
-          alert('Por favor, ingresa el monto a pagar antes de abrir Phantom.');
-          return;
-        }
-        const payUrl = `https://phantom.app/ul/v1/send?recipient=${CENTRAL}&amount=${amount}&spl-token=${MINT}&reference=bitsDeposit&message=Depósito%20de%20${amount}%20BITS`;
-        window.open(payUrl, '_blank');
-      }catch(err){
-        console.error(err);
-        status.textContent = '❌ Error al conectar con Phantom.';
-      }
-    };
-  }
-})();
-</script>
 <div id="deposit-container" class="lg:col-span-2 bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)] mb-6">
   <h3 class="font-semibold text-lg mb-4 text-purple-400" data-key="deposit_funds">Depositar BITS (Solana Pay)</h3>
   <div class="bg-[var(--background-tertiary)] p-6 rounded-lg text-center">
@@ -1319,6 +1234,7 @@
 </script>
 </body>
 </html>
+
 
 
 
