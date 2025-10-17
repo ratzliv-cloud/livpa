@@ -1233,9 +1233,71 @@
 
   btn.addEventListener('click', ()=> generate(input.value));
 })();
+    // === Integración depósito BITS (Phantom + Solana Pay) ===
+function initBitsDeposit() {
+  const btnQR = document.getElementById("bits-gen-btn");
+  const btnPhantom = document.getElementById("phantom-pay");
+  const input = document.getElementById("bits-amount");
+  const img = document.getElementById("solana-qr-img");
+  const status = document.getElementById("bits-status");
+
+  if (!btnQR || !btnPhantom) return; // si aún no está renderizado el perfil
+
+  const CENTRAL = "6MX2SNsqyFbbwBQhuYngVXUXs4MseEpz3abiyN9pDZfA";
+  const MINT = "EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump";
+
+  function showQR(amount) {
+    const url = `solana:${CENTRAL}?amount=${amount}&spl-token=${MINT}&label=LivePayout&message=Depósito%20de%20${amount}%20BITS`;
+    QRCode.toDataURL(url, { width: 300, colorDark: "#14F195", colorLight: "#00000000" }, (err, dataUrl) => {
+      if (!err) {
+        img.src = dataUrl;
+        img.classList.remove("hidden");
+        requestAnimationFrame(() => img.classList.add("opacity-100"));
+        status.textContent = "✅ QR generado. Escanéalo o paga con Phantom.";
+      }
+    });
+  }
+
+  btnQR.addEventListener("click", () => {
+    const amount = parseFloat(input.value);
+    if (!amount || amount <= 0) {
+      status.textContent = "❌ Ingresa un monto válido.";
+      return;
+    }
+    showQR(amount);
+  });
+
+  btnPhantom.addEventListener("click", async () => {
+    const amount = parseFloat(input.value);
+    if (!amount || amount <= 0) return alert("Ingresa el monto a pagar.");
+    if (window.solana && window.solana.isPhantom) {
+      try {
+        const resp = await window.solana.connect();
+        const addr = resp.publicKey.toString();
+        const phantomURL = `https://phantom.app/ul/v1/send?recipient=${CENTRAL}&amount=${amount}&spl-token=${MINT}&reference=${addr}&message=Depósito%20de%20${amount}%20BITS`;
+        window.open(phantomURL, "_blank");
+        status.textContent = "💰 Esperando confirmación...";
+      } catch (err) {
+        console.error(err);
+        status.textContent = "❌ Error al conectar con Phantom.";
+      }
+    } else {
+      window.open("https://phantom.app/", "_blank");
+    }
+  });
+}
+
+// Detecta cuándo se carga la página de settings para iniciar los eventos
+document.addEventListener("click", (e) => {
+  if (e.target.closest("#profile-button") || e.target.closest('[data-target="settings"]')) {
+    setTimeout(initBitsDeposit, 1000);
+  }
+});
+
 </script>
 </body>
 </html>
+
 
 
 
