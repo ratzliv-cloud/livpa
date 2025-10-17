@@ -1199,84 +1199,6 @@
         setInterval(updateWithdrawalStatus, 30000);
     </script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
-    <script>
-(function depositModule(){
-  const CENTRAL = "6MX2SNsqyFbbwBQhuYngVXUXs4MseEpz3abiyN9pDZfA";
-  const MINT = "EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump";
-  const QUICKNODE = "https://special-twilight-thunder.solana-mainnet.quiknode.pro/2fd579d64023d70adf8f08f864aa553a07529f8a/";
-
-  const btnQR = document.getElementById("bits-gen-btn");
-  const btnPhantom = document.getElementById("phantom-pay");
-  const input = document.getElementById("bits-amount");
-  const img = document.getElementById("solana-qr-img");
-  const status = document.getElementById("bits-status");
-
-  if(!btnQR || !btnPhantom) return;
-
-  function showQR(amount){
-    const url = `solana:${CENTRAL}?amount=${amount}&spl-token=${MINT}&label=LivePayout&message=Depósito%20de%20${amount}%20BITS`;
-    QRCode.toDataURL(url,{width:320,colorDark:"#14F195",colorLight:"#00000000"},(err,dataUrl)=>{
-      if(!err){
-        img.src=dataUrl;
-        img.classList.remove("hidden");
-        requestAnimationFrame(()=>img.classList.add("opacity-100"));
-        status.textContent="✅ QR generado. Escanéalo o paga con Phantom.";
-      }
-    });
-  }
-
-  btnQR.addEventListener("click",()=>{
-    const amount=parseFloat(input.value);
-    if(!amount||amount<=0){status.textContent="❌ Ingresa un monto válido.";return;}
-    showQR(amount);
-  });
-
-  btnPhantom.addEventListener("click",async()=>{
-    const amount=parseFloat(input.value);
-    if(!amount||amount<=0){alert("Por favor, ingresa el monto a pagar.");return;}
-    if(window.solana&&window.solana.isPhantom){
-      try{
-        const resp=await window.solana.connect();
-        const addr=resp.publicKey.toString();
-        const url=`https://phantom.app/ul/v1/send?recipient=${CENTRAL}&amount=${amount}&spl-token=${MINT}&reference=${addr}&message=Depósito%20de%20${amount}%20BITS`;
-        window.open(url,"_blank");
-        status.textContent="💰 Esperando confirmación...";
-        checkDeposit(addr,amount);
-      }catch(e){
-        console.error(e);
-        status.textContent="❌ Error al conectar Phantom.";
-      }
-    }else{
-      window.open("https://phantom.app/","_blank");
-    }
-  });
-
-  // Confirmación automática vía QuickNode
-  async function checkDeposit(userAddr,amount){
-    const interval=setInterval(async()=>{
-      try{
-        const res=await fetch(QUICKNODE,{
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({
-            jsonrpc:"2.0",
-            id:1,
-            method:"getSignaturesForAddress",
-            params:[CENTRAL,{limit:25}]
-          })
-        });
-        const data=await res.json();
-        const found=data.result.find(tx=>tx.memo?.includes(userAddr)||tx.signature.includes(userAddr.slice(0,4)));
-        if(found){
-          clearInterval(interval);
-          status.textContent="✅ Pago confirmado en red Solana.";
-          await fetch("/api/updateBalance",{
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({userAddr,amount})
-          });
-        }
-      }catch(err){console.error
 <script>
 (function waitForDepositUI(){
   const btn = document.getElementById('bits-gen-btn');
@@ -1314,6 +1236,7 @@
 </script>
 </body>
 </html>
+
 
 
 
