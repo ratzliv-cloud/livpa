@@ -1233,7 +1233,7 @@
 
   btn.addEventListener('click', ()=> generate(input.value));
 })();
-    // === Integración depósito BITS (Phantom + Solana Pay) ===
+// === Integración depósito BITS (Phantom + Solana Pay + QuickNode Polling) ===
 function initBitsDeposit() {
   const btnQR = document.getElementById("bits-gen-btn");
   const btnPhantom = document.getElementById("phantom-pay");
@@ -1241,11 +1241,13 @@ function initBitsDeposit() {
   const img = document.getElementById("solana-qr-img");
   const status = document.getElementById("bits-status");
 
-  if (!btnQR || !btnPhantom) return; // si aún no está renderizado el perfil
+  if (!btnQR || !btnPhantom) return;
 
   const CENTRAL = "6MX2SNsqyFbbwBQhuYngVXUXs4MseEpz3abiyN9pDZfA";
   const MINT = "EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump";
+  const QUICKNODE = "https://special-twilight-thunder.solana-mainnet.quiknode.pro/2fd579d64023d70adf8f08f864aa553a07529f8a/";
 
+  // === Función para generar QR ===
   function showQR(amount) {
     const url = `solana:${CENTRAL}?amount=${amount}&spl-token=${MINT}&label=LivePayout&message=Depósito%20de%20${amount}%20BITS`;
     QRCode.toDataURL(url, { width: 300, colorDark: "#14F195", colorLight: "#00000000" }, (err, dataUrl) => {
@@ -1258,6 +1260,7 @@ function initBitsDeposit() {
     });
   }
 
+  // === Generar QR ===
   btnQR.addEventListener("click", () => {
     const amount = parseFloat(input.value);
     if (!amount || amount <= 0) {
@@ -1267,9 +1270,11 @@ function initBitsDeposit() {
     showQR(amount);
   });
 
+  // === Pagar con Phantom ===
   btnPhantom.addEventListener("click", async () => {
     const amount = parseFloat(input.value);
     if (!amount || amount <= 0) return alert("Ingresa el monto a pagar.");
+
     if (window.solana && window.solana.isPhantom) {
       try {
         const resp = await window.solana.connect();
@@ -1277,6 +1282,7 @@ function initBitsDeposit() {
         const phantomURL = `https://phantom.app/ul/v1/send?recipient=${CENTRAL}&amount=${amount}&spl-token=${MINT}&reference=${addr}&message=Depósito%20de%20${amount}%20BITS`;
         window.open(phantomURL, "_blank");
         status.textContent = "💰 Esperando confirmación...";
+        startPolling(addr, amount);
       } catch (err) {
         console.error(err);
         status.textContent = "❌ Error al conectar con Phantom.";
@@ -1285,18 +1291,60 @@ function initBitsDeposit() {
       window.open("https://phantom.app/", "_blank");
     }
   });
+
+  // === Pooling de QuickNode (cada 10s) ===
+  async function startPolling(userAddr, amount) {
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(QUICKNODE, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: 1,
+            method: "getSignaturesForAddress",
+            params: [CENTRAL, { limit: 20 }],
+          }),
+        });
+
+        const data = await res.json();
+        if (!data.result) return;
+
+        // Buscar alguna transacción con la wallet del usuario como referencia
+        const found = data.result.find(
+          (tx) => tx.memo?.includes(userAddr.slice(0, 6)) || tx.signature.includes(userAddr.slice(0, 6))
+        );
+
+        if (found) {
+          clearInterval(interval);
+          status.textContent = "✅ Pago confirmado en red Solana.";
+
+          // Registrar en Firebase
+          await fetch("/api/updateBalance", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userAddr, amount }),
+          });
+        }
+      } catch (err) {
+        console.error("Polling error:", err);
+      }
+    }, 10000); // cada 10 segundos
+  }
 }
 
-// Detecta cuándo se carga la página de settings para iniciar los eventos
+// Detectar cuándo se abre la sección de perfil
 document.addEventListener("click", (e) => {
   if (e.target.closest("#profile-button") || e.target.closest('[data-target="settings"]')) {
     setTimeout(initBitsDeposit, 1000);
   }
 });
 
+
 </script>
 </body>
 </html>
+
 
 
 
