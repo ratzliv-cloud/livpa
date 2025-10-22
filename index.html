@@ -10,7 +10,15 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="icon" type="image/jpeg" href="https://i.postimg.cc/4xL1nYWJ/android-chrome-512x512.png">
 
-<link rel="manifest" href="/site.webmanifest">
+    <link rel="manifest" href="/site.webmanifest">
+    
+    <!-- Solana Web3.js para interactuar con la blockchain -->
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <!-- Solana SPL Token library -->
+    <script src="https://unpkg.com/@solana/spl-token@0.3.7/lib/index.iife.min.js"></script>
+    
+    <!-- Biblioteca para generar códigos QR -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
 
     <style>
         :root {
@@ -81,6 +89,13 @@
         .category-card img {
             aspect-ratio: 3 / 4;
             object-fit: cover;
+        }
+         .spinner-deposit {
+            border-top-color: #8347dd;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -186,12 +201,12 @@
         
         const firebaseConfig = {
             apiKey: "AIzaSyACz8EaihKTwAQHAnNCZJ-k8WxF1BDUOGs",
-    authDomain: "livep-d622a.firebaseapp.com",
-    projectId: "livep-d622a",
-    storageBucket: "livep-d622a.firebasestorage.app",
-    messagingSenderId: "257830156699",
-    appId: "1:257830156699:web:30f1b92479ea035d4ac93e",
-    measurementId: "G-EHBX5PD4G4"
+            authDomain: "livep-d622a.firebaseapp.com",
+            projectId: "livep-d622a",
+            storageBucket: "livep-d622a.firebasestorage.app",
+            messagingSenderId: "257830156699",
+            appId: "1:257830156699:web:30f1b92479ea035d4ac93e",
+            measurementId: "G-EHBX5PD4G4"
         };
         
         const CATEGORIES = ['Just Chatting', 'Crypto Raiders', 'Axie Infinity', 'Star Atlas', 'Decentraland', 'The Sandbox', 'Gods Unchained', 'Music', 'Gaming', 'DeFi'];
@@ -212,6 +227,7 @@
         let currentLang = 'en';
         let currentPageRender = () => renderExplorePage();
         let navigationHistory = [];
+        let withdrawalUpdateInterval = null;
 
         app = initializeApp(firebaseConfig);
         auth = getAuth(app);
@@ -338,6 +354,7 @@
         
         function logout() {
             stopStream();
+            if (withdrawalUpdateInterval) clearInterval(withdrawalUpdateInterval);
             if(unsubscribeUser) unsubscribeUser();
             localStorage.removeItem('walletAddress');
             if(auth.currentUser) auth.signOut();
@@ -399,84 +416,8 @@
             }, 3000);
         }
 
-        function setupNavigation() {
-            const pages = {
-                'explore': { render: renderExplorePage, pageKey: 'explore', auth: false },
-                'categories': { render: renderCategoriesPage, pageKey: 'categories', auth: false },
-                'studio': { render: renderStudioPage, pageKey: 'studio', auth: true }
-            };
+        // --- RENDER FUNCTIONS (MOVED UP TO FIX REFERENCE ERROR) ---
 
-            document.body.addEventListener('click', (e) => {
-                const profileButton = e.target.closest('#profile-button');
-                if (profileButton) {
-                    if (!requireAuth()) return;
-                    e.preventDefault();
-                    navigationHistory.push(currentPageRender);
-                    cleanupWatchPage();
-                    renderSettingsPage();
-                }
-
-                const navAction = e.target.closest('.nav-action');
-                if (navAction) {
-                    e.preventDefault();
-                    const targetPageKey = navAction.dataset.target;
-                    const page = pages[targetPageKey];
-                    if (page) {
-                        if(page.auth && !requireAuth()) return;
-                        navigationHistory.push(currentPageRender);
-                        cleanupWatchPage();
-                        currentPageRender = page.render;
-                        currentPageRender();
-                    }
-                }
-            });
-            
-            backButton.addEventListener('click', () => {
-                if (navigationHistory.length > 0) {
-                    cleanupWatchPage();
-                    const previousPage = navigationHistory.pop();
-                    if (typeof previousPage === 'function') {
-                        currentPageRender = previousPage;
-                        previousPage();
-                    }
-                }
-            });
-
-            function toggleSidebar() {
-                sidebar.classList.toggle('-translate-x-full');
-                sidebarBackdrop.classList.toggle('hidden');
-                mobileMenuIcon.setAttribute('data-lucide', sidebar.classList.contains('-translate-x-full') ? 'menu' : 'x');
-                lucide.createIcons();
-            }
-
-            mobileMenuBtn.addEventListener('click', toggleSidebar);
-            sidebarBackdrop.addEventListener('click', toggleSidebar);
-            sidebar.addEventListener('click', (e) => {
-                if (e.target.closest('a.nav-action')) {
-                    toggleSidebar();
-                }
-            });
-        }
-        
-        function updateHeaderButtons(isSubPage) {
-            backButton.classList.toggle('hidden', !isSubPage);
-            mobileMenuBtn.classList.toggle('hidden', isSubPage);
-        }
-
-        function setActiveLink(activeTarget) {
-             document.querySelectorAll('.nav-action[data-target]').forEach(link => {
-                link.classList.toggle('active', link.dataset.target === activeTarget);
-            });
-        }
-
-        function renderPage(content, activeTargetKey, isSubPage = false) {
-            mainContent.innerHTML = `<div class="animate-slide-in">${content}</div>`;
-            setActiveLink(activeTargetKey);
-            updateHeaderButtons(isSubPage);
-            setLanguage(currentLang);
-            lucide.createIcons();
-        }
-        
         async function renderExplorePage() {
             currentPageRender = renderExplorePage;
             let streamsQuery = query(collection(db, "streams"), where("status", "==", "live"));
@@ -559,37 +500,51 @@
                             </div>
                             <button id="save-profile" class="mt-4 w-full purple-gradient-bg text-white font-semibold py-2 rounded-lg transition-all hover:scale-105" data-key="save">Save Changes</button>
                             <button id="logout-button" class="mt-3 w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 rounded-lg transition-all" data-key="logout">Log Out</button>
-                        </div>         
-  </div>
-<div class="lg:col-span-2 bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)] mb-6">
-  <h3 class="font-semibold text-lg mb-4 text-purple-400">Depositar BITS</h3>
-  <div class="bg-[var(--background-tertiary)] p-6 rounded-lg text-center">
-    <p class="text-sm text-[var(--text-secondary)] mb-3">Deposita tokens BITS usando Solana Pay o tu wallet Phantom.</p>
-    <div class="flex items-center justify-center mb-4">
-      <img id="solana-qr-img" src="" alt="QR de pago" class="w-36 h-36 rounded-lg border border-[var(--border-color)] hidden opacity-0 transition-opacity duration-300">
-    </div>
-    <div class="grid grid-cols-2 gap-3 mb-3">
-      <input id="bits-amount" type="number" min="0.01" step="0.01" placeholder="Monto en BITS" class="bg-[var(--background-secondary)] p-2 rounded-lg text-center">
-      <button id="bits-gen-btn" class="purple-gradient-bg text-white font-semibold py-2 rounded-lg">Generar QR</button>
-    </div>
-    <button id="phantom-pay" class="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-2 rounded-lg transition-all">Abrir en Phantom</button>
-    <p id="bits-status" class="text-sm text-green-400 mt-3">Estado: esperando...</p>
-  </div>
-</div>
-  </div>
-                    </div>
-</div>
-</div> 
-                    <div class="lg:col-span-2 bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)]"><h3 class="font-semibold text-lg mb-4" data-key="balance_withdrawal">Balance & Withdrawal</h3>
-                        <div class="bg-[var(--background-tertiary)] p-6 rounded-lg mb-6">
-                            <p class="text-sm text-[var(--text-secondary)]" data-key="current_balance">Your Current Balance</p>
-                            <div class="flex items-center gap-2"><img src="${BIT_COIN_LOGO_URL}" class="w-10 h-10 rounded-full object-cover"><p class="text-4xl font-bold text-white">${currentUser.bitBalance.toLocaleString()} <span class="text-2xl font-normal text-purple-300">BIT</span></p></div>
-                            <p class="text-lg text-green-400 h-7 mt-2" id="usd-equivalent-display">...</p>
                         </div>
-                        <p class="text-sm text-[var(--text-secondary)]" id="withdrawal-info-text" data-key="withdrawal_minimum_bit">You need a minimum of ${WITHDRAWAL_MINIMUM_BIT.toLocaleString()} BIT to withdraw.</p>
-                        <div id="token-price-info" class="text-xs text-gray-500 h-4 mt-1"></div>
-                        <button id="withdraw-button" class="mt-4 w-full purple-gradient-bg text-white font-bold py-3 rounded-lg transition-all disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed" disabled data-key="request_withdrawal">Request Withdrawal</button>
-                        <div id="withdraw-message" class="text-center text-sm h-5 mt-2"></div>
+                    </div>
+                    <div class="lg:col-span-2 space-y-6">
+                        <div class="bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)]">
+                             <h3 class="font-semibold text-lg mb-4">Depositar BITS</h3>
+                            <!-- Contenedor del sistema de depósito -->
+                            <div id="solana-deposit-container">
+                                <div id="deposit-form-section">
+                                    <label for="deposit-amount" class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Monto a Depositar</label>
+                                    <div class="relative">
+                                        <input type="number" id="deposit-amount" class="w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-purple)]" placeholder="Ej: 100.50">
+                                        <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-sm text-gray-400">BIT</span>
+                                    </div>
+                                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <button id="generate-qr-btn" class="w-full purple-gradient-bg text-white font-bold py-3 rounded-lg transition-all hover:opacity-90 flex items-center justify-center gap-2">
+                                            <i data-lucide="qr-code"></i> Pagar con QR
+                                        </button>
+                                        <button id="pay-with-phantom-btn" class="w-full bg-purple-800 text-white font-bold py-3 rounded-lg transition-all hover:bg-purple-700 flex items-center justify-center gap-2">
+                                            <img src="https://phantom.app/img/logo.png" class="w-5 h-5"> Pagar con Phantom
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="deposit-status-section" class="text-center hidden">
+                                     <h4 id="deposit-title" class="text-md font-semibold mb-3">Escanea para Pagar</h4>
+                                     <div id="deposit-qr-code" class="flex justify-center items-center my-4"></div>
+                                     <div class="flex items-center justify-center space-x-2">
+                                        <div id="deposit-spinner" class="spinner-deposit h-5 w-5 rounded-full border-2 border-gray-600 border-t-purple-500"></div>
+                                        <p id="deposit-status-message" class="text-[var(--text-secondary)] text-sm">Esperando pago...</p>
+                                     </div>
+                                     <button id="deposit-cancel-btn" class="mt-4 w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 rounded-lg transition-all">Cancelar</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)]">
+                            <h3 class="font-semibold text-lg mb-4" data-key="balance_withdrawal">Balance & Withdrawal</h3>
+                            <div class="bg-[var(--background-tertiary)] p-6 rounded-lg mb-6">
+                                <p class="text-sm text-[var(--text-secondary)]" data-key="current_balance">Your Current Balance</p>
+                                <div class="flex items-center gap-2"><img src="${BIT_COIN_LOGO_URL}" class="w-10 h-10 rounded-full object-cover"><p class="text-4xl font-bold text-white">${currentUser.bitBalance.toLocaleString()} <span class="text-2xl font-normal text-purple-300">BIT</span></p></div>
+                                <p class="text-lg text-green-400 h-7 mt-2" id="usd-equivalent-display">...</p>
+                            </div>
+                            <p class="text-sm text-[var(--text-secondary)]" id="withdrawal-info-text" data-key="withdrawal_minimum_bit">You need a minimum of ${WITHDRAWAL_MINIMUM_BIT.toLocaleString()} BIT to withdraw.</p>
+                            <div id="token-price-info" class="text-xs text-gray-500 h-4 mt-1"></div>
+                            <button id="withdraw-button" class="mt-4 w-full purple-gradient-bg text-white font-bold py-3 rounded-lg transition-all disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed" disabled data-key="request_withdrawal">Request Withdrawal</button>
+                            <div id="withdraw-message" class="text-center text-sm h-5 mt-2"></div>
+                        </div>
                     </div>
                 </div>
             </div>`;
@@ -598,9 +553,12 @@
             document.getElementById('logout-button').addEventListener('click', logout); 
             document.getElementById('withdraw-button').addEventListener('click', requestWithdrawal); 
             document.getElementById('lang-select').addEventListener('change', (e) => setLanguage(e.target.value));
-            updateWithdrawalStatus(); 
+            if (withdrawalUpdateInterval) clearInterval(withdrawalUpdateInterval);
+            withdrawalUpdateInterval = setInterval(updateWithdrawalStatus, 30000);
+            updateWithdrawalStatus();
+            setupSolanaDeposit(); // <-- Inicializa la lógica de depósito
         }
-
+        
         function renderStudioPage() {
             currentPageRender = renderStudioPage;
             const studioHTML = `
@@ -626,7 +584,7 @@
             tabButtons.forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.target)));
             switchTab('studio-stream');
         }
-        
+
         let unsubscribeChat = null;
         let unsubscribeStream = null;
         let viewerPeerConnection = null;
@@ -809,6 +767,293 @@
                 </div>
                 <div class="mt-6"><img src="https://placehold.co/800x400/1e1e24/2a2a32?text=Performance+Charts" class="w-full rounded-lg"></div>`;
         }
+        
+        // --- NAVIGATION & UI HELPERS ---
+
+        function setupNavigation() {
+            const pages = {
+                'explore': { render: renderExplorePage, pageKey: 'explore', auth: false },
+                'categories': { render: renderCategoriesPage, pageKey: 'categories', auth: false },
+                'studio': { render: renderStudioPage, pageKey: 'studio', auth: true }
+            };
+
+            document.body.addEventListener('click', (e) => {
+                const profileButton = e.target.closest('#profile-button');
+                if (profileButton) {
+                    if (!requireAuth()) return;
+                    e.preventDefault();
+                    navigationHistory.push(currentPageRender);
+                    cleanupWatchPage();
+                    renderSettingsPage();
+                }
+
+                const navAction = e.target.closest('.nav-action');
+                if (navAction) {
+                    e.preventDefault();
+                    const targetPageKey = navAction.dataset.target;
+                    const page = pages[targetPageKey];
+                    if (page) {
+                        if(page.auth && !requireAuth()) return;
+                        navigationHistory.push(currentPageRender);
+                        cleanupWatchPage();
+                        currentPageRender = page.render;
+                        currentPageRender();
+                    }
+                }
+            });
+            
+            backButton.addEventListener('click', () => {
+                if (navigationHistory.length > 0) {
+                    cleanupWatchPage();
+                    const previousPage = navigationHistory.pop();
+                    if (typeof previousPage === 'function') {
+                        currentPageRender = previousPage;
+                        previousPage();
+                    }
+                }
+            });
+
+            function toggleSidebar() {
+                sidebar.classList.toggle('-translate-x-full');
+                sidebarBackdrop.classList.toggle('hidden');
+                mobileMenuIcon.setAttribute('data-lucide', sidebar.classList.contains('-translate-x-full') ? 'menu' : 'x');
+                lucide.createIcons();
+            }
+
+            mobileMenuBtn.addEventListener('click', toggleSidebar);
+            sidebarBackdrop.addEventListener('click', toggleSidebar);
+            sidebar.addEventListener('click', (e) => {
+                if (e.target.closest('a.nav-action')) {
+                    toggleSidebar();
+                }
+            });
+        }
+        
+        function updateHeaderButtons(isSubPage) {
+            backButton.classList.toggle('hidden', !isSubPage);
+            mobileMenuBtn.classList.toggle('hidden', isSubPage);
+        }
+
+        function setActiveLink(activeTarget) {
+             document.querySelectorAll('.nav-action[data-target]').forEach(link => {
+                link.classList.toggle('active', link.dataset.target === activeTarget);
+            });
+        }
+
+        function renderPage(content, activeTargetKey, isSubPage = false) {
+            mainContent.innerHTML = `<div class="animate-slide-in">${content}</div>`;
+            setActiveLink(activeTargetKey);
+            updateHeaderButtons(isSubPage);
+            setLanguage(currentLang);
+            lucide.createIcons();
+        }
+
+        // --- INICIO DE LA LÓGICA DE DEPÓSITO DE SOLANA ---
+        function setupSolanaDeposit() {
+            // --- CONFIG ---
+            const TATUM_API_KEY = 't-68f69f0447bf5156a36067b3-b0b00e1660324a54ad70ef28';
+            const RPC_URL = `https://solana-mainnet.gateway.tatum.io/v1/rpc`;
+            const SPL_TOKEN_MINT = 'EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump';
+            const SPL_TOKEN_DECIMALS = 6;
+
+            // --- DOM ELEMENTS ---
+            const amountInput = document.getElementById('deposit-amount');
+            const generateQrBtn = document.getElementById('generate-qr-btn');
+            const payWithPhantomBtn = document.getElementById('pay-with-phantom-btn');
+            const depositFormSection = document.getElementById('deposit-form-section');
+            const depositStatusSection = document.getElementById('deposit-status-section');
+            const qrCodeContainer = document.getElementById('deposit-qr-code');
+            const statusMessage = document.getElementById('deposit-status-message');
+            const cancelBtn = document.getElementById('deposit-cancel-btn');
+            const paymentSpinner = document.getElementById('deposit-spinner');
+            const depositTitle = document.getElementById('deposit-title');
+
+            if (!amountInput) return;
+
+            // --- CONNECTION ---
+            const connection = new solanaWeb3.Connection(RPC_URL, {
+                commitment: 'confirmed',
+                httpHeaders: { "x-api-key": TATUM_API_KEY }
+            });
+
+            let pollingInterval = null;
+
+            const resetToInitialState = () => {
+                if (pollingInterval) clearInterval(pollingInterval);
+                pollingInterval = null;
+                amountInput.value = '';
+                generateQrBtn.disabled = false;
+                payWithPhantomBtn.disabled = false;
+                depositFormSection.classList.remove('hidden');
+                depositStatusSection.classList.add('hidden');
+                qrCodeContainer.innerHTML = '';
+                statusMessage.textContent = 'Esperando pago...';
+            };
+
+            const finalizeDeposit = async (amount) => {
+                statusMessage.textContent = '¡Pago recibido! Actualizando balance...';
+                paymentSpinner.style.display = 'block';
+
+                const userRef = doc(db, "users", currentUser.walletAddress);
+                await updateDoc(userRef, { bitBalance: increment(amount) });
+
+                statusMessage.textContent = '¡Depósito Confirmado!';
+                paymentSpinner.style.display = 'none';
+                showToast(`+${amount.toLocaleString()} BIT han sido añadidos a tu balance.`);
+                
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists()) {
+                    currentUser = { ...userSnap.data(), walletAddress: userSnap.id };
+                    renderHeader();
+                }
+
+                await updateWithdrawalStatus();
+                setTimeout(resetToInitialState, 4000);
+            };
+
+            const listenForTransaction = (referencePublicKey, amount) => {
+                pollingInterval = setInterval(async () => {
+                    try {
+                        const signatures = await connection.getSignaturesForAddress(referencePublicKey, { limit: 1 });
+                        if (signatures.length > 0) {
+                            clearInterval(pollingInterval);
+                            pollingInterval = null;
+                            const signature = signatures[0].signature;
+                            
+                            statusMessage.textContent = 'Confirmando transacción...';
+                            await connection.confirmTransaction(signature, 'confirmed');
+                            
+                            await finalizeDeposit(amount);
+                        }
+                    } catch (error) {
+                        console.error("Error polling for QR transaction:", error);
+                        statusMessage.textContent = 'Error de conexión.';
+                        paymentSpinner.style.display = 'none';
+                        clearInterval(pollingInterval);
+                    }
+                }, 2500);
+            };
+
+            // **NUEVA LÓGICA CORRECTA PARA PHANTOM**
+            const getPhantomProvider = () => {
+                if ('phantom' in window) {
+                    const provider = window.phantom?.solana;
+                    if (provider?.isPhantom) {
+                        return provider;
+                    }
+                }
+                return null;
+            };
+
+            const handlePhantomPay = async () => {
+                const amount = parseFloat(amountInput.value);
+                if (isNaN(amount) || amount <= 0) {
+                    showToast("Por favor, ingresa un monto válido.");
+                    amountInput.classList.add('ring-2', 'ring-red-500');
+                    setTimeout(() => amountInput.classList.remove('ring-2', 'ring-red-500'), 2000);
+                    return;
+                }
+                
+                const provider = getPhantomProvider();
+                if (!provider) {
+                    showToast('La billetera Phantom no está instalada.');
+                    window.open('https://phantom.app/', '_blank');
+                    return;
+                }
+
+                generateQrBtn.disabled = true;
+                payWithPhantomBtn.disabled = true;
+                depositFormSection.classList.add('hidden');
+                depositStatusSection.classList.remove('hidden');
+                qrCodeContainer.innerHTML = ''; 
+                qrCodeContainer.classList.add('hidden');
+                depositTitle.textContent = "Confirmar en Phantom";
+                statusMessage.textContent = 'Solicitando conexión a tu billetera...';
+                paymentSpinner.style.display = 'block';
+
+                try {
+                    await provider.connect({ onlyIfTrusted: false });
+                    statusMessage.textContent = 'Creando transacción...';
+
+                    const fromWallet = provider.publicKey;
+                    const toWallet = new solanaWeb3.PublicKey(currentUser.walletAddress);
+                    const splTokenMint = new solanaWeb3.PublicKey(SPL_TOKEN_MINT);
+                    const amountInSmallestUnit = amount * Math.pow(10, SPL_TOKEN_DECIMALS);
+
+                    const fromAta = await splToken.getAssociatedTokenAddress(splTokenMint, fromWallet);
+                    const toAta = await splToken.getAssociatedTokenAddress(splTokenMint, toWallet);
+                    
+                    const transaction = new solanaWeb3.Transaction();
+                    const toAtaAccount = await connection.getAccountInfo(toAta);
+
+                    if (!toAtaAccount) {
+                        transaction.add(
+                            splToken.createAssociatedTokenAccountInstruction(fromWallet, toAta, toWallet, splTokenMint)
+                        );
+                    }
+
+                    transaction.add(
+                        splToken.createTransferInstruction(fromAta, toAta, fromWallet, amountInSmallestUnit)
+                    );
+                    
+                    transaction.feePayer = fromWallet;
+                    transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+
+                    statusMessage.textContent = 'Por favor, confirma en tu billetera Phantom...';
+                    const { signature } = await provider.signAndSendTransaction(transaction);
+                    
+                    statusMessage.textContent = 'Confirmando transacción en la red...';
+                    await connection.confirmTransaction(signature, 'confirmed');
+
+                    await finalizeDeposit(amount);
+
+                } catch (err) {
+                    console.error("Phantom payment error:", err);
+                    showToast(err.message.includes("User rejected the request") ? "Transacción cancelada por el usuario." : "Pago con Phantom fallido.");
+                    resetToInitialState();
+                }
+            };
+            
+            const handleQrPay = () => {
+                const amount = parseFloat(amountInput.value);
+                if (isNaN(amount) || amount <= 0) {
+                    showToast("Por favor, ingresa un monto válido.");
+                    amountInput.classList.add('ring-2', 'ring-red-500');
+                    setTimeout(() => amountInput.classList.remove('ring-2', 'ring-red-500'), 2000);
+                    return;
+                }
+
+                generateQrBtn.disabled = true;
+                payWithPhantomBtn.disabled = true;
+
+                const reference = new solanaWeb3.Keypair();
+                const label = 'Deposito de BITs';
+                const message = `Pago de ${amount} BIT a LivePayout. Ref: ${reference.publicKey.toBase58().substring(0, 8)}`;
+                const solanaPayUrl = `solana:${currentUser.walletAddress}?amount=${amount}&spl-token=${SPL_TOKEN_MINT}&reference=${reference.publicKey.toBase58()}&label=${encodeURIComponent(label)}&message=${encodeURIComponent(message)}`;
+                
+                qrCodeContainer.innerHTML = '';
+                QRCode.toCanvas(solanaPayUrl, { width: 192, errorCorrectionLevel: 'H', color: { dark: '#FFFFFF', light: '#1F2937' } }, (err, canvas) => {
+                    if (err) throw err;
+                    canvas.style.borderRadius = '0.5rem';
+                    canvas.style.border = '8px solid #374151';
+                    qrCodeContainer.appendChild(canvas);
+                });
+                
+                depositFormSection.classList.add('hidden');
+                depositStatusSection.classList.remove('hidden');
+                qrCodeContainer.classList.remove('hidden');
+                depositTitle.textContent = "Escanea para Pagar";
+                statusMessage.textContent = 'Esperando pago...';
+                paymentSpinner.style.display = 'block';
+
+                listenForTransaction(reference.publicKey, amount);
+            };
+
+            payWithPhantomBtn.addEventListener('click', handlePhantomPay);
+            generateQrBtn.addEventListener('click', handleQrPay);
+            cancelBtn.addEventListener('click', resetToInitialState);
+        }
+        // --- FIN DE LA LÓGICA DE DEPÓSITO ---
 
         function attachAnalyticsListeners() {
             if (!currentUser) return;
@@ -859,25 +1104,22 @@
                 } else {
                     if (usdEquivalentDisplay) usdEquivalentDisplay.textContent = `~ $---- USD`;
                 }
-                const canWithdraw = currentUser.bitBalance >= WITHDRAWAL_MINIMUM_BIT;
+            } catch (e) {
+                console.error("Error fetching token price:", e.message);
+                if (withdrawalUpdateInterval) {
+                    clearInterval(withdrawalUpdateInterval);
+                    withdrawalUpdateInterval = null;
+                }
+                if (usdEquivalentDisplay) usdEquivalentDisplay.textContent = translations[currentLang].price_fetch_error;
+                if (tokenPriceInfo) tokenPriceInfo.textContent = '';
+            } finally {
+                 const canWithdraw = currentUser.bitBalance >= WITHDRAWAL_MINIMUM_BIT;
                 if (withdrawButton) withdrawButton.disabled = !canWithdraw;
                 if (canWithdraw) {
                     if(withdrawalInfoText) withdrawalInfoText.textContent = translations[currentLang].withdrawal_ready;
                 } else {
                     const neededBits = WITHDRAWAL_MINIMUM_BIT - currentUser.bitBalance;
                     if(withdrawalInfoText) withdrawalInfoText.textContent = translations[currentLang].need_more_to_withdraw.replace('%a', neededBits.toLocaleString());
-                }
-            } catch (e) {
-                console.error("Error fetching token price:", e);
-                if (usdEquivalentDisplay) usdEquivalentDisplay.textContent = translations[currentLang].price_fetch_error;
-                if (tokenPriceInfo) tokenPriceInfo.textContent = '';
-                const canWithdraw = currentUser.bitBalance >= WITHDRAWAL_MINIMUM_BIT;
-                if (withdrawButton) withdrawButton.disabled = !canWithdraw;
-                if (!canWithdraw) {
-                    const neededBits = WITHDRAWAL_MINIMUM_BIT - currentUser.bitBalance;
-                    if (withdrawalInfoText) withdrawalInfoText.textContent = translations[currentLang].need_more_to_withdraw.replace('%a', neededBits.toLocaleString());
-                } else {
-                     if (withdrawalInfoText) withdrawalInfoText.textContent = translations[currentLang].withdrawal_ready;
                 }
             }
         }
@@ -1196,197 +1438,10 @@
         }
         
         // --- INICIALIZACIÓN ---
-        setInterval(updateWithdrawalStatus, 30000);
-    </script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
-<script>
-(function waitForDepositUI(){
-  const btn = document.getElementById('bits-gen-btn');
-  const img = document.getElementById('solana-qr-img');
-  const input = document.getElementById('bits-amount');
-  const status = document.getElementById('bits-status');
-
-  if(!btn || !img || !input || !status){
-    setTimeout(waitForDepositUI, 300);
-    return;
-  }
-
-  const CENTRAL = "6MX2SNsqyFbbwBQhuYngVXUXs4MseEpz3abiyN9pDZfA";
-  const MINT = "EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump";
-
-  function generate(amount){
-    const a = Number(amount);
-    if(!a || a<=0){
-      status.textContent = "❌ Ingresa un monto válido.";
-      return;
-    }
-    const url = `solana:${CENTRAL}?amount=${a}&spl-token=${MINT}&label=LivePayout&message=Depósito%20de%20${a}%20BITS`;
-    QRCode.toDataURL(url, { width: 320, colorDark: "#14F195", colorLight: "#00000000" }, (err, dataUrl)=>{
-      if(!err){
-        img.src = dataUrl;
-        img.classList.remove("hidden");
-        requestAnimationFrame(()=> img.classList.add("opacity-100"));
-        status.textContent = "✅ QR generado. Escanéalo para pagar.";
-      }
-    });
-  }
-
-  btn.addEventListener('click', ()=> generate(input.value));
-})();
-// === Integración depósito BITS (Phantom + Solana Pay + QuickNode Polling) ===
-function initBitsDeposit() {
-  const btnQR = document.getElementById("bits-gen-btn");
-  const btnPhantom = document.getElementById("phantom-pay");
-  const input = document.getElementById("bits-amount");
-  const img = document.getElementById("solana-qr-img");
-  const status = document.getElementById("bits-status");
-
-  if (!btnQR || !btnPhantom) return;
-
-  const CENTRAL = "6MX2SNsqyFbbwBQhuYngVXUXs4MseEpz3abiyN9pDZfA";
-  const MINT = "EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump";
-  const QUICKNODE = "https://special-twilight-thunder.solana-mainnet.quiknode.pro/2fd579d64023d70adf8f08f864aa553a07529f8a/";
-
-  // === Función para generar QR ===
-  function showQR(amount) {
-    const url = `solana:${CENTRAL}?amount=${amount}&spl-token=${MINT}&label=LivePayout&message=Depósito%20de%20${amount}%20BITS`;
-    QRCode.toDataURL(url, { width: 300, colorDark: "#14F195", colorLight: "#00000000" }, (err, dataUrl) => {
-      if (!err) {
-        img.src = dataUrl;
-        img.classList.remove("hidden");
-        requestAnimationFrame(() => img.classList.add("opacity-100"));
-        status.textContent = "✅ QR generado. Escanéalo o paga con Phantom.";
-      }
-    });
-  }
-
-  // === Generar QR ===
-  btnQR.addEventListener("click", () => {
-    const amount = parseFloat(input.value);
-    if (!amount || amount <= 0) {
-      status.textContent = "❌ Ingresa un monto válido.";
-      return;
-    }
-    showQR(amount);
-  });
-
-  // === Pagar con Phantom ===
-  btnPhantom.addEventListener("click", async () => {
-    const amount = parseFloat(input.value);
-    if (!amount || amount <= 0) return alert("Ingresa el monto a pagar.");
-
-    if (window.solana && window.solana.isPhantom) {
-      try {
-        const resp = await window.solana.connect();
-        const addr = resp.publicKey.toString();
-        const phantomURL = `https://phantom.app/ul/v1/send?recipient=${CENTRAL}&amount=${amount}&spl-token=${MINT}&reference=${addr}&message=Depósito%20de%20${amount}%20BITS`;
-        window.open(phantomURL, "_blank");
-        status.textContent = "💰 Esperando confirmación...";
-        startPolling(addr, amount);
-      } catch (err) {
-        console.error(err);
-        status.textContent = "❌ Error al conectar con Phantom.";
-      }
-    } else {
-      window.open("https://phantom.app/", "_blank");
-    }
-  });
-
-  // === Pooling de QuickNode (cada 10s) ===
-  async function startPolling(userAddr, amount) {
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(QUICKNODE, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            jsonrpc: "2.0",
-            id: 1,
-            method: "getSignaturesForAddress",
-            params: [CENTRAL, { limit: 20 }],
-          }),
-        });
-
-        const data = await res.json();
-        if (!data.result) return;
-
-        // Buscar alguna transacción con la wallet del usuario como referencia
-        const found = data.result.find(
-          (tx) => tx.memo?.includes(userAddr.slice(0, 6)) || tx.signature.includes(userAddr.slice(0, 6))
-        );
-
-        if (found) {
-          clearInterval(interval);
-          status.textContent = "✅ Pago confirmado en red Solana.";
-
-          // Registrar en Firebase
-          await fetch("/api/updateBalance", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userAddr, amount }),
-          });
+        if (!withdrawalUpdateInterval) {
+            withdrawalUpdateInterval = setInterval(updateWithdrawalStatus, 60000);
         }
-      } catch (err) {
-        console.error("Polling error:", err);
-      }
-    }, 10000); // cada 10 segundos
-  }
-}
-
-// Detectar cuándo se abre la sección de perfil
-document.addEventListener("click", (e) => {
-  if (e.target.closest("#profile-button") || e.target.closest('[data-target="settings"]')) {
-    setTimeout(initBitsDeposit, 1000);
-  }
-});
-
-
-</script>
+    </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
