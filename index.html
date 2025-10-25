@@ -872,7 +872,7 @@
             if (!amountInput) return; // Salir si los elementos no existen
 
             // --- CONNECTION using Tatum RPC---
-            const connection = new solanaWeb3.Connection(`${RPC_URL}?apiKey=${TATUM_API_KEY}`, {
+             const connection = new solanaWeb3.Connection(`${RPC_URL}?apiKey=${TATUM_API_KEY}`, {
                  commitment: 'confirmed'
              });
 
@@ -975,7 +975,6 @@
                     return;
                 }
 
-                // Deshabilitar botones y mostrar estado
                 generateQrBtn.disabled = true;
                 payWithPhantomBtn.disabled = true;
                 depositFormSection.classList.add('hidden');
@@ -987,7 +986,6 @@
                 paymentSpinner.style.display = 'block';
 
                 try {
-                    // Solicitar conexión (mostrará pop-up si no está conectado)
                     await provider.connect({ onlyIfTrusted: false }); 
                     
                     if (!provider.publicKey) throw new Error("Conexión con Phantom rechazada.");
@@ -995,43 +993,35 @@
                     statusMessage.textContent = 'Creando transacción...';
 
                     const fromWallet = provider.publicKey;
-                    // **USAR LA WALLET DE DESTINO CENTRAL**
                     const toWallet = new solanaWeb3.PublicKey(DEPOSIT_DESTINATION_WALLET); 
                     const splTokenMint = new solanaWeb3.PublicKey(SPL_TOKEN_MINT);
                     const amountInSmallestUnit = BigInt(Math.round(amount * Math.pow(10, SPL_TOKEN_DECIMALS)));
 
-                    // Obtener las direcciones de las Cuentas de Token Asociadas (ATA)
-                    const fromAta = await window.splToken.getAssociatedTokenAddress(splTokenMint, fromWallet);
-                    const toAta = await window.splToken.getAssociatedTokenAddress(splTokenMint, toWallet); // ATA del destinatario
+                    // CORRECCIÓN: Usar splToken directamente (asumiendo que es el global correcto)
+                    const fromAta = await splToken.getAssociatedTokenAddress(splTokenMint, fromWallet);
+                    const toAta = await splToken.getAssociatedTokenAddress(splTokenMint, toWallet);
                     
                     const transaction = new solanaWeb3.Transaction();
                     const toAtaAccount = await connection.getAccountInfo(toAta);
 
-                    // Si la cuenta ATA de destino **NO EXISTE**, añadir instrucción para crearla
                     if (!toAtaAccount) {
-                        console.log("La cuenta ATA de destino no existe. Creándola...");
+                        console.log("Creando cuenta ATA de destino...");
+                         // CORRECCIÓN: Usar splToken directamente
                         transaction.add(
-                            window.splToken.createAssociatedTokenAccountInstruction(
-                                fromWallet, // Quién paga la creación (el usuario)
-                                toAta,      // La dirección ATA a crear
-                                toWallet,   // El dueño de la nueva cuenta ATA (la wallet central)
-                                splTokenMint // El mint del token
+                            splToken.createAssociatedTokenAccountInstruction(
+                                fromWallet, toAta, toWallet, splTokenMint
                             )
                         );
                     }
 
-                    // Añadir la instrucción de transferencia del token
                     console.log("Añadiendo instrucción de transferencia...");
+                     // CORRECCIÓN: Usar splToken directamente
                     transaction.add(
-                        window.splToken.createTransferInstruction(
-                            fromAta,        // Cuenta de origen (ATA del usuario)
-                            toAta,          // Cuenta de destino (ATA de la wallet central)
-                            fromWallet,     // Dueño de la cuenta de origen (el usuario)
-                            amountInSmallestUnit // Cantidad en la unidad más pequeña (BigInt)
+                        splToken.createTransferInstruction(
+                            fromAta, toAta, fromWallet, amountInSmallestUnit
                         )
                     );
                     
-                    // Establecer quién pagará la tarifa y obtener el blockhash más reciente
                     transaction.feePayer = fromWallet;
                     console.log("Obteniendo blockhash reciente...");
                     const latestBlockhash = await connection.getLatestBlockhash('confirmed');
@@ -1041,12 +1031,10 @@
                     statusMessage.textContent = 'Por favor, confirma en tu billetera Phantom...';
                     console.log("Solicitando firma y envío a Phantom...");
                     
-                    // Solicitar firma y envío a Phantom
                     const { signature } = await provider.signAndSendTransaction(transaction);
                     console.log("Transacción enviada con firma:", signature);
                     
                     statusMessage.textContent = 'Confirmando transacción en la red...';
-                    // Confirmar la transacción en la red
                     await connection.confirmTransaction({
                         signature,
                         blockhash: transaction.recentBlockhash,
@@ -1054,7 +1042,6 @@
                     }, 'confirmed');
                     console.log("Transacción confirmada por Phantom.");
 
-                    // Finalizar el depósito (actualiza el balance del usuario en Firebase)
                     await finalizeDeposit(amount);
 
                 } catch (err) {
@@ -1068,11 +1055,10 @@
                         userMessage = `Error: ${err.message.split(".")[0].substring(0, 100)}`; 
                     }
                      showToast(userMessage);
-                    resetToInitialState(); // Volver al estado inicial si hay error
+                    resetToInitialState();
                 }
             };
             
-            // Generar y mostrar QR Code (Solana Pay)
             const handleQrPay = () => {
                 const amount = parseFloat(amountInput.value);
                 if (isNaN(amount) || amount <= 0) {
@@ -1085,10 +1071,9 @@
                 generateQrBtn.disabled = true;
                 payWithPhantomBtn.disabled = true;
 
-                const reference = new solanaWeb3.Keypair(); // Referencia única para esta tx
+                const reference = new solanaWeb3.Keypair(); 
                 const label = 'Deposito LivePayout';
                 const message = `Pago de ${amount} BIT. Ref: ${reference.publicKey.toBase58().substring(0,6)}`;
-                // **URL de Solana Pay apuntando a la WALLET CENTRAL**
                 const solanaPayUrl = `solana:${DEPOSIT_DESTINATION_WALLET}?amount=${amount}&spl-token=${SPL_TOKEN_MINT}&reference=${reference.publicKey.toBase58()}&label=${encodeURIComponent(label)}&message=${encodeURIComponent(message)}`;
                 
                 qrCodeContainer.innerHTML = '';
@@ -1100,11 +1085,10 @@
                         return;
                     }
                     canvas.style.borderRadius = '0.5rem';
-                    canvas.style.border = '8px solid #374151'; // Borde gris oscuro
+                    canvas.style.border = '8px solid #374151'; 
                     qrCodeContainer.appendChild(canvas);
                 });
                 
-                // Mostrar sección de estado
                 depositFormSection.classList.add('hidden');
                 depositStatusSection.classList.remove('hidden');
                 qrCodeContainer.classList.remove('hidden'); 
@@ -1112,11 +1096,9 @@
                 statusMessage.textContent = 'Esperando pago...';
                 paymentSpinner.style.display = 'block';
 
-                // Empezar a escuchar por la transacción usando la referencia
                 listenForTransaction(reference.publicKey, amount);
             };
 
-            // Asignar eventos a los botones
             payWithPhantomBtn.addEventListener('click', handlePhantomPay);
             generateQrBtn.addEventListener('click', handleQrPay);
             cancelBtn.addEventListener('click', resetToInitialState);
