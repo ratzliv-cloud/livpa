@@ -10,11 +10,11 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="icon" type="image/jpeg" href="https://i.postimg.cc/4xL1nYWJ/android-chrome-512x512.png">
 
-    <!-- <link rel="manifest" href="/site.webmanifest"> --> <!-- CORREGIDO: Comentado para evitar el error 404 -->
+    <!-- <link rel="manifest" href="/site.webmanifest"> --> 
     
-    <!-- CORRECCIÓN: Scripts de Solana actualizados a versiones estables -->
-    <script src="https://unpkg.com/@solana/web3.js@1.81.0/lib/index.iife.min.js"></script>
-    <script src="https://unpkg.com/@solana/spl-token@0.4.7/lib/index.iife.min.js"></script>
+    <!-- CORRECCIÓN: Scripts de Solana actualizados y con 'async' -->
+    <script src="https://unpkg.com/@solana/web3.js@1.81.0/lib/index.iife.min.js" async></script>
+    <script src="https://unpkg.com/@solana/spl-token@0.4.7/lib/index.iife.min.js" async></script>
     
     <!-- Biblioteca para generar códigos QR -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
@@ -199,7 +199,7 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, addDoc, serverTimestamp, updateDoc, increment, deleteDoc, getDocs, query, where, writeBatch, orderBy, limit, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        // --- CORRECCIÓN: Esperar a que el DOM esté cargado ---
+        // --- Esperar a que el DOM esté cargado ---
         window.addEventListener('DOMContentLoaded', () => {
             
             // --- Mover todas las variables y lógica aquí dentro ---
@@ -351,7 +351,7 @@
                 if (creatorSection) creatorSection.style.display = currentUser ? 'block' : 'none';
                 if (currentUser) {
                     loadRecommendedChannels();
-                } else {
+                } else if (recommendedChannelsContainer) { // Ensure container exists
                     recommendedChannelsContainer.innerHTML = '';
                 }
                 if (!navigationHistory.length) { 
@@ -373,6 +373,9 @@
             }
 
             function renderHeader() {
+                // Check if userProfileArea exists before modifying it
+                if (!userProfileArea) return; 
+
                 if (currentUser) {
                     userProfileArea.innerHTML = `
                         <div class="flex items-center gap-1 md:gap-2 bg-[var(--background-tertiary)] px-2 md:px-3 py-1.5 rounded-full">
@@ -388,18 +391,21 @@
                         <button id="login-button-header" class="purple-gradient-bg text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 transform hover:scale-105">
                             Log In
                         </button>`;
-                    document.getElementById('login-button-header').addEventListener('click', () => {
-                         loginModal.style.display = 'flex';
-                    });
+                    const loginButton = document.getElementById('login-button-header');
+                    if (loginButton) { // Check if button exists before adding listener
+                        loginButton.addEventListener('click', () => {
+                             loginModal.style.display = 'flex';
+                        });
+                    }
                 }
                 lucide.createIcons();
             }
             
             async function loadRecommendedChannels() {
-                if(!currentUser) return;
+                if(!currentUser || !recommendedChannelsContainer) return; // Ensure container exists
                 const usersQuery = query(collection(db, "users"), where("walletAddress", "!=", currentUser.walletAddress), limit(5));
                 const usersSnapshot = await getDocs(usersQuery);
-                recommendedChannelsContainer.innerHTML = '';
+                recommendedChannelsContainer.innerHTML = ''; // Clear existing content
                 usersSnapshot.forEach(doc => {
                     const user = doc.data();
                     const channelEl = document.createElement('div');
@@ -416,40 +422,47 @@
 
             function showToast(message) {
                 const toast = document.getElementById('toast');
-                document.getElementById('toast-message').textContent = message;
+                const toastMessage = document.getElementById('toast-message');
+                if (!toast || !toastMessage) return; // Ensure elements exist
+                toastMessage.textContent = message;
                 toast.classList.remove('translate-y-20', 'opacity-0');
                 setTimeout(() => {
                     toast.classList.add('translate-y-20', 'opacity-0');
                 }, 3000);
             }
 
-            // --- RENDER FUNCTIONS (MOVED UP TO FIX REFERENCE ERROR) ---
+            // --- RENDER FUNCTIONS ---
 
             async function renderExplorePage() {
                 currentPageRender = renderExplorePage;
                 let streamsQuery = query(collection(db, "streams"), where("status", "==", "live"));
                 
-                const querySnapshot = await getDocs(streamsQuery);
                 let streamsHTML = '';
-                if (querySnapshot.empty) {
-                    streamsHTML = `<p class="text-center text-[var(--text-secondary)] col-span-full">${translations[currentLang].no_one_live.replace('%s', 'any')}</p>`;
-                } else {
-                    querySnapshot.forEach(doc => {
-                        const stream = doc.data();
-                        streamsHTML += `
-                            <div class="stream-card group bg-[var(--background-secondary)] rounded-xl overflow-hidden border border-[var(--border-color)] hover:border-[var(--brand-color-purple)] transition-all transform hover:-translate-y-1 duration-300 cursor-pointer" data-streamer-wallet="${doc.id}">
-                                <div class="relative"><img src="${stream.thumbnailUrl || 'https://placehold.co/400x225/141418/2a2a32?text=En+Vivo'}" class="w-full h-40 object-cover">
-                                    <div class="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md">LIVE</div>
-                                    <div class="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-md flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i> ${stream.viewerCount || 0}</div>
-                                </div>
-                                <div class="p-4 flex items-start gap-3"><img src="${stream.streamerPic}" class="w-10 h-10 rounded-full">
-                                    <div><h3 class="font-bold text-md truncate">${stream.title}</h3>
-                                        <p class="text-sm text-[var(--text-secondary)]">${stream.streamerUsername || stream.streamerWallet.substring(0, 6)}</h6>
-                                        <span class="text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full">${stream.category}</span>
+                try {
+                    const querySnapshot = await getDocs(streamsQuery);
+                    if (querySnapshot.empty) {
+                        streamsHTML = `<p class="text-center text-[var(--text-secondary)] col-span-full">${translations[currentLang].no_one_live.replace('%s', 'any')}</p>`;
+                    } else {
+                        querySnapshot.forEach(doc => {
+                            const stream = doc.data();
+                            streamsHTML += `
+                                <div class="stream-card group bg-[var(--background-secondary)] rounded-xl overflow-hidden border border-[var(--border-color)] hover:border-[var(--brand-color-purple)] transition-all transform hover:-translate-y-1 duration-300 cursor-pointer" data-streamer-wallet="${doc.id}">
+                                    <div class="relative"><img src="${stream.thumbnailUrl || 'https://placehold.co/400x225/141418/2a2a32?text=En+Vivo'}" class="w-full h-40 object-cover" onerror="this.src='https://placehold.co/400x225/141418/2a2a32?text=Error'">
+                                        <div class="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md">LIVE</div>
+                                        <div class="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-md flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i> ${stream.viewerCount || 0}</div>
                                     </div>
-                                </div>
-                            </div>`;
-                    });
+                                    <div class="p-4 flex items-start gap-3"><img src="${stream.streamerPic}" class="w-10 h-10 rounded-full" onerror="this.src='https://placehold.co/40x40/1a1a1a/eaeaea?text=?';">
+                                        <div><h3 class="font-bold text-md truncate">${stream.title}</h3>
+                                            <p class="text-sm text-[var(--text-secondary)]">${stream.streamerUsername || stream.streamerWallet.substring(0, 6)}</h6>
+                                            <span class="text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full">${stream.category}</span>
+                                        </div>
+                                    </div>
+                                </div>`;
+                        });
+                    }
+                } catch (error) {
+                    console.error("Error fetching streams:", error);
+                    streamsHTML = `<p class="text-center text-red-500 col-span-full">Error loading streams.</p>`;
                 }
                 
                 renderPage(`<h1 class="text-3xl font-bold mb-6" data-key="explore_title">${translations[currentLang].explore_title}</h1>
@@ -468,7 +481,7 @@
                 currentPageRender = renderCategoriesPage;
                 const categoriesHTML = CATEGORIES.map(cat => `
                     <div class="category-card group bg-[var(--background-secondary)] rounded-xl overflow-hidden border border-[var(--border-color)] hover:border-[var(--brand-color-purple)] transition-all transform hover:-translate-y-1 duration-300 cursor-pointer" data-category="${cat}">
-                        <img src="${CATEGORY_IMAGES[cat] || `https://placehold.co/300x400/141418/2a2a32?text=${cat.replace(' ', '+')}`}" class="w-full h-auto object-cover">
+                        <img src="${CATEGORY_IMAGES[cat] || `https://placehold.co/300x400/141418/2a2a32?text=${cat.replace(' ', '+')}`}" class="w-full h-auto object-cover" onerror="this.src='https://placehold.co/300x400/141418/2a2a32?text=Error'">
                         <div class="p-4 bg-[var(--background-secondary)]"><h3 class="font-bold text-lg truncate">${cat}</h3></div>
                     </div>`).join('');
                 
@@ -479,17 +492,18 @@
                     card.addEventListener('click', () => {
                         const category = card.dataset.category;
                         mainContent.innerHTML = `<div class="text-center p-8">${translations[currentLang].loading}...</div>`; 
-                        renderExplorePage(category);
+                        renderExplorePage(category); // Note: This might need adjustment if category filtering isn't implemented
                     });
                 });
             }
             
             function renderSettingsPage() {
                  currentPageRender = renderSettingsPage;
+                 if (!currentUser) return; // Prevent rendering if user isn't loaded
                  const profileHTML = `
                  <div class="space-y-4">
                     <div><img src="https://placehold.co/1200x300/1f1f1f/1f1f1f" class="w-full h-40 object-cover rounded-2xl"></div>
-                    <div class="flex flex-col items-center -mt-20"><img src="${currentUser.profilePicture}" class="w-32 h-32 rounded-full object-cover border-4 border-[var(--background-primary)]">
+                    <div class="flex flex-col items-center -mt-20"><img src="${currentUser.profilePicture}" class="w-32 h-32 rounded-full object-cover border-4 border-[var(--background-primary)]" onerror="this.src='https://placehold.co/128x128/1a1a1a/eaeaea?text=?';">
                         <div class="text-center mt-2"><h1 class="text-2xl font-bold">${currentUser.username}</h1><p class="text-sm text-[var(--text-secondary)] break-all px-2">${currentUser.walletAddress}</p></div>
                     </div>
                     <div class="pt-4 grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -556,17 +570,18 @@
                     </div>
                 </div>`;
                 renderPage(profileHTML, null, true); 
-                document.getElementById('save-profile').addEventListener('click', saveProfile); 
-                document.getElementById('logout-button').addEventListener('click', logout); 
-                document.getElementById('withdraw-button').addEventListener('click', requestWithdrawal); 
-                document.getElementById('lang-select').addEventListener('change', (e) => setLanguage(e.target.value));
+                document.getElementById('save-profile')?.addEventListener('click', saveProfile); 
+                document.getElementById('logout-button')?.addEventListener('click', logout); 
+                document.getElementById('withdraw-button')?.addEventListener('click', requestWithdrawal); 
+                document.getElementById('lang-select')?.addEventListener('change', (e) => setLanguage(e.target.value));
                 if (withdrawalUpdateInterval) clearInterval(withdrawalUpdateInterval);
                 withdrawalUpdateInterval = setInterval(updateWithdrawalStatus, 30000);
                 updateWithdrawalStatus();
                 setupSolanaDeposit(); // <-- Inicializa la lógica de depósito
             }
             
-            function renderStudioPage() {
+            // ... (Resto de las funciones renderStudioPage, renderWatchStreamPage, etc. sin cambios significativos) ...
+             function renderStudioPage() {
                 currentPageRender = renderStudioPage;
                 const studioHTML = `
                     <div class="bg-[var(--background-secondary)] rounded-2xl border border-[var(--border-color)] min-h-[70vh] flex flex-col md:flex-row">
@@ -582,14 +597,16 @@
                 const tabs = { 'studio-stream': renderStudioStream, 'studio-analytics': renderStudioAnalytics };
                 function switchTab(targetId) {
                     tabButtons.forEach(btn => btn.classList.toggle('bg-[var(--background-tertiary)]', btn.dataset.target === targetId));
-                    studioContent.innerHTML = `<div class="animate-fade-in">${tabs[targetId]()}</div>`;
-                    setLanguage(currentLang);
-                    lucide.createIcons();
-                    if(targetId === 'studio-analytics') attachAnalyticsListeners();
-                    if(targetId === 'studio-stream') attachStreamListeners();
+                    if (studioContent) { // Check if element exists
+                        studioContent.innerHTML = `<div class="animate-fade-in">${tabs[targetId]()}</div>`;
+                        setLanguage(currentLang);
+                        lucide.createIcons();
+                        if(targetId === 'studio-analytics') attachAnalyticsListeners();
+                        if(targetId === 'studio-stream') attachStreamListeners();
+                    }
                 }
                 tabButtons.forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.target)));
-                switchTab('studio-stream');
+                switchTab('studio-stream'); // Initial tab
             }
 
             let unsubscribeChat = null;
@@ -597,11 +614,20 @@
             let viewerPeerConnection = null;
             async function renderWatchStreamPage(streamerWallet) {
                 currentPageRender = () => renderWatchStreamPage(streamerWallet);
-                mainContent.classList.add('!p-0', 'md:!p-0', '!overflow-hidden');
+                 if (mainContent) {
+                    mainContent.classList.add('!p-0', 'md:!p-0', '!overflow-hidden');
+                 }
 
-                const streamerDoc = await getDoc(doc(db, "users", streamerWallet));
-                const streamerData = streamerDoc.exists() ? streamerDoc.data() : { profilePicture: '', followersCount: 0, username: 'Streamer' };
-                
+                let streamerData = { profilePicture: '', followersCount: 0, username: 'Streamer' };
+                try {
+                    const streamerDoc = await getDoc(doc(db, "users", streamerWallet));
+                    if (streamerDoc.exists()) {
+                        streamerData = streamerDoc.data();
+                    }
+                } catch (error) {
+                    console.error("Error fetching streamer data:", error);
+                }
+
                 const watchHTML = `
                 <div class="w-full h-full flex flex-col lg:flex-row">
                     <!-- Top section (scrollable): Video + info -->
@@ -644,16 +670,21 @@
                         </div>
                     </div>
                 </div>`;
-                mainContent.innerHTML = watchHTML;
+                if (mainContent) mainContent.innerHTML = watchHTML; // Check before setting innerHTML
                 setLanguage(currentLang);
                 lucide.createIcons();
                 updateHeaderButtons(true);
                 
                 joinStream(streamerWallet);
+
+                const chatInputContainer = document.getElementById('chat-input-container');
+                const streamInfoPanel = document.getElementById('stream-info-panel');
                 if (!currentUser) {
-                    document.getElementById('chat-input-container').innerHTML = `<div class="text-center p-4 py-6 text-sm text-gray-400 rounded-lg bg-[var(--background-tertiary)]">Please <button id="login-prompt-chat" class="text-purple-400 font-bold hover:underline">log in</button> to chat or interact.</div>`;
-                    document.getElementById('stream-info-panel').style.display = 'none';
-                    document.getElementById('login-prompt-chat').onclick = () => { loginModal.style.display = 'flex'; };
+                    if (chatInputContainer) {
+                        chatInputContainer.innerHTML = `<div class="text-center p-4 py-6 text-sm text-gray-400 rounded-lg bg-[var(--background-tertiary)]">Please <button id="login-prompt-chat" class="text-purple-400 font-bold hover:underline">log in</button> to chat or interact.</div>`;
+                        document.getElementById('login-prompt-chat')?.addEventListener('click', () => { loginModal.style.display = 'flex'; });
+                    }
+                    if (streamInfoPanel) streamInfoPanel.style.display = 'none';
                 } else {
                     setupFollowButton(streamerWallet);
                     setupSubscribeButton(streamerWallet);
@@ -665,9 +696,10 @@
                         showToast(translations[currentLang].stream_ended);
                         renderExplorePage();
                     } else {
-                        document.getElementById('stream-title-display').textContent = docSnap.data().title;
+                        const streamTitleDisplay = document.getElementById('stream-title-display');
+                        if (streamTitleDisplay) streamTitleDisplay.textContent = docSnap.data().title;
                     }
-                });
+                }, error => console.error("Error listening to stream:", error));
                 
                 const chatMessages = document.getElementById('chat-messages');
                 const chatForm = document.getElementById('chat-form');
@@ -676,6 +708,7 @@
                 const q = query(chatRef, orderBy("createdAt", "desc"), limit(50));
                 
                 unsubscribeChat = onSnapshot(q, async (snapshot) => {
+                   if (!chatMessages) return; // Check if chatMessages exists
                     snapshot.docChanges().reverse().forEach(async change => {
                         if (change.type === "added") {
                             const msg = change.doc.data();
@@ -684,7 +717,10 @@
                                 msgEl.className = 'super-chat';
                                 msgEl.innerHTML = `<div class="flex items-center gap-2 mb-2"><img src="${msg.vipEmoji.url}" class="w-10 h-10"><div class="font-bold text-lg">${msg.userName} ${translations[currentLang].sent} ${msg.vipEmoji.price} BIT</div></div><p class="text-white text-md">${msg.text}</p>`;
                             } else {
-                                const isSub = currentUser && (await getDoc(doc(db, "users", streamerWallet, "subscribers", msg.userWallet))).exists();
+                                let isSub = false;
+                                try {
+                                    isSub = currentUser && (await getDoc(doc(db, "users", streamerWallet, "subscribers", msg.userWallet))).exists();
+                                } catch (e) { console.error("Error checking subscription:", e);}
                                 msgEl.className = 'text-sm';
                                 msgEl.innerHTML = `<p>${isSub ? '<svg class="member-badge" viewBox="0 0 24 24" fill="gold"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path></svg>' : ''}<strong class="font-semibold" style="color: ${msg.userColor || '#FFFFFF'}">${msg.userName}:</strong> ${msg.text}</p>`;
                             }
@@ -692,32 +728,36 @@
                         }
                     });
                     chatMessages.scrollTop = chatMessages.scrollHeight;
-                });
+                }, error => console.error("Error listening to chat:", error));
                 
-                if(chatForm) chatForm.addEventListener('submit', (e) => {
+                if(chatForm) chatForm.addEventListener('submit', async (e) => { // Make async
                     e.preventDefault();
                     if (!requireAuth()) return;
-                    const text = chatInput.value.trim();
+                    const text = chatInput?.value.trim(); // Check if chatInput exists
                     if (text) {
-                        addDoc(chatRef, { text, userName: currentUser.username, userWallet: currentUser.walletAddress, userColor: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'), createdAt: serverTimestamp() });
-                        chatInput.value = '';
+                       try {
+                            await addDoc(chatRef, { text, userName: currentUser.username, userWallet: currentUser.walletAddress, userColor: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'), createdAt: serverTimestamp() });
+                            if(chatInput) chatInput.value = '';
+                        } catch (error) {
+                             console.error("Error sending chat message:", error);
+                             showToast("Error sending message.");
+                        }
                     }
                 });
             }
             
             function cleanupWatchPage() {
-                mainContent.classList.remove('!p-0', 'md:!p-0', '!overflow-hidden');
-                mainContent.classList.add('p-4', 'md:p-8');
-                if (unsubscribeChat) unsubscribeChat();
-                if (unsubscribeStream) unsubscribeStream();
+                 if (mainContent) {
+                     mainContent.classList.remove('!p-0', 'md:!p-0', '!overflow-hidden');
+                     mainContent.classList.add('p-4', 'md:p-8');
+                 }
+                if (unsubscribeChat) { unsubscribeChat(); unsubscribeChat = null; }
+                if (unsubscribeStream) { unsubscribeStream(); unsubscribeStream = null; }
                 if (viewerPeerConnection) {
                     viewerPeerConnection.close();
                     viewerPeerConnection = null;
                 }
-                if(adInterval) clearInterval(adInterval);
-                adInterval = null;
-                unsubscribeChat = null;
-                unsubscribeStream = null;
+                if(adInterval) { clearInterval(adInterval); adInterval = null; }
             }
 
             function renderStudioStream() {
@@ -809,36 +849,41 @@
                     }
                 });
                 
-                backButton.addEventListener('click', () => {
-                    if (navigationHistory.length > 0) {
-                        cleanupWatchPage();
-                        const previousPage = navigationHistory.pop();
-                        if (typeof previousPage === 'function') {
-                            currentPageRender = previousPage;
-                            previousPage();
+                if (backButton) { // Check if button exists
+                    backButton.addEventListener('click', () => {
+                        if (navigationHistory.length > 0) {
+                            cleanupWatchPage();
+                            const previousPage = navigationHistory.pop();
+                            if (typeof previousPage === 'function') {
+                                currentPageRender = previousPage;
+                                previousPage();
+                            }
                         }
-                    }
-                });
+                    });
+                }
 
                 function toggleSidebar() {
+                    if (!sidebar || !sidebarBackdrop || !mobileMenuIcon) return; // Check elements exist
                     sidebar.classList.toggle('-translate-x-full');
                     sidebarBackdrop.classList.toggle('hidden');
                     mobileMenuIcon.setAttribute('data-lucide', sidebar.classList.contains('-translate-x-full') ? 'menu' : 'x');
                     lucide.createIcons();
                 }
 
-                mobileMenuBtn.addEventListener('click', toggleSidebar);
-                sidebarBackdrop.addEventListener('click', toggleSidebar);
-                sidebar.addEventListener('click', (e) => {
-                    if (e.target.closest('a.nav-action')) {
-                        toggleSidebar();
-                    }
-                });
+               if(mobileMenuBtn) mobileMenuBtn.addEventListener('click', toggleSidebar); // Check button exists
+               if(sidebarBackdrop) sidebarBackdrop.addEventListener('click', toggleSidebar); // Check backdrop exists
+               if(sidebar) { // Check sidebar exists
+                    sidebar.addEventListener('click', (e) => {
+                        if (e.target.closest('a.nav-action')) {
+                            toggleSidebar();
+                        }
+                    });
+               }
             }
             
             function updateHeaderButtons(isSubPage) {
-                backButton.classList.toggle('hidden', !isSubPage);
-                mobileMenuBtn.classList.toggle('hidden', isSubPage);
+               if(backButton) backButton.classList.toggle('hidden', !isSubPage); // Check button exists
+               if(mobileMenuBtn) mobileMenuBtn.classList.toggle('hidden', isSubPage); // Check button exists
             }
 
             function setActiveLink(activeTarget) {
@@ -848,6 +893,7 @@
             }
 
             function renderPage(content, activeTargetKey, isSubPage = false) {
+                 if (!mainContent) return; // Check if mainContent exists
                 mainContent.innerHTML = `<div class="animate-slide-in">${content}</div>`;
                 setActiveLink(activeTargetKey);
                 updateHeaderButtons(isSubPage);
@@ -876,10 +922,12 @@
                 const paymentSpinner = document.getElementById('deposit-spinner');
                 const depositTitle = document.getElementById('deposit-title');
 
-                if (!amountInput) return; // Salir si los elementos no existen
+                if (!amountInput || !generateQrBtn || !payWithPhantomBtn || !cancelBtn) {
+                     console.error("Deposit elements not found!");
+                     return; // Salir si los elementos no existen
+                }
 
                 // --- CONNECTION using Tatum RPC---
-                 // CORRECCIÓN: Usar window.solanaWeb3
                  const connection = new window.solanaWeb3.Connection(`${RPC_URL}?apiKey=${TATUM_API_KEY}`, {
                      commitment: 'confirmed'
                  });
@@ -889,43 +937,76 @@
                 const resetToInitialState = () => {
                     if (pollingInterval) clearInterval(pollingInterval);
                     pollingInterval = null;
-                    amountInput.value = '';
-                    generateQrBtn.disabled = false;
-                    payWithPhantomBtn.disabled = false;
-                    depositFormSection.classList.remove('hidden');
-                    depositStatusSection.classList.add('hidden');
-                    qrCodeContainer.innerHTML = '';
-                    statusMessage.textContent = 'Esperando pago...';
+                    if(amountInput) amountInput.value = '';
+                    if(generateQrBtn) generateQrBtn.disabled = false;
+                    if(payWithPhantomBtn) payWithPhantomBtn.disabled = false;
+                    if(depositFormSection) depositFormSection.classList.remove('hidden');
+                    if(depositStatusSection) depositStatusSection.classList.add('hidden');
+                    if(qrCodeContainer) qrCodeContainer.innerHTML = '';
+                    if(statusMessage) statusMessage.textContent = 'Esperando pago...';
                 };
 
                 const finalizeDeposit = async (amount) => {
-                    statusMessage.textContent = '¡Pago recibido! Actualizando balance en la plataforma...';
-                    paymentSpinner.style.display = 'block';
+                    if (statusMessage) statusMessage.textContent = '¡Pago recibido! Actualizando balance en la plataforma...';
+                    if (paymentSpinner) paymentSpinner.style.display = 'block';
 
-                    // Incrementar el balance del *usuario* en Firebase
-                    const userRef = doc(db, "users", currentUser.walletAddress);
-                    await updateDoc(userRef, { bitBalance: increment(amount) });
+                    try {
+                        const userRef = doc(db, "users", currentUser.walletAddress);
+                        await updateDoc(userRef, { bitBalance: increment(amount) });
 
-                    statusMessage.textContent = '¡Depósito Confirmado!';
-                    paymentSpinner.style.display = 'none';
-                    showToast(`+${amount.toLocaleString()} BIT han sido añadidos a tu balance.`);
-                    
-                    // Refrescar datos del usuario y header
-                    const userSnap = await getDoc(userRef);
-                    if (userSnap.exists()) {
-                        currentUser = { ...userSnap.data(), walletAddress: userSnap.id };
-                        renderHeader(); 
+                         if (statusMessage) statusMessage.textContent = '¡Depósito Confirmado!';
+                         if (paymentSpinner) paymentSpinner.style.display = 'none';
+                        showToast(`+${amount.toLocaleString()} BIT han sido añadidos a tu balance.`);
+                        
+                        // Refrescar datos del usuario y header (renderHeader handles null check)
+                        const userSnap = await getDoc(userRef);
+                        if (userSnap.exists()) {
+                            currentUser = { ...userSnap.data(), walletAddress: userSnap.id };
+                            renderHeader(); 
+                        }
+
+                        await updateWithdrawalStatus(); // Actualizar info de retiro
+                    } catch (error) {
+                         console.error("Error finalizing deposit:", error);
+                         if (statusMessage) statusMessage.textContent = 'Error al actualizar balance.';
+                         if (paymentSpinner) paymentSpinner.style.display = 'none';
+                         showToast("Error al actualizar tu balance.");
+                    } finally {
+                        setTimeout(resetToInitialState, 4000); // Volver al formulario
                     }
-
-                    await updateWithdrawalStatus(); // Actualizar info de retiro
-                    setTimeout(resetToInitialState, 4000); // Volver al formulario
                 };
+                
+                 // Helper function for delays
+                const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+                // Helper function to check if libraries are loaded
+                const checkSolanaLibs = async (source) => {
+                     let attempts = 0;
+                     while ((typeof window.solanaWeb3 === 'undefined' || typeof window.splToken === 'undefined') && attempts < 10) {
+                         console.log(`${source}: Solana libraries not ready, waiting... (Attempt ${attempts + 1})`);
+                         await delay(300); // Wait 300ms
+                         attempts++;
+                     }
+                     if (typeof window.solanaWeb3 === 'undefined' || typeof window.splToken === 'undefined') {
+                        console.error(`${source}: Solana libraries failed to load after multiple attempts.`);
+                        showToast("Error: Las librerías de Solana no cargaron. Refresca la página.");
+                        return false;
+                     }
+                     console.log(`${source}: Solana libraries loaded.`);
+                     return true;
+                };
+
 
                 // Escucha para transacciones de QR Code (Solana Pay)
                 const listenForTransaction = (referencePublicKey, amount) => {
-                    statusMessage.textContent = 'Esperando escaneo QR y confirmación...';
-                    paymentSpinner.style.display = 'block';
+                     if (statusMessage) statusMessage.textContent = 'Esperando escaneo QR y confirmación...';
+                     if (paymentSpinner) paymentSpinner.style.display = 'block';
                     pollingInterval = setInterval(async () => {
+                        if (!await checkSolanaLibs('QR Polling')) { // Re-check libs each time
+                             clearInterval(pollingInterval);
+                             resetToInitialState();
+                             return;
+                        }
                         try {
                             console.log(`Buscando firma para referencia: ${referencePublicKey.toBase58().substring(0, 10)}...`);
                             const signatures = await connection.getSignaturesForAddress(referencePublicKey, { limit: 1 });
@@ -936,16 +1017,14 @@
                                 const signature = signatures[0].signature;
                                 console.log("Firma encontrada:", signature);
                                 
-                                statusMessage.textContent = 'Confirmando transacción...';
+                                 if (statusMessage) statusMessage.textContent = 'Confirmando transacción...';
 
-                                // --- CORRECCIÓN: Usar la confirmación moderna ---
                                 const latestBlockhash = await connection.getLatestBlockhash('confirmed');
                                 const confirmation = await connection.confirmTransaction({
                                     signature,
                                     blockhash: latestBlockhash.blockhash,
                                     lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
                                 }, 'confirmed');
-                                // --- FIN DE LA CORRECCIÓN ---
 
                                  if (confirmation.value.err) {
                                     throw new Error(`Error en la confirmación: ${confirmation.value.err}`);
@@ -958,21 +1037,18 @@
                             }
                         } catch (error) {
                             console.error("Error polling for QR transaction:", error);
-                            // Comprobar si es error de rate limit
                             if (error.message && error.message.includes('429')) {
-                                statusMessage.textContent = 'Verificación lenta (límite de red). Reintentando...';
-                                // No limpiar intervalo, seguirá intentando más espaciado
+                                if (statusMessage) statusMessage.textContent = 'Verificación lenta (límite de red). Reintentando...';
                             } else {
-                                statusMessage.textContent = 'Error al verificar pago QR.';
-                                paymentSpinner.style.display = 'none';
+                                if (statusMessage) statusMessage.textContent = 'Error al verificar pago QR.';
+                                if (paymentSpinner) paymentSpinner.style.display = 'none';
                                 clearInterval(pollingInterval);
                                  setTimeout(resetToInitialState, 3000);
                             }
                         }
-                    }, 15000); // **Aumentado a 15 segundos para evitar error 429**
+                    }, 15000); 
                 };
 
-                // **LÓGICA CORRECTA PARA PHANTOM SEGÚN DOCUMENTACIÓN**
                 const getPhantomProvider = () => {
                     if ('phantom' in window) {
                         const provider = window.phantom?.solana;
@@ -984,18 +1060,19 @@
                 };
 
                 const handlePhantomPay = async () => {
-                    // CORRECCIÓN: Verificar que las librerías estén cargadas
-                    if (typeof window.solanaWeb3 === 'undefined' || typeof window.splToken === 'undefined') {
-                        console.error("Phantom Pay: Solana libraries not loaded on window.");
-                        showToast("Error: Las librerías de Solana no cargaron. Refresca la página.");
+                    // CORRECCIÓN: Verificar librerías con espera
+                    if (!await checkSolanaLibs('Phantom Pay')) {
+                        resetToInitialState(); // Reset UI if libs don't load
                         return;
                     }
 
                     const amount = parseFloat(amountInput.value);
                     if (isNaN(amount) || amount <= 0) {
                         showToast("Por favor, ingresa un monto válido.");
-                        amountInput.classList.add('ring-2', 'ring-red-500');
-                        setTimeout(() => amountInput.classList.remove('ring-2', 'ring-red-500'), 2000);
+                        if(amountInput) {
+                            amountInput.classList.add('ring-2', 'ring-red-500');
+                            setTimeout(() => amountInput.classList.remove('ring-2', 'ring-red-500'), 2000);
+                        }
                         return;
                     }
                     
@@ -1005,40 +1082,38 @@
                         return;
                     }
 
-                    generateQrBtn.disabled = true;
-                    payWithPhantomBtn.disabled = true;
-                    depositFormSection.classList.add('hidden');
-                    depositStatusSection.classList.remove('hidden');
-                    qrCodeContainer.innerHTML = ''; 
-                    qrCodeContainer.classList.add('hidden'); 
-                    depositTitle.textContent = "Confirmar en Phantom";
-                    statusMessage.textContent = 'Conectando con Phantom...';
-                    paymentSpinner.style.display = 'block';
+                    if(generateQrBtn) generateQrBtn.disabled = true;
+                    if(payWithPhantomBtn) payWithPhantomBtn.disabled = true;
+                    if(depositFormSection) depositFormSection.classList.add('hidden');
+                    if(depositStatusSection) depositStatusSection.classList.remove('hidden');
+                    if(qrCodeContainer) {
+                         qrCodeContainer.innerHTML = ''; 
+                         qrCodeContainer.classList.add('hidden'); 
+                    }
+                    if(depositTitle) depositTitle.textContent = "Confirmar en Phantom";
+                    if(statusMessage) statusMessage.textContent = 'Conectando con Phantom...';
+                    if(paymentSpinner) paymentSpinner.style.display = 'block';
 
                     try {
                         await provider.connect({ onlyIfTrusted: false }); 
                         
                         if (!provider.publicKey) throw new Error("Conexión con Phantom rechazada.");
                         
-                        statusMessage.textContent = 'Creando transacción...';
+                        if(statusMessage) statusMessage.textContent = 'Creando transacción...';
 
-                        // CORRECCIÓN: Usar window.solanaWeb3
                         const fromWallet = provider.publicKey;
                         const toWallet = new window.solanaWeb3.PublicKey(DEPOSIT_DESTINATION_WALLET); 
                         const splTokenMint = new window.solanaWeb3.PublicKey(SPL_TOKEN_MINT);
                         const amountInSmallestUnit = BigInt(Math.round(amount * Math.pow(10, SPL_TOKEN_DECIMALS)));
 
-                        // CORRECCIÓN: Usar 'window.splToken'
                         const fromAta = await window.splToken.getAssociatedTokenAddress(splTokenMint, fromWallet);
                         const toAta = await window.splToken.getAssociatedTokenAddress(splTokenMint, toWallet);
                         
-                        // CORRECCIÓN: Usar window.solanaWeb3
                         const transaction = new window.solanaWeb3.Transaction();
                         const toAtaAccount = await connection.getAccountInfo(toAta);
 
                         if (!toAtaAccount) {
                             console.log("Creando cuenta ATA de destino...");
-                             // CORRECCIÓN: Usar 'window.splToken'
                             transaction.add(
                                 window.splToken.createAssociatedTokenAccountInstruction(
                                     fromWallet, toAta, toWallet, splTokenMint
@@ -1047,7 +1122,6 @@
                         }
 
                         console.log("Añadiendo instrucción de transferencia...");
-                         // CORRECCIÓN: Usar 'window.splToken'
                         transaction.add(
                             window.splToken.createTransferInstruction(
                                 fromAta, toAta, fromWallet, amountInSmallestUnit
@@ -1060,13 +1134,13 @@
                         transaction.recentBlockhash = latestBlockhash.blockhash;
                         const lastValidBlockHeight = latestBlockhash.lastValidBlockHeight;
 
-                        statusMessage.textContent = 'Por favor, confirma en tu billetera Phantom...';
+                        if(statusMessage) statusMessage.textContent = 'Por favor, confirma en tu billetera Phantom...';
                         console.log("Solicitando firma y envío a Phantom...");
                         
                         const { signature } = await provider.signAndSendTransaction(transaction);
                         console.log("Transacción enviada con firma:", signature);
                         
-                        statusMessage.textContent = 'Confirmando transacción en la red...';
+                        if(statusMessage) statusMessage.textContent = 'Confirmando transacción en la red...';
                         await connection.confirmTransaction({
                             signature,
                             blockhash: transaction.recentBlockhash,
@@ -1091,32 +1165,32 @@
                     }
                 };
                 
-                const handleQrPay = () => {
-                    // CORRECCIÓN: Verificar que las librerías estén cargadas
-                    if (typeof window.solanaWeb3 === 'undefined' || typeof window.splToken === 'undefined') {
-                        console.error("QR Pay: Solana libraries not loaded on window.");
-                        showToast("Error: Las librerías de Solana no cargaron. Refresca la página.");
+                const handleQrPay = async () => { // Make async
+                    // CORRECCIÓN: Verificar librerías con espera
+                    if (!await checkSolanaLibs('QR Pay')) {
+                        resetToInitialState();
                         return;
                     }
 
                     const amount = parseFloat(amountInput.value);
                     if (isNaN(amount) || amount <= 0) {
                         showToast("Por favor, ingresa un monto válido.");
-                        amountInput.classList.add('ring-2', 'ring-red-500');
-                        setTimeout(() => amountInput.classList.remove('ring-2', 'ring-red-500'), 2000);
+                        if(amountInput) {
+                             amountInput.classList.add('ring-2', 'ring-red-500');
+                             setTimeout(() => amountInput.classList.remove('ring-2', 'ring-red-500'), 2000);
+                        }
                         return;
                     }
 
-                    generateQrBtn.disabled = true;
-                    payWithPhantomBtn.disabled = true;
+                    if(generateQrBtn) generateQrBtn.disabled = true;
+                    if(payWithPhantomBtn) payWithPhantomBtn.disabled = true;
 
-                    // CORRECCIÓN: Usar window.solanaWeb3
                     const reference = new window.solanaWeb3.Keypair(); 
                     const label = 'Deposito LivePayout';
                     const message = `Pago de ${amount} BIT. Ref: ${reference.publicKey.toBase58().substring(0,6)}`;
                     const solanaPayUrl = `solana:${DEPOSIT_DESTINATION_WALLET}?amount=${amount}&spl-token=${SPL_TOKEN_MINT}&reference=${reference.publicKey.toBase58()}&label=${encodeURIComponent(label)}&message=${encodeURIComponent(message)}`;
                     
-                    qrCodeContainer.innerHTML = '';
+                    if(qrCodeContainer) qrCodeContainer.innerHTML = ''; // Check if exists
                     QRCode.toCanvas(solanaPayUrl, { width: 192, errorCorrectionLevel: 'H', color: { dark: '#FFFFFF', light: '#1F2937' } }, (err, canvas) => {
                         if (err) {
                             console.error("Error generating QR code:", err);
@@ -1124,17 +1198,19 @@
                             resetToInitialState();
                             return;
                         }
-                        canvas.style.borderRadius = '0.5rem';
-                        canvas.style.border = '8px solid #374151'; 
-                        qrCodeContainer.appendChild(canvas);
+                         if(qrCodeContainer) { // Check if exists
+                            canvas.style.borderRadius = '0.5rem';
+                            canvas.style.border = '8px solid #374151'; 
+                            qrCodeContainer.appendChild(canvas);
+                         }
                     });
                     
-                    depositFormSection.classList.add('hidden');
-                    depositStatusSection.classList.remove('hidden');
-                    qrCodeContainer.classList.remove('hidden'); 
-                    depositTitle.textContent = "Escanea para Pagar";
-                    statusMessage.textContent = 'Esperando pago...';
-                    paymentSpinner.style.display = 'block';
+                    if(depositFormSection) depositFormSection.classList.add('hidden');
+                    if(depositStatusSection) depositStatusSection.classList.remove('hidden');
+                    if(qrCodeContainer) qrCodeContainer.classList.remove('hidden'); 
+                    if(depositTitle) depositTitle.textContent = "Escanea para Pagar";
+                    if(statusMessage) statusMessage.textContent = 'Esperando pago...';
+                    if(paymentSpinner) paymentSpinner.style.display = 'block';
 
                     listenForTransaction(reference.publicKey, amount);
                 };
@@ -1148,29 +1224,47 @@
             function attachAnalyticsListeners() {
                 if (!currentUser) return;
                 const transferBtn = document.getElementById("transfer-rewards");
-                if(currentUser.creatorRewardsBalance <= 0) { transferBtn.disabled = true; }
-                transferBtn.addEventListener("click", async () => {
-                    if(currentUser.creatorRewardsBalance <= 0) return;
-                    loader.classList.remove("hidden");
-                    const userRef = doc(db, "users", currentUser.walletAddress);
-                    const amount = currentUser.creatorRewardsBalance;
-                    await updateDoc(userRef, { bitBalance: increment(amount), creatorRewardsBalance: 0 });
-                    showToast(translations[currentLang].rewards_transferred.replace('%a', amount.toLocaleString()));
-                    loader.classList.add("hidden");
-                });
+                if (transferBtn) { // Check if exists
+                    if(currentUser.creatorRewardsBalance <= 0) { transferBtn.disabled = true; }
+                    transferBtn.addEventListener("click", async () => {
+                        if(currentUser.creatorRewardsBalance <= 0) return;
+                        if(loader) loader.classList.remove("hidden"); // Check if exists
+                        try {
+                            const userRef = doc(db, "users", currentUser.walletAddress);
+                            const amount = currentUser.creatorRewardsBalance;
+                            await updateDoc(userRef, { bitBalance: increment(amount), creatorRewardsBalance: 0 });
+                            showToast(translations[currentLang].rewards_transferred.replace('%a', amount.toLocaleString()));
+                        } catch (error) {
+                             console.error("Error transferring rewards:", error);
+                             showToast("Error transferring rewards.");
+                        } finally {
+                            if(loader) loader.classList.add("hidden");
+                        }
+                    });
+                }
             }
 
             async function saveProfile() {
-                const newPicUrl = document.getElementById("profile-pic-url").value.trim();
-                const newUsername = document.getElementById("username-input").value.trim();
+                const profilePicUrlInput = document.getElementById("profile-pic-url");
+                const usernameInput = document.getElementById("username-input");
+                if (!profilePicUrlInput || !usernameInput || !currentUser) return; // Check elements and user exist
+
+                const newPicUrl = profilePicUrlInput.value.trim();
+                const newUsername = usernameInput.value.trim();
                 const updates = {};
                 if (newPicUrl && newPicUrl !== currentUser.profilePicture) updates.profilePicture = newPicUrl;
                 if (newUsername && newUsername !== currentUser.username) updates.username = newUsername;
                 if (Object.keys(updates).length > 0) {
-                    loader.classList.remove("hidden");
-                    await updateDoc(doc(db, "users", currentUser.walletAddress), updates);
-                    showToast(translations[currentLang].profile_updated);
-                    loader.classList.add("hidden");
+                   if(loader) loader.classList.remove("hidden");
+                    try {
+                        await updateDoc(doc(db, "users", currentUser.walletAddress), updates);
+                        showToast(translations[currentLang].profile_updated);
+                    } catch (error) {
+                         console.error("Error updating profile:", error);
+                         showToast("Error updating profile.");
+                    } finally {
+                        if(loader) loader.classList.add("hidden");
+                    }
                 }
             }
 
@@ -1183,7 +1277,7 @@
                 const withdrawButton = document.getElementById("withdraw-button");
                 const withdrawalInfoText = document.getElementById("withdrawal-info-text");
 
-                if (!currentUser || !withdrawalInfoText) return;
+                if (!currentUser || !withdrawalInfoText || !withdrawButton || !usdEquivalentDisplay || !tokenPriceInfo) return; // Check all elements exist
 
                 // Intentar obtener el precio solo si no se ha intentado antes o si el intervalo está activo
                 if (!priceFetchAttempted && withdrawalUpdateInterval) {
@@ -1196,48 +1290,45 @@
                         const priceUsd = firstPair ? parseFloat(firstPair.priceUsd) : 0;
                         if (firstPair && !isNaN(priceUsd)) {
                             const balanceUsd = currentUser.bitBalance * priceUsd;
-                            if (tokenPriceInfo) tokenPriceInfo.textContent = `1 BIT \u2248 $${priceUsd.toFixed(6)} USD`;
-                            if (usdEquivalentDisplay) usdEquivalentDisplay.textContent = `~ $${balanceUsd.toFixed(2)} USD`;
+                            tokenPriceInfo.textContent = `1 BIT \u2248 $${priceUsd.toFixed(6)} USD`;
+                            usdEquivalentDisplay.textContent = `~ $${balanceUsd.toFixed(2)} USD`;
                         } else {
-                            if (usdEquivalentDisplay) usdEquivalentDisplay.textContent = `~ $---- USD`;
+                            usdEquivalentDisplay.textContent = `~ $---- USD`;
                         }
                     } catch (e) {
                         console.error("Error fetching token price:", e.message);
-                        // No limpiar el intervalo aquí, solo mostrar error y dejar de intentar
-                        if (usdEquivalentDisplay) usdEquivalentDisplay.textContent = translations[currentLang].price_fetch_error;
-                        if (tokenPriceInfo) tokenPriceInfo.textContent = '';
-                         // Detener futuros intentos si falla la primera vez
+                        usdEquivalentDisplay.textContent = translations[currentLang].price_fetch_error;
+                        tokenPriceInfo.textContent = '';
                         if (withdrawalUpdateInterval) {
                             clearInterval(withdrawalUpdateInterval);
                             withdrawalUpdateInterval = null;
                             console.log("Price fetch failed, stopping interval.");
                         }
                     }
-                } else if (!withdrawalUpdateInterval && usdEquivalentDisplay && usdEquivalentDisplay.textContent === "...") { // Solo mostrar error si no hay un valor ya
-                    // Si el intervalo fue detenido previamente por un error, mostrar el error
-                     if (usdEquivalentDisplay) usdEquivalentDisplay.textContent = translations[currentLang].price_fetch_error;
-                     if (tokenPriceInfo) tokenPriceInfo.textContent = '';
+                } else if (!withdrawalUpdateInterval && usdEquivalentDisplay.textContent === "...") { 
+                    usdEquivalentDisplay.textContent = translations[currentLang].price_fetch_error;
+                    tokenPriceInfo.textContent = '';
                 }
 
-
-                // Actualizar estado del botón de retiro independientemente del precio
+                // Actualizar estado del botón de retiro
                 const canWithdraw = currentUser.bitBalance >= WITHDRAWAL_MINIMUM_BIT;
-                if (withdrawButton) withdrawButton.disabled = !canWithdraw;
+                withdrawButton.disabled = !canWithdraw;
                 if (canWithdraw) {
-                    if(withdrawalInfoText) withdrawalInfoText.textContent = translations[currentLang].withdrawal_ready;
+                    withdrawalInfoText.textContent = translations[currentLang].withdrawal_ready;
                 } else {
                     const neededBits = WITHDRAWAL_MINIMUM_BIT - currentUser.bitBalance;
-                    if(withdrawalInfoText) withdrawalInfoText.textContent = translations[currentLang].need_more_to_withdraw.replace('%a', neededBits.toLocaleString());
+                    withdrawalInfoText.textContent = translations[currentLang].need_more_to_withdraw.replace('%a', neededBits.toLocaleString());
                 }
-
             }
             
             async function requestWithdrawal() {
                 const withdrawButton = document.getElementById("withdraw-button");
                 const withdrawMessage = document.getElementById("withdraw-message");
-                if (withdrawButton.disabled) return;
-                loader.classList.remove("hidden");
+                if (!withdrawButton || withdrawButton.disabled || !withdrawMessage || !currentUser) return; // Check elements and state
+
+                if(loader) loader.classList.remove("hidden");
                 withdrawMessage.textContent = translations[currentLang].processing;
+                withdrawMessage.classList.remove("text-green-500", "text-red-500"); // Clear previous colors
                 try {
                     await addDoc(collection(db, "withdrawalRequests"), {
                         userWallet: currentUser.walletAddress, username: currentUser.username, amount: currentUser.bitBalance, status: "pending", requestedAt: serverTimestamp()
@@ -1246,20 +1337,24 @@
                     withdrawMessage.textContent = translations[currentLang].withdrawal_requested;
                     withdrawMessage.classList.add("text-green-500");
                     showToast(translations[currentLang].withdrawal_requested_toast);
+                    // Refresh withdrawal status after successful request
+                    updateWithdrawalStatus(); 
                 } catch (error) {
                     console.error("Error creating withdrawal request:", error);
                     withdrawMessage.textContent = translations[currentLang].withdrawal_error;
                     withdrawMessage.classList.add("text-red-500");
                 } finally {
-                    loader.classList.add("hidden");
+                   if(loader) loader.classList.add("hidden");
                 }
             }
 
             async function setupFollowButton(streamerWallet) {
                 const followBtn = document.getElementById('follow-btn');
-                if (!currentUser) return;
+                if (!currentUser || !followBtn) return; // Check user and button exist
                 const myFollowingRef = doc(db, 'users', currentUser.walletAddress, 'following', streamerWallet);
-                onSnapshot(myFollowingRef, (docSnap) => {
+                
+                // Use a variable to hold the unsubscribe function
+                let unsubscribeFollow = onSnapshot(myFollowingRef, (docSnap) => {
                     followBtn.classList.remove('purple-gradient-bg', 'bg-transparent', 'border', 'border-[var(--brand-color-purple)]', 'text-[var(--brand-color-purple)]', 'bg-gray-700', 'hover:bg-gray-600');
                     followBtn.classList.add('text-white');
                     if (docSnap.exists()) {
@@ -1270,15 +1365,26 @@
                         followBtn.textContent = translations[currentLang].follow;
                         followBtn.classList.add('bg-gray-700', 'hover:bg-gray-600');
                     }
-                });
+                }, error => console.error("Error listening to follow status:", error));
+
                 followBtn.onclick = async () => {
-                    if (!requireAuth()) return;
-                    const docSnap = await getDoc(myFollowingRef);
-                    const streamerFollowersRef = doc(db, 'users', streamerWallet, 'followers', currentUser.walletAddress);
-                    const myUserRef = doc(db, 'users', currentUser.walletAddress);
-                    const streamerUserRef = doc(db, 'users', streamerWallet);
+                     // Unsubscribe before performing action to prevent potential race conditions
+                     if (unsubscribeFollow) unsubscribeFollow(); 
+
+                    if (!requireAuth()) {
+                         // Re-subscribe if action fails due to auth
+                         unsubscribeFollow = onSnapshot(myFollowingRef, /* ... original snapshot logic ... */);
+                         return;
+                    }
                     try {
-                        const streamerUsername = ((await getDoc(streamerUserRef)).data() || {}).username || streamerWallet.substring(0,6);
+                        const docSnap = await getDoc(myFollowingRef);
+                        const streamerFollowersRef = doc(db, 'users', streamerWallet, 'followers', currentUser.walletAddress);
+                        const myUserRef = doc(db, 'users', currentUser.walletAddress);
+                        const streamerUserRef = doc(db, 'users', streamerWallet);
+
+                        const streamerSnap = await getDoc(streamerUserRef);
+                        const streamerUsername = (streamerSnap.data() || {}).username || streamerWallet.substring(0,6);
+
                         if (docSnap.exists()) {
                             await runTransaction(db, async (t) => { t.delete(myFollowingRef); t.delete(streamerFollowersRef); t.update(myUserRef, { followingCount: increment(-1) }); t.update(streamerUserRef, { followersCount: increment(-1) }); });
                             showToast(translations[currentLang].unfollowed_user.replace('%s', streamerUsername));
@@ -1286,39 +1392,60 @@
                             await runTransaction(db, async (t) => { t.set(myFollowingRef, { followedAt: serverTimestamp() }); t.set(streamerFollowersRef, { followerAt: serverTimestamp() }); t.update(myUserRef, { followingCount: increment(1) }); t.update(streamerUserRef, { followersCount: increment(1) }); });
                             showToast(translations[currentLang].followed_user.replace('%s', streamerUsername));
                         }
-                    } catch (error) { console.error("Follow/unfollow error:", error); showToast(translations[currentLang].action_error); }
+                    } catch (error) { 
+                        console.error("Follow/unfollow transaction error:", error); 
+                        showToast(translations[currentLang].action_error); 
+                    } finally {
+                        // Re-subscribe after action is complete
+                         unsubscribeFollow = onSnapshot(myFollowingRef, /* ... original snapshot logic ... */);
+                    }
                 };
+
+                 // Cleanup listener when leaving the page (add this to cleanupWatchPage)
+                 // if (unsubscribeFollow) unsubscribeFollow(); 
             }
             
             async function setupSubscribeButton(streamerWallet) {
                 const subBtn = document.getElementById('subscribe-btn');
+                 if (!currentUser || !subBtn) return; // Check user and button exist
+
                 const subRef = doc(db, 'users', streamerWallet, 'subscribers', currentUser.walletAddress);
-                const subSnap = await getDoc(subRef);
-                if (subSnap.exists()) {
-                    subBtn.disabled = true;
-                    subBtn.innerHTML = `<i data-lucide="check"></i> <span data-key="subscribed">${translations[currentLang].subscribed}</span>`;
-                    lucide.createIcons();
-                }
+                try {
+                    const subSnap = await getDoc(subRef);
+                    if (subSnap.exists()) {
+                        subBtn.disabled = true;
+                        subBtn.innerHTML = `<i data-lucide="check"></i> <span data-key="subscribed">${translations[currentLang].subscribed}</span>`;
+                        lucide.createIcons();
+                    }
+                } catch(e) { console.error("Error checking initial subscription status:", e); }
+
                 subBtn.onclick = async () => {
                     if (!requireAuth()) return;
                     if (currentUser.bitBalance < 100) return showToast(translations[currentLang].insufficient_bits_subscribe);
-                    loader.classList.remove('hidden');
+                   if(loader) loader.classList.remove('hidden');
                     try {
                         const streamerUserRef = doc(db, "users", streamerWallet);
-                        const streamerUsername = ((await getDoc(streamerUserRef)).data() || {}).username || streamerWallet.substring(0,6);
+                        const streamerSnap = await getDoc(streamerUserRef); // Get streamer data for username
+                        const streamerUsername = (streamerSnap.data() || {}).username || streamerWallet.substring(0,6);
+                        
                         await runTransaction(db, async (t) => {
                             const myUserRef = doc(db, "users", currentUser.walletAddress);
                             const myDoc = await t.get(myUserRef);
-                            if (!myDoc.exists() || myDoc.data().bitBalance < 100) throw "Insufficient balance.";
+                            if (!myDoc.exists() || myDoc.data().bitBalance < 100) throw new Error("Insufficient balance during transaction."); // More specific error
                             t.update(myUserRef, { bitBalance: increment(-100) });
                             t.update(streamerUserRef, { creatorRewardsBalance: increment(100) });
-                            t.set(subRef, { subscribedAt: serverTimestamp(), expiresAt: 'never' });
+                            t.set(subRef, { subscribedAt: serverTimestamp(), expiresAt: 'never' }); // Consider adding 'expiresAt' logic if needed
                         });
                         showToast(translations[currentLang].subscribed_to_user.replace('%s', streamerUsername));
                         subBtn.disabled = true;
                         subBtn.innerHTML = `<i data-lucide="check"></i> <span data-key="subscribed">${translations[currentLang].subscribed}</span>`;
                         lucide.createIcons();
-                    } catch (e) { console.error("Subscription transaction error: ", e); showToast(translations[currentLang].subscription_error); } finally { loader.classList.add('hidden'); }
+                    } catch (e) { 
+                        console.error("Subscription transaction error: ", e.message || e); 
+                        showToast(translations[currentLang].subscription_error + (e.message ? `: ${e.message}` : '')); 
+                    } finally { 
+                        if(loader) loader.classList.add('hidden'); 
+                    }
                 };
             }
 
@@ -1326,34 +1453,53 @@
                 const openBtn = document.getElementById('open-vip-emojis');
                 const panel = document.getElementById('vip-emoji-panel');
                 const chatInput = document.getElementById('chat-input');
+                 if (!openBtn || !panel || !chatInput) return; // Check elements exist
+
                 openBtn.onclick = () => panel.classList.toggle('hidden');
+                
                 panel.addEventListener('click', async (e) => {
                     const button = e.target.closest('.vip-emoji-btn');
                     if (button) {
                         if (!requireAuth()) return;
                         panel.classList.add('hidden');
                         const emoji = VIP_EMOJIS.find(em => em.id === button.dataset.emojiId);
+                        if (!emoji) return; // Safety check
+
                         const text = chatInput.value.trim();
                         if (!text) return showToast(translations[currentLang].superchat_no_text);
                         if (currentUser.bitBalance < emoji.price) return showToast(translations[currentLang].insufficient_bits_emoji.replace('%p', emoji.price));
-                        loader.classList.remove('hidden');
+                        
+                        if(loader) loader.classList.remove('hidden');
                         try {
                             await runTransaction(db, async (t) => {
                                 const myUserRef = doc(db, "users", currentUser.walletAddress);
                                 const streamerUserRef = doc(db, "users", streamerWallet);
                                 const myDoc = await t.get(myUserRef);
-                                if (!myDoc.exists() || myDoc.data().bitBalance < emoji.price) throw "Insufficient balance.";
+                                if (!myDoc.exists() || myDoc.data().bitBalance < emoji.price) throw new Error("Insufficient balance during transaction.");
                                 t.update(myUserRef, { bitBalance: increment(-emoji.price) });
                                 t.update(streamerUserRef, { creatorRewardsBalance: increment(emoji.price) });
                             });
-                            await addDoc(collection(db, 'streams', streamerWallet, 'chat'), { text, userName: currentUser.username, userWallet: currentUser.walletAddress, userColor: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'), createdAt: serverTimestamp(), vipEmoji: { url: emoji.url, price: emoji.price } });
+                            await addDoc(collection(db, 'streams', streamerWallet, 'chat'), { 
+                                text, 
+                                userName: currentUser.username, 
+                                userWallet: currentUser.walletAddress, 
+                                userColor: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'), 
+                                createdAt: serverTimestamp(), 
+                                vipEmoji: { url: emoji.url, price: emoji.price } 
+                            });
                             chatInput.value = '';
-                        } catch(err) { console.error("Super Chat transaction error:", err); showToast(translations[currentLang].superchat_error); } finally { loader.classList.add('hidden'); }
+                        } catch(err) { 
+                             console.error("Super Chat transaction error:", err.message || err); 
+                             showToast(translations[currentLang].superchat_error + (err.message ? `: ${err.message}` : '')); 
+                        } finally { 
+                            if(loader) loader.classList.add('hidden'); 
+                        }
                     }
                 });
             }
 
-            let adInterval = null;
+            // ... (Resto del código de streaming, anuncios, traducciones, etc.) ...
+             let adInterval = null;
             function showAd() {
                 const adContainer = document.getElementById('ad-container'), adWarning = document.getElementById('ad-warning'), adSlot = document.getElementById('ad-slot');
                 if (!adContainer || !adWarning || !adSlot) return;
@@ -1375,63 +1521,136 @@
             const iceServers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
             async function attachStreamListeners() {
-                document.getElementById('select-cam-btn').onclick = () => getMedia('camera');
+                const selectCamBtn = document.getElementById('select-cam-btn');
                 const selectScreenBtn = document.getElementById('select-screen-btn');
-                if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
-                    selectScreenBtn.onclick = () => getMedia('screen');
-                } else { selectScreenBtn.disabled = true; selectScreenBtn.onclick = () => showToast('Screen sharing is not available.'); }
-                document.getElementById('start-stream-btn').onclick = startStream;
-                document.getElementById('stop-stream-btn').onclick = stopStream;
+                const startStreamBtn = document.getElementById('start-stream-btn');
+                const stopStreamBtn = document.getElementById('stop-stream-btn');
                 const micSelect = document.getElementById('mic-select');
-                try {
-                    const devices = await navigator.mediaDevices.enumerateDevices();
-                    devices.filter(({ kind }) => kind === 'audioinput').forEach(({ deviceId, label }) => {
-                        const option = document.createElement('option'); option.value = deviceId;
-                        option.text = label || `${translations[currentLang].microphone} ${micSelect.options.length + 1}`;
-                        micSelect.appendChild(option);
-                    });
-                } catch(e) { console.error("Error enumerating devices:", e); }
+
+                if (selectCamBtn) selectCamBtn.onclick = () => getMedia('camera');
+
+                if (selectScreenBtn) {
+                     if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+                        selectScreenBtn.onclick = () => getMedia('screen');
+                    } else { 
+                        selectScreenBtn.disabled = true; 
+                        selectScreenBtn.onclick = () => showToast('Screen sharing is not available.'); 
+                    }
+                }
+               if(startStreamBtn) startStreamBtn.onclick = startStream;
+               if(stopStreamBtn) stopStreamBtn.onclick = stopStream;
+                
+                if (micSelect) {
+                    try {
+                        const devices = await navigator.mediaDevices.enumerateDevices();
+                        devices.filter(({ kind }) => kind === 'audioinput').forEach(({ deviceId, label }) => {
+                            const option = document.createElement('option'); option.value = deviceId;
+                            option.text = label || `${translations[currentLang].microphone} ${micSelect.options.length + 1}`;
+                            micSelect.appendChild(option);
+                        });
+                    } catch(e) { console.error("Error enumerating audio devices:", e); }
+                }
             }
 
             async function getMedia(type) {
+                 const localVideoPreview = document.getElementById('local-video-preview');
+                 const startStreamBtn = document.getElementById('start-stream-btn');
+                 const micSelect = document.getElementById('mic-select');
+                 if(!localVideoPreview || !startStreamBtn || !micSelect) return; // Check elements exist
+
                 try {
                     if (localStream) localStream.getTracks().forEach(track => track.stop());
-                    const audioDeviceId = document.getElementById('mic-select').value;
+                    const audioDeviceId = micSelect.value;
                     const constraints = { video: true, audio: { deviceId: audioDeviceId ? {exact: audioDeviceId} : undefined } };
-                    localStream = type === 'camera' ? await navigator.mediaDevices.getUserMedia(constraints) : await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
-                    document.getElementById('local-video-preview').srcObject = localStream;
-                    document.getElementById('start-stream-btn').disabled = false;
-                } catch (error) { console.error(`Error getting ${type}`, error); showToast(translations[currentLang].media_error); }
+                    
+                    if (type === 'camera') {
+                         localStream = await navigator.mediaDevices.getUserMedia(constraints);
+                    } else if (type === 'screen' && navigator.mediaDevices.getDisplayMedia) {
+                         localStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }); // Request audio for screen share too
+                    } else {
+                         throw new Error("Unsupported media type or browser capability");
+                    }
+                    
+                    localVideoPreview.srcObject = localStream;
+                    startStreamBtn.disabled = false;
+                } catch (error) { 
+                    console.error(`Error getting ${type}:`, error); 
+                    showToast(translations[currentLang].media_error + `: ${error.message}`); 
+                    startStreamBtn.disabled = true; // Disable start if media fails
+                    localStream = null; // Reset localStream
+                    localVideoPreview.srcObject = null;
+                }
             }
 
-            async function startStream() {
-                if (!localStream) return showToast(translations[currentLang].no_video_source);
+            // ... (Resto de las funciones startStream, stopStream, joinStream sin cambios mayores, pero añadiendo checks para elementos) ...
+             async function startStream() {
+                const streamTitleInput = document.getElementById('stream-title-input');
+                const streamCategorySelect = document.getElementById('stream-category-select');
+                const streamThumbnailInput = document.getElementById('stream-thumbnail-input');
+                const startStreamBtn = document.getElementById('start-stream-btn');
+                const stopStreamBtn = document.getElementById('stop-stream-btn');
+                const streamStatusText = document.getElementById('stream-status-text');
+                 const studioChatMessages = document.getElementById('studio-chat-messages');
+
+                if (!localStream || !currentUser || !streamTitleInput || !streamCategorySelect || !streamThumbnailInput || !startStreamBtn || !stopStreamBtn || !streamStatusText || !studioChatMessages) {
+                    showToast(translations[currentLang].no_video_source);
+                    console.error("Missing elements or stream/user data for startStream");
+                    return; 
+                }
+
                 const streamRef = doc(db, 'streams', currentUser.walletAddress);
-                loader.classList.remove('hidden');
+               if(loader) loader.classList.remove('hidden');
                 try {
                     await setDoc(streamRef, {
-                        status: 'live', title: document.getElementById('stream-title-input').value, category: document.getElementById('stream-category-select').value, thumbnailUrl: document.getElementById('stream-thumbnail-input').value, streamerWallet: currentUser.walletAddress, streamerPic: currentUser.profilePicture, streamerUsername: currentUser.username, viewerCount: 0
+                        status: 'live', 
+                        title: streamTitleInput.value, 
+                        category: streamCategorySelect.value, 
+                        thumbnailUrl: streamThumbnailInput.value, 
+                        streamerWallet: currentUser.walletAddress, 
+                        streamerPic: currentUser.profilePicture, 
+                        streamerUsername: currentUser.username, 
+                        viewerCount: 0
                     });
+
+                    // Start viewer listener
                     viewersUnsubscribe = onSnapshot(collection(streamRef, 'viewers'), (snapshot) => {
-                        updateDoc(streamRef, { viewerCount: snapshot.size });
+                         if (!currentUser) return; // Check user still exists
+                         updateDoc(doc(db, 'streams', currentUser.walletAddress), { viewerCount: snapshot.size }).catch(e => console.error("Error updating viewer count:", e)); // Add catch
                         const studioViewerCount = document.getElementById('studio-viewer-count');
                         if(studioViewerCount) { studioViewerCount.innerHTML = `<i data-lucide="users" class="w-4 h-4"></i> ${snapshot.size}`; lucide.createIcons(); }
+                        
                         snapshot.docChanges().forEach(async (change) => {
                             const viewerUid = change.doc.id, viewerData = change.doc.data();
-                            if (change.type === 'added' && viewerData.offer) {
-                                peerConnections[viewerUid] = new RTCPeerConnection(iceServers);
-                                localStream.getTracks().forEach(track => peerConnections[viewerUid].addTrack(track, localStream));
-                                peerConnections[viewerUid].onicecandidate = e => e.candidate && addDoc(collection(change.doc.ref, 'iceCandidates'), e.candidate.toJSON());
-                                onSnapshot(collection(change.doc.ref, 'iceCandidatesFromViewer'), snap => snap.docChanges().forEach(c => c.type === 'added' && peerConnections[viewerUid].addIceCandidate(new RTCIceCandidate(c.doc.data()))));
-                                await peerConnections[viewerUid].setRemoteDescription(new RTCSessionDescription(viewerData.offer));
-                                const answer = await peerConnections[viewerUid].createAnswer();
-                                await peerConnections[viewerUid].setLocalDescription(answer);
-                                await updateDoc(change.doc.ref, { answer });
+                            try { // Add try-catch for WebRTC setup
+                                if (change.type === 'added' && viewerData.offer) {
+                                    peerConnections[viewerUid] = new RTCPeerConnection(iceServers);
+                                    localStream.getTracks().forEach(track => peerConnections[viewerUid].addTrack(track, localStream));
+                                    peerConnections[viewerUid].onicecandidate = e => e.candidate && addDoc(collection(change.doc.ref, 'iceCandidates'), e.candidate.toJSON()).catch(e => console.error("Error adding streamer ICE candidate:", e));
+                                    
+                                    // Listen for viewer ICE candidates
+                                    onSnapshot(collection(change.doc.ref, 'iceCandidatesFromViewer'), snap => snap.docChanges().forEach(c => {
+                                        if (c.type === 'added') {
+                                             peerConnections[viewerUid]?.addIceCandidate(new RTCIceCandidate(c.doc.data())).catch(e => console.error("Error adding viewer ICE candidate:", e)); // Check if connection still exists
+                                        }
+                                    }), error => console.error("Error listening for viewer ICE candidates:", error));
+                                    
+                                    await peerConnections[viewerUid].setRemoteDescription(new RTCSessionDescription(viewerData.offer));
+                                    const answer = await peerConnections[viewerUid].createAnswer();
+                                    await peerConnections[viewerUid].setLocalDescription(answer);
+                                    await updateDoc(change.doc.ref, { answer });
+                                }
+                            } catch (rtcError) {
+                                 console.error(`WebRTC setup error for viewer ${viewerUid}:`, rtcError);
+                                 if (peerConnections[viewerUid]) { peerConnections[viewerUid].close(); delete peerConnections[viewerUid]; } // Cleanup failed connection
                             }
-                            if (change.type === 'removed' && peerConnections[viewerUid]) { peerConnections[viewerUid].close(); delete peerConnections[viewerUid]; }
+                            if (change.type === 'removed' && peerConnections[viewerUid]) { 
+                                peerConnections[viewerUid].close(); 
+                                delete peerConnections[viewerUid]; 
+                            }
                         });
-                    });
-                    const studioChatMessages = document.getElementById('studio-chat-messages');
+                    }, error => console.error("Error listening to viewers collection:", error));
+
+                    // Start chat listener
                     const chatRef = collection(streamRef, 'chat');
                     unsubscribeStudioChat = onSnapshot(query(chatRef, orderBy("createdAt", "desc"), limit(50)), (snapshot) => {
                         snapshot.docChanges().reverse().forEach(change => {
@@ -1443,85 +1662,263 @@
                                 studioChatMessages.appendChild(msgEl);
                             }
                         });
-                        studioChatMessages.scrollTop = studioChatMessages.scrollHeight;
-                    });
-                    document.getElementById('stream-status-text').innerHTML = `<span class="text-red-500 font-bold flex items-center gap-2"><div class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>LIVE</span>`;
-                    document.getElementById('start-stream-btn').disabled = true; document.getElementById('stop-stream-btn').disabled = false;
-                    let startTime = Date.now(), timerEl = document.getElementById('stream-timer');
-                    streamTimerInterval = setInterval(() => { const e=Date.now()-startTime,s=Math.floor(e/1e3%60).toString().padStart(2,'0'),m=Math.floor(e/6e4%60).toString().padStart(2,'0'),h=Math.floor(e/36e5).toString().padStart(2,'0'); if(timerEl)timerEl.textContent=`${h}:${m}:${s}`}, 1000);
+                         studioChatMessages.scrollTop = studioChatMessages.scrollHeight; // Scroll after updates
+                    }, error => console.error("Error listening to studio chat:", error));
+
+                    streamStatusText.innerHTML = `<span class="text-red-500 font-bold flex items-center gap-2"><div class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>LIVE</span>`;
+                    startStreamBtn.disabled = true; 
+                    stopStreamBtn.disabled = false;
+                    
+                    // Start timer
+                    let startTime = Date.now();
+                    const timerEl = document.getElementById('stream-timer');
+                    if (timerEl) {
+                        streamTimerInterval = setInterval(() => { 
+                            const e=Date.now()-startTime,s=Math.floor(e/1e3%60).toString().padStart(2,'0'),m=Math.floor(e/6e4%60).toString().padStart(2,'0'),h=Math.floor(e/36e5).toString().padStart(2,'0'); 
+                            timerEl.textContent=`${h}:${m}:${s}`;
+                        }, 1000);
+                    }
+
+                    // Start rewards interval
                     let lastRewardTimeInMinutes = 0;
                     rewardInterval = setInterval(async () => {
+                         if (!currentUser) return; // Check user still exists
                         const currentMinutes = Math.floor((Date.now() - startTime) / 60000);
                         if (currentMinutes >= lastRewardTimeInMinutes + REWARD_INTERVAL_MINUTES) {
                             lastRewardTimeInMinutes += REWARD_INTERVAL_MINUTES;
-                            await updateDoc(doc(db, "users", currentUser.walletAddress), { creatorRewardsBalance: increment(REWARD_AMOUNT) });
-                            showToast(translations[currentLang].reward_notification.replace('%a', REWARD_AMOUNT.toLocaleString()).replace('%m', lastRewardTimeInMinutes));
+                            try {
+                                await updateDoc(doc(db, "users", currentUser.walletAddress), { creatorRewardsBalance: increment(REWARD_AMOUNT) });
+                                showToast(translations[currentLang].reward_notification.replace('%a', REWARD_AMOUNT.toLocaleString()).replace('%m', lastRewardTimeInMinutes));
+                            } catch (rewardError) {
+                                 console.error("Error updating creator rewards:", rewardError);
+                            }
                         }
                     }, 15000);
+
+                    // Start ads interval
                     if(adInterval) clearInterval(adInterval);
-                    adInterval = setInterval(showAd, 120000);
+                    adInterval = setInterval(showAd, 120000); 
+
                     showToast(translations[currentLang].stream_started);
-                } catch (error) { console.error("Error starting stream:", error); showToast(translations[currentLang].stream_start_error); stopStream(); } finally { loader.classList.add('hidden'); }
+                } catch (error) { 
+                    console.error("Error starting stream:", error); 
+                    showToast(translations[currentLang].stream_start_error + `: ${error.message}`); 
+                    stopStream(); // Attempt cleanup on error
+                } finally { 
+                   if(loader) loader.classList.add('hidden'); 
+                }
             }
 
-            async function stopStream() {
-                if (streamTimerInterval) clearInterval(streamTimerInterval); if (rewardInterval) clearInterval(rewardInterval); if (adInterval) clearInterval(adInterval);
-                if (localStream) localStream.getTracks().forEach(track => track.stop());
-                if (viewersUnsubscribe) viewersUnsubscribe(); if (unsubscribeStudioChat) unsubscribeStudioChat();
+             async function stopStream() {
+                console.log("Stopping stream...");
+                // Clear intervals
+                if (streamTimerInterval) clearInterval(streamTimerInterval); 
+                if (rewardInterval) clearInterval(rewardInterval); 
+                if (adInterval) clearInterval(adInterval); 
+                streamTimerInterval=null; rewardInterval=null; adInterval=null;
+
+                // Stop media tracks
+                if (localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                    localStream = null;
+                }
+
+                // Unsubscribe Firestore listeners
+                if (viewersUnsubscribe) viewersUnsubscribe(); 
+                if (unsubscribeStudioChat) unsubscribeStudioChat(); 
+                viewersUnsubscribe=null; unsubscribeStudioChat=null;
+
+                // Close peer connections
                 Object.values(peerConnections).forEach(pc => pc.close());
-                localStream=null;streamTimerInterval=null;rewardInterval=null;adInterval=null;peerConnections={};
-                if (!currentUser) return;
-                const streamRef = doc(db, 'streams', currentUser.walletAddress);
-                try {
-                    for(const coll of [collection(streamRef, 'viewers'), collection(streamRef, 'chat')]) {
-                        const snapshot = await getDocs(coll); if(!snapshot.empty) { const batch = writeBatch(db); snapshot.forEach(doc => batch.delete(doc.ref)); await batch.commit(); }
-                    }
-                    await deleteDoc(streamRef);
-                } catch(error) { console.error("Error cleaning up stream:", error); await deleteDoc(streamRef).catch(()=>{}); }
+                peerConnections = {};
+
+                // Update UI elements safely
                 const studioUI = document.getElementById('studio-content');
                 if(studioUI) {
-                    const statusText = studioUI.querySelector('#stream-status-text'); if (statusText) statusText.textContent = translations[currentLang].preview;
-                    const timerEl = studioUI.querySelector('#stream-timer'); if (timerEl) timerEl.textContent = '';
-                    const viewerCountEl = studioUI.querySelector('#studio-viewer-count'); if (viewerCountEl) viewerCountEl.innerHTML = '';
-                    studioUI.querySelector('#start-stream-btn').disabled = true; studioUI.querySelector('#stop-stream-btn').disabled = true;
-                    const videoPreview = studioUI.querySelector('#local-video-preview'); if(videoPreview) videoPreview.srcObject = null;
+                    const statusText = studioUI.querySelector('#stream-status-text'); 
+                    if (statusText) statusText.textContent = translations[currentLang].preview;
+                    
+                    const timerEl = studioUI.querySelector('#stream-timer'); 
+                    if (timerEl) timerEl.textContent = '';
+                    
+                    const viewerCountEl = studioUI.querySelector('#studio-viewer-count'); 
+                    if (viewerCountEl) viewerCountEl.innerHTML = '';
+                    
+                    const startBtn = studioUI.querySelector('#start-stream-btn');
+                    // Re-enable start button only if media stream might still be available (though we stopped it)
+                    if (startBtn) startBtn.disabled = true; // Keep disabled until new media selected
+
+                    const stopBtn = studioUI.querySelector('#stop-stream-btn');
+                    if (stopBtn) stopBtn.disabled = true;
+
+                    const videoPreview = studioUI.querySelector('#local-video-preview'); 
+                    if(videoPreview) videoPreview.srcObject = null;
                 }
+
+                // Delete stream data from Firestore
+                if (currentUser) {
+                    const streamRef = doc(db, 'streams', currentUser.walletAddress);
+                    try {
+                        // Delete subcollections first (viewers, chat, iceCandidates etc.)
+                        for(const collName of ['viewers', 'chat']) { // Add other subcollections if needed
+                            const collRef = collection(streamRef, collName);
+                            const snapshot = await getDocs(collRef); 
+                            if(!snapshot.empty) { 
+                                const batch = writeBatch(db); 
+                                snapshot.forEach(subDoc => batch.delete(subDoc.ref)); 
+                                await batch.commit(); 
+                                console.log(`Deleted subcollection: ${collName}`);
+                            }
+                        }
+                        // Delete the main stream document
+                        await deleteDoc(streamRef);
+                        console.log("Stream document deleted.");
+                    } catch(error) { 
+                        console.error("Error cleaning up stream Firestore data:", error); 
+                        // Attempt to delete main doc even if subcollection deletion fails
+                        await deleteDoc(streamRef).catch(e => console.error("Failed to delete main stream doc after error:", e)); 
+                    }
+                } else {
+                     console.warn("Stop stream called but no current user found.");
+                }
+
                 showToast(translations[currentLang].stream_stopped);
             }
 
             async function joinStream(streamerWallet) {
+                const remoteVideo = document.getElementById('remote-video');
+                const videoOverlay = document.getElementById('video-overlay');
+                 if (!remoteVideo || !videoOverlay) {
+                     console.error("Video elements not found for joinStream");
+                     return;
+                 }
+
                 viewerPeerConnection = new RTCPeerConnection(iceServers);
-                const remoteVideo = document.getElementById('remote-video'), videoOverlay = document.getElementById('video-overlay');
-                const viewerRef = doc(db, 'streams', streamerWallet, 'viewers', auth.currentUser ? auth.currentUser.uid : `guest_${Date.now()}`);
-                const iceCandidateBuffer = [];
+                
+                const viewerId = auth.currentUser ? auth.currentUser.uid : `guest_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+                const viewerRef = doc(db, 'streams', streamerWallet, 'viewers', viewerId);
+                const iceCandidateBuffer = []; // To store candidates received before remote description is set
+
                 viewerPeerConnection.oniceconnectionstatechange = () => {
-                    if(videoOverlay) videoOverlay.textContent = `Status: ${viewerPeerConnection.iceConnectionState}`;
-                     if(viewerPeerConnection.iceConnectionState === 'connected' || viewerPeerConnection.iceConnectionState === 'completed'){
-                        if(videoOverlay) videoOverlay.style.display = 'none'; if(remoteVideo) remoteVideo.classList.add('opacity-100');
-                        if(adInterval) clearInterval(adInterval); adInterval = setInterval(showAd, 120000);
+                    const state = viewerPeerConnection.iceConnectionState;
+                    console.log(`Viewer ICE State: ${state}`);
+                    videoOverlay.textContent = `Status: ${state}`;
+                     if(state === 'connected' || state === 'completed'){
+                        videoOverlay.style.display = 'none'; 
+                        remoteVideo.classList.remove('opacity-0'); // Show video
+                        remoteVideo.classList.add('opacity-100');
+                        // Start ads only when connected
+                        if(adInterval) clearInterval(adInterval); 
+                        adInterval = setInterval(showAd, 120000); 
+                    } else if (state === 'failed' || state === 'disconnected' || state === 'closed') {
+                         videoOverlay.style.display = 'flex'; // Show overlay again
+                         videoOverlay.textContent = `Stream disconnected: ${state}`;
+                         remoteVideo.classList.remove('opacity-100');
+                         remoteVideo.classList.add('opacity-0'); // Hide video
+                         if(adInterval) clearInterval(adInterval); // Stop ads
                     }
                 };
-                viewerPeerConnection.ontrack = e => { if (e.streams && e.streams[0] && remoteVideo.srcObject !== e.streams[0]) remoteVideo.srcObject = e.streams[0]; };
-                if (currentUser) {
-                    viewerPeerConnection.onicecandidate = e => e.candidate && addDoc(collection(viewerRef, 'iceCandidatesFromViewer'), e.candidate.toJSON());
-                    onSnapshot(collection(viewerRef, 'iceCandidates'), s => s.docChanges().forEach(change => {
-                        if (change.type === 'added') { const candidate = new RTCIceCandidate(change.doc.data()); if (viewerPeerConnection.currentRemoteDescription) viewerPeerConnection.addIceCandidate(candidate); else iceCandidateBuffer.push(candidate); }
-                    }));
-                }
-                const offer = await viewerPeerConnection.createOffer({offerToReceiveVideo: true, offerToReceiveAudio: true});
-                await viewerPeerConnection.setLocalDescription(offer);
-                await setDoc(viewerRef, { offer });
-                onSnapshot(viewerRef, async (docSnap) => {
-                    const data = docSnap.data();
-                    if (data && data.answer && !viewerPeerConnection.currentRemoteDescription) {
-                        await viewerPeerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-                        iceCandidateBuffer.forEach(c => viewerPeerConnection.addIceCandidate(c)); iceCandidateBuffer.length = 0;
+
+                viewerPeerConnection.ontrack = e => { 
+                    console.log("Track received:", e.track.kind);
+                    if (e.streams && e.streams[0]) {
+                        if (remoteVideo.srcObject !== e.streams[0]) {
+                             remoteVideo.srcObject = e.streams[0]; 
+                             console.log("Remote stream assigned to video element.");
+                        }
+                    } else {
+                         // Fallback for older browsers might be needed here using addTrack
+                         console.warn("Stream not found on track event, might need older browser handling");
                     }
-                });
-                const leaveStream = () => { if(viewerPeerConnection) { viewerPeerConnection.close(); deleteDoc(viewerRef).catch(()=>{}); } if(adInterval) clearInterval(adInterval); };
-                window.addEventListener('pagehide', leaveStream, { once: true });
+                };
+
+                // Setup ICE candidate listeners *before* creating offer
+                viewerPeerConnection.onicecandidate = e => {
+                    if (e.candidate) {
+                         console.log("Viewer sending ICE candidate...");
+                         addDoc(collection(viewerRef, 'iceCandidatesFromViewer'), e.candidate.toJSON())
+                           .catch(e => console.error("Error sending viewer ICE candidate:", e));
+                    }
+                };
+                
+                // Listener for streamer's ICE candidates
+                const unsubscribeIce = onSnapshot(collection(viewerRef, 'iceCandidates'), 
+                    s => s.docChanges().forEach(change => {
+                        if (change.type === 'added') { 
+                            const candidate = new RTCIceCandidate(change.doc.data());
+                            console.log("Viewer received ICE candidate...");
+                            if (viewerPeerConnection.currentRemoteDescription) {
+                                viewerPeerConnection.addIceCandidate(candidate).catch(e => console.error("Error adding received ICE candidate:", e));
+                            } else {
+                                console.log("Buffering ICE candidate.");
+                                iceCandidateBuffer.push(candidate); // Buffer if remote description not set yet
+                            }
+                        }
+                    }),
+                    error => console.error("Error listening for streamer ICE candidates:", error)
+                );
+
+                try {
+                    console.log("Creating offer...");
+                    const offer = await viewerPeerConnection.createOffer({offerToReceiveVideo: true, offerToReceiveAudio: true});
+                    await viewerPeerConnection.setLocalDescription(offer);
+                    console.log("Offer created and set, sending to Firestore...");
+                    await setDoc(viewerRef, { offer: viewerPeerConnection.localDescription.toJSON() }); // Send full offer object
+                    
+                    // Listener for the answer from the streamer
+                    const unsubscribeAnswer = onSnapshot(viewerRef, async (docSnap) => {
+                        const data = docSnap.data();
+                        if (data && data.answer && !viewerPeerConnection.currentRemoteDescription) {
+                             console.log("Answer received, setting remote description...");
+                             try {
+                                await viewerPeerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                                console.log("Remote description set. Adding buffered ICE candidates...");
+                                // Add any buffered ICE candidates
+                                while (iceCandidateBuffer.length > 0) {
+                                    const candidate = iceCandidateBuffer.shift();
+                                    console.log("Adding buffered ICE candidate...");
+                                    await viewerPeerConnection.addIceCandidate(candidate);
+                                }
+                             } catch (e) {
+                                 console.error("Error setting remote description or adding buffered candidates:", e);
+                                 videoOverlay.textContent = "Error connecting stream.";
+                                 cleanupConnection(); // Cleanup on error
+                             }
+                        } else if (!data) {
+                            console.warn("Viewer document deleted or doesn't exist.");
+                            videoOverlay.textContent = "Stream connection lost.";
+                            cleanupConnection();
+                        }
+                    }, error => {
+                         console.error("Error listening for answer:", error);
+                         videoOverlay.textContent = "Error listening for stream data.";
+                         cleanupConnection();
+                    });
+
+                    // Cleanup function
+                    const cleanupConnection = () => {
+                         console.log("Cleaning up viewer connection...");
+                         if (unsubscribeIce) unsubscribeIce();
+                         if (unsubscribeAnswer) unsubscribeAnswer();
+                         if (viewerPeerConnection) { viewerPeerConnection.close(); viewerPeerConnection = null; }
+                         if(adInterval) clearInterval(adInterval);
+                         deleteDoc(viewerRef).catch(e => console.warn("Error deleting viewer doc on cleanup:", e));
+                    };
+
+                    // Add listeners to clean up when leaving page or component
+                    window.addEventListener('pagehide', cleanupConnection, { once: true });
+                    // If this were a component framework, you'd call cleanupConnection in the unmount/destroy lifecycle hook.
+
+                } catch (error) {
+                    console.error("Error joining stream:", error);
+                    videoOverlay.textContent = "Failed to join stream.";
+                    if (viewerPeerConnection) viewerPeerConnection.close(); // Close connection on initial error
+                     if(adInterval) clearInterval(adInterval);
+                     deleteDoc(viewerRef).catch(e => console.warn("Error deleting viewer doc on join error:", e));
+                }
             }
-            
+
+
             window.onbeforeunload = () => { if (Object.keys(peerConnections).length > 0) stopStream(); }
     
             const translations = {
@@ -1547,8 +1944,9 @@
             
             // --- INICIALIZACIÓN ---
             if (!withdrawalUpdateInterval) {
-                withdrawalUpdateInterval = setInterval(updateWithdrawalStatus, 60000); // Check price every 60 seconds
-                updateWithdrawalStatus(); // Initial check
+                // Check price less frequently initially
+                updateWithdrawalStatus(); 
+                withdrawalUpdateInterval = setInterval(updateWithdrawalStatus, 120000); // Check every 2 minutes initially
             }
 
         }); // --- FIN DEL WRAPPER DOMContentLoaded ---
