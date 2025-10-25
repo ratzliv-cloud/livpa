@@ -941,12 +941,18 @@
                         }
                     } catch (error) {
                         console.error("Error polling for QR transaction:", error);
-                        statusMessage.textContent = 'Error al verificar pago QR.';
-                        paymentSpinner.style.display = 'none';
-                        clearInterval(pollingInterval);
-                         setTimeout(resetToInitialState, 3000);
+                        // Comprobar si es error de rate limit
+                        if (error.message && error.message.includes('429')) {
+                            statusMessage.textContent = 'Verificación lenta (límite de red). Reintentando...';
+                            // No limpiar intervalo, seguirá intentando más espaciado
+                        } else {
+                            statusMessage.textContent = 'Error al verificar pago QR.';
+                            paymentSpinner.style.display = 'none';
+                            clearInterval(pollingInterval);
+                             setTimeout(resetToInitialState, 3000);
+                        }
                     }
-                }, 3000); // Check every 3 seconds
+                }, 15000); // **Aumentado a 15 segundos para evitar error 429**
             };
 
             // **LÓGICA CORRECTA PARA PHANTOM SEGÚN DOCUMENTACIÓN**
@@ -997,7 +1003,7 @@
                     const splTokenMint = new solanaWeb3.PublicKey(SPL_TOKEN_MINT);
                     const amountInSmallestUnit = BigInt(Math.round(amount * Math.pow(10, SPL_TOKEN_DECIMALS)));
 
-                    // CORRECCIÓN: Usar splToken directamente (asumiendo que es el global correcto)
+                    // **CORRECCIÓN: Usar la variable global 'splToken' que define la librería**
                     const fromAta = await splToken.getAssociatedTokenAddress(splTokenMint, fromWallet);
                     const toAta = await splToken.getAssociatedTokenAddress(splTokenMint, toWallet);
                     
@@ -1006,7 +1012,7 @@
 
                     if (!toAtaAccount) {
                         console.log("Creando cuenta ATA de destino...");
-                         // CORRECCIÓN: Usar splToken directamente
+                         // **CORRECCIÓN: Usar la variable global 'splToken'**
                         transaction.add(
                             splToken.createAssociatedTokenAccountInstruction(
                                 fromWallet, toAta, toWallet, splTokenMint
@@ -1015,7 +1021,7 @@
                     }
 
                     console.log("Añadiendo instrucción de transferencia...");
-                     // CORRECCIÓN: Usar splToken directamente
+                     // **CORRECCIÓN: Usar la variable global 'splToken'**
                     transaction.add(
                         splToken.createTransferInstruction(
                             fromAta, toAta, fromWallet, amountInSmallestUnit
