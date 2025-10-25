@@ -96,6 +96,23 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+        /* Estilo para el campo de solo lectura */
+        .readonly-input-field {
+            background-color: var(--background-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            font-family: monospace;
+            font-size: 0.9rem;
+            width: 100%;
+            overflow-x: auto;
+            white-space: nowrap;
+            cursor: text;
+            -webkit-user-select: text; /* Safari */
+            -ms-user-select: text; /* IE 10+ */
+            user-select: text; /* Standard */
+        }
     </style>
 </head>
 <body class="overflow-y-auto">
@@ -528,6 +545,7 @@
                                  <h3 class="font-semibold text-lg mb-4">Depositar BITS</h3>
                                 <!-- Contenedor del sistema de depósito -->
                                 <div id="solana-deposit-container">
+                                    <!-- INICIO: Sección de formulario (Paso 1) -->
                                     <div id="deposit-form-section">
                                         <label for="deposit-amount" class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Monto a Depositar</label>
                                         <div class="relative">
@@ -538,20 +556,61 @@
                                             <button id="generate-qr-btn" class="w-full purple-gradient-bg text-white font-bold py-3 rounded-lg transition-all hover:opacity-90 flex items-center justify-center gap-2">
                                                 <i data-lucide="qr-code"></i> Pagar con QR
                                             </button>
-                                            <button id="pay-with-phantom-btn" class="w-full bg-purple-800 text-white font-bold py-3 rounded-lg transition-all hover:bg-purple-700 flex items-center justify-center gap-2">
-                                                <img src="https://phantom.app/img/logo.png" class="w-5 h-5"> Pagar con Phantom
+                                            <!-- CAMBIO: Botón de Phantom ahora es Pago Manual -->
+                                            <button id="manual-pay-btn" class="w-full bg-purple-800 text-white font-bold py-3 rounded-lg transition-all hover:bg-purple-700 flex items-center justify-center gap-2">
+                                                <i data-lucide="wallet"></i> Pagar con Wallet (Manual)
                                             </button>
                                         </div>
                                     </div>
+                                    <!-- FIN: Sección de formulario -->
+
+                                    <!-- INICIO: Sección de Estado/Verificación (Paso 2) -->
                                     <div id="deposit-status-section" class="text-center hidden">
+                                         
+                                         <!-- Título dinámico -->
                                          <h4 id="deposit-title" class="text-md font-semibold mb-3">Escanea para Pagar</h4>
+                                         
+                                         <!-- Contenedor QR (para Pago QR) -->
                                          <div id="deposit-qr-code" class="flex justify-center items-center my-4"></div>
-                                         <div class="flex items-center justify-center space-x-2">
-                                            <div id="deposit-spinner" class="spinner-deposit h-5 w-5 rounded-full border-2 border-gray-600 border-t-purple-500"></div>
+                                         
+                                         <!-- CAMBIO: Contenedor para instrucciones de pago manual -->
+                                         <div id="manual-payment-instructions" class="hidden text-left space-y-3 my-4">
+                                            <p class="text-sm text-yellow-400 text-center font-semibold">¡IMPORTANTE! Debes enviar el monto EXACTO.</p>
+                                            <div>
+                                                <label class="block text-xs font-medium text-[var(--text-secondary)]">Monto a Enviar (Exacto)</label>
+                                                <div id="manual-amount-display" class="readonly-input-field font-bold text-lg"></div>
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-medium text-[var(--text-secondary)]">Wallet de Destino (Token BIT)</label>
+                                                <div id="manual-wallet-display" class="readonly-input-field"></div>
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-medium text-[var(--text-secondary)]">Token Mint (BIT)</label>
+                                                <div id="manual-token-display" class="readonly-input-field"></div>
+                                            </div>
+                                            
+                                            <hr class="border-[var(--border-color)] my-4">
+                                            
+                                            <!-- Formulario de verificación -->
+                                            <div>
+                                                <label for="sender-wallet-input" class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Ingresa la wallet PÚBLICA desde la que enviaste</label>
+                                                <input type="text" id="sender-wallet-input" class="w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-purple)]" placeholder="Ej: 5x...yZ">
+                                            </div>
+                                            <button id="verify-payment-btn" class="mt-2 w-full purple-gradient-bg text-white font-bold py-3 rounded-lg transition-all hover:opacity-90 flex items-center justify-center gap-2">
+                                                <i data-lucide="check-check"></i> Ya realicé el pago
+                                            </button>
+                                         </div>
+                                         
+                                         <!-- Estado y Spinner (usado por ambos) -->
+                                         <div class="flex items-center justify-center space-x-2 mt-4">
+                                            <div id="deposit-spinner" class="spinner-deposit h-5 w-5 rounded-full border-2 border-gray-600 border-t-purple-500 hidden"></div>
                                             <p id="deposit-status-message" class="text-[var(--text-secondary)] text-sm">Esperando pago...</p>
                                          </div>
+                                         
+                                         <!-- Botón de cancelar (usado por ambos) -->
                                          <button id="deposit-cancel-btn" class="mt-4 w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 rounded-lg transition-all">Cancelar</button>
                                     </div>
+                                    <!-- FIN: Sección de Estado/Verificación -->
                                 </div>
                             </div>
                             <div class="bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)]">
@@ -913,7 +972,8 @@
                 // --- DOM ELEMENTS ---
                 const amountInput = document.getElementById('deposit-amount');
                 const generateQrBtn = document.getElementById('generate-qr-btn');
-                const payWithPhantomBtn = document.getElementById('pay-with-phantom-btn');
+                // CAMBIO: ID del botón
+                const manualPayBtn = document.getElementById('manual-pay-btn');
                 const depositFormSection = document.getElementById('deposit-form-section');
                 const depositStatusSection = document.getElementById('deposit-status-section');
                 const qrCodeContainer = document.getElementById('deposit-qr-code');
@@ -922,7 +982,15 @@
                 const paymentSpinner = document.getElementById('deposit-spinner');
                 const depositTitle = document.getElementById('deposit-title');
 
-                if (!amountInput || !generateQrBtn || !payWithPhantomBtn || !cancelBtn) {
+                // CAMBIO: Nuevos elementos para pago manual
+                const manualInstructions = document.getElementById('manual-payment-instructions');
+                const manualAmountDisplay = document.getElementById('manual-amount-display');
+                const manualWalletDisplay = document.getElementById('manual-wallet-display');
+                const manualTokenDisplay = document.getElementById('manual-token-display');
+                const senderWalletInput = document.getElementById('sender-wallet-input');
+                const verifyPaymentBtn = document.getElementById('verify-payment-btn');
+
+                if (!amountInput || !generateQrBtn || !manualPayBtn || !cancelBtn || !verifyPaymentBtn || !manualInstructions) {
                      console.error("Deposit elements not found!");
                      return; // Salir si los elementos no existen
                 }
@@ -933,29 +1001,38 @@
                  });
 
                 let pollingInterval = null;
+                let currentDepositAmount = 0; // Almacenar el monto
 
                 const resetToInitialState = () => {
                     if (pollingInterval) clearInterval(pollingInterval);
                     pollingInterval = null;
+                    currentDepositAmount = 0;
                     if(amountInput) amountInput.value = '';
+                    if(senderWalletInput) senderWalletInput.value = '';
                     if(generateQrBtn) generateQrBtn.disabled = false;
-                    if(payWithPhantomBtn) payWithPhantomBtn.disabled = false;
+                    if(manualPayBtn) manualPayBtn.disabled = false;
                     if(depositFormSection) depositFormSection.classList.remove('hidden');
                     if(depositStatusSection) depositStatusSection.classList.add('hidden');
-                    if(qrCodeContainer) qrCodeContainer.innerHTML = '';
+                    if(qrCodeContainer) {
+                        qrCodeContainer.innerHTML = '';
+                        qrCodeContainer.classList.add('hidden'); // Asegurarse que esté oculto
+                    }
+                    if(manualInstructions) manualInstructions.classList.add('hidden'); // Ocultar instrucciones
                     if(statusMessage) statusMessage.textContent = 'Esperando pago...';
+                    if(paymentSpinner) paymentSpinner.classList.add('hidden');
+                    if(verifyPaymentBtn) verifyPaymentBtn.disabled = false;
                 };
 
                 const finalizeDeposit = async (amount) => {
                     if (statusMessage) statusMessage.textContent = '¡Pago recibido! Actualizando balance en la plataforma...';
-                    if (paymentSpinner) paymentSpinner.style.display = 'block';
+                    if (paymentSpinner) paymentSpinner.classList.remove('hidden');
 
                     try {
                         const userRef = doc(db, "users", currentUser.walletAddress);
                         await updateDoc(userRef, { bitBalance: increment(amount) });
 
                          if (statusMessage) statusMessage.textContent = '¡Depósito Confirmado!';
-                         if (paymentSpinner) paymentSpinner.style.display = 'none';
+                         if (paymentSpinner) paymentSpinner.classList.add('hidden');
                         showToast(`+${amount.toLocaleString()} BIT han sido añadidos a tu balance.`);
                         
                         // Refrescar datos del usuario y header (renderHeader handles null check)
@@ -969,7 +1046,7 @@
                     } catch (error) {
                          console.error("Error finalizing deposit:", error);
                          if (statusMessage) statusMessage.textContent = 'Error al actualizar balance.';
-                         if (paymentSpinner) paymentSpinner.style.display = 'none';
+                         if (paymentSpinner) paymentSpinner.classList.add('hidden');
                          showToast("Error al actualizar tu balance.");
                     } finally {
                         setTimeout(resetToInitialState, 4000); // Volver al formulario
@@ -998,9 +1075,10 @@
 
 
                 // Escucha para transacciones de QR Code (Solana Pay)
+                // ESTA FUNCIÓN NO SE TOCA (Usa web3.js)
                 const listenForTransaction = (referencePublicKey, amount) => {
                      if (statusMessage) statusMessage.textContent = 'Esperando escaneo QR y confirmación...';
-                     if (paymentSpinner) paymentSpinner.style.display = 'block';
+                     if (paymentSpinner) paymentSpinner.classList.remove('hidden');
                     pollingInterval = setInterval(async () => {
                         if (!await checkSolanaLibs('QR Polling')) { // Re-check libs each time
                              clearInterval(pollingInterval);
@@ -1041,7 +1119,7 @@
                                 if (statusMessage) statusMessage.textContent = 'Verificación lenta (límite de red). Reintentando...';
                             } else {
                                 if (statusMessage) statusMessage.textContent = 'Error al verificar pago QR.';
-                                if (paymentSpinner) paymentSpinner.style.display = 'none';
+                                if (paymentSpinner) paymentSpinner.classList.add('hidden');
                                 clearInterval(pollingInterval);
                                  setTimeout(resetToInitialState, 3000);
                             }
@@ -1049,23 +1127,8 @@
                     }, 15000); 
                 };
 
-                const getPhantomProvider = () => {
-                    if ('phantom' in window) {
-                        const provider = window.phantom?.solana;
-                        if (provider?.isPhantom) {
-                            return provider;
-                        }
-                    }
-                    return null;
-                };
-
-                const handlePhantomPay = async () => {
-                    // CORRECCIÓN: Verificar librerías con espera
-                    if (!await checkSolanaLibs('Phantom Pay')) {
-                        resetToInitialState(); // Reset UI if libs don't load
-                        return;
-                    }
-
+                // CAMBIO: Nueva función para manejar el pago manual (Paso 1 del nuevo flujo)
+                const handleManualPay = async () => {
                     const amount = parseFloat(amountInput.value);
                     if (isNaN(amount) || amount <= 0) {
                         showToast("Por favor, ingresa un monto válido.");
@@ -1076,95 +1139,172 @@
                         return;
                     }
                     
-                    const provider = getPhantomProvider();
-                    if (!provider) {
-                        showToast('La billetera Phantom no está instalada o no se detecta.');
-                        return;
-                    }
-
+                    currentDepositAmount = amount; // Guardar el monto
+                    
                     if(generateQrBtn) generateQrBtn.disabled = true;
-                    if(payWithPhantomBtn) payWithPhantomBtn.disabled = true;
+                    if(manualPayBtn) manualPayBtn.disabled = true;
                     if(depositFormSection) depositFormSection.classList.add('hidden');
                     if(depositStatusSection) depositStatusSection.classList.remove('hidden');
-                    if(qrCodeContainer) {
-                         qrCodeContainer.innerHTML = ''; 
-                         qrCodeContainer.classList.add('hidden'); 
+
+                    // Ocultar QR y mostrar instrucciones manuales
+                    if(qrCodeContainer) qrCodeContainer.classList.add('hidden'); 
+                    if(manualInstructions) manualInstructions.classList.remove('hidden');
+
+                    if(depositTitle) depositTitle.textContent = "Instrucciones para Pago Manual";
+                    
+                    // Rellenar datos
+                    if(manualAmountDisplay) manualAmountDisplay.textContent = `${amount} BIT`;
+                    if(manualWalletDisplay) manualWalletDisplay.textContent = DEPOSIT_DESTINATION_WALLET;
+                    if(manualTokenDisplay) manualTokenDisplay.textContent = SPL_TOKEN_MINT;
+                    
+                    if(statusMessage) statusMessage.textContent = 'Esperando confirmación de pago...';
+                    if(paymentSpinner) paymentSpinner.classList.add('hidden'); // Ocultar spinner por ahora
+                };
+                
+                // CAMBIO: Nueva función para manejar la verificación (Paso 2 del nuevo flujo)
+                // MODIFICADA para usar FETCH en lugar de web3.js
+                const handleVerification = async () => {
+                    // NO SE NECESITA checkSolanaLibs AHORA
+                    
+                    const senderWallet = senderWalletInput.value.trim();
+                    if (senderWallet.length < 32 || senderWallet.length > 44) {
+                        showToast("Por favor, ingresa una wallet de Solana válida.");
+                        return;
                     }
-                    if(depositTitle) depositTitle.textContent = "Confirmar en Phantom";
-                    if(statusMessage) statusMessage.textContent = 'Conectando con Phantom...';
-                    if(paymentSpinner) paymentSpinner.style.display = 'block';
-
+                    
+                    if (currentDepositAmount <= 0) {
+                         showToast("Error: No se ha establecido un monto de depósito.");
+                         resetToInitialState();
+                         return;
+                    }
+                    
+                    if(statusMessage) statusMessage.textContent = 'Verificando pago...';
+                    if(paymentSpinner) paymentSpinner.classList.remove('hidden');
+                    if(verifyPaymentBtn) verifyPaymentBtn.disabled = true;
+                    if(cancelBtn) cancelBtn.disabled = true; // Deshabilitar cancelar durante la verificación
+                    
+                    const requiredAmount = currentDepositAmount;
+                    const requiredAmountSmallestUnit = BigInt(Math.round(requiredAmount * Math.pow(10, SPL_TOKEN_DECIMALS)));
+                    
                     try {
-                        await provider.connect({ onlyIfTrusted: false }); 
+                        // CAMBIO: Usa fetch en lugar de connection.getSignaturesForAddress
+                        const rpcUrl = `${RPC_URL}?apiKey=${TATUM_API_KEY}`;
+                        const signaturesResponse = await fetch(rpcUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                jsonrpc: '2.0',
+                                id: 1,
+                                method: 'getSignaturesForAddress',
+                                params: [senderWallet, { limit: 15 }]
+                            })
+                        });
+                        const signaturesData = await signaturesResponse.json();
+                        if (signaturesData.error) throw new Error(`RPC Error (getSignatures): ${signaturesData.error.message}`);
+                        const signatures = signaturesData.result;
                         
-                        if (!provider.publicKey) throw new Error("Conexión con Phantom rechazada.");
-                        
-                        if(statusMessage) statusMessage.textContent = 'Creando transacción...';
-
-                        const fromWallet = provider.publicKey;
-                        const toWallet = new window.solanaWeb3.PublicKey(DEPOSIT_DESTINATION_WALLET); 
-                        const splTokenMint = new window.solanaWeb3.PublicKey(SPL_TOKEN_MINT);
-                        const amountInSmallestUnit = BigInt(Math.round(amount * Math.pow(10, SPL_TOKEN_DECIMALS)));
-
-                        const fromAta = await window.splToken.getAssociatedTokenAddress(splTokenMint, fromWallet);
-                        const toAta = await window.splToken.getAssociatedTokenAddress(splTokenMint, toWallet);
-                        
-                        const transaction = new window.solanaWeb3.Transaction();
-                        const toAtaAccount = await connection.getAccountInfo(toAta);
-
-                        if (!toAtaAccount) {
-                            console.log("Creando cuenta ATA de destino...");
-                            transaction.add(
-                                window.splToken.createAssociatedTokenAccountInstruction(
-                                    fromWallet, toAta, toWallet, splTokenMint
-                                )
-                            );
+                        if (!signatures || signatures.length === 0) {
+                            throw new Error("No se encontraron transacciones recientes para esta wallet.");
                         }
 
-                        console.log("Añadiendo instrucción de transferencia...");
-                        transaction.add(
-                            window.splToken.createTransferInstruction(
-                                fromAta, toAta, fromWallet, amountInSmallestUnit
-                            )
-                        );
-                        
-                        transaction.feePayer = fromWallet;
-                        console.log("Obteniendo blockhash reciente...");
-                        const latestBlockhash = await connection.getLatestBlockhash('confirmed');
-                        transaction.recentBlockhash = latestBlockhash.blockhash;
-                        const lastValidBlockHeight = latestBlockhash.lastValidBlockHeight;
+                        let matchFound = false;
+                        for (const signatureInfo of signatures) {
+                            const { signature } = signatureInfo;
+                            
+                            // 1. Verificar si esta firma ya fue usada para este usuario
+                            const sigRef = doc(db, "users", currentUser.walletAddress, "usedSignatures", signature);
+                            const sigSnap = await getDoc(sigRef);
+                            if (sigSnap.exists()) {
+                                console.log(`Firma ${signature.substring(0,6)} ya procesada. Saltando.`);
+                                continue; // Ya se usó
+                            }
+                            
+                            // 2. Obtener detalles de la transacción
+                            // CAMBIO: Usa fetch en lugar de connection.getTransaction
+                            const txResponse = await fetch(rpcUrl, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    jsonrpc: '2.0',
+                                    id: 1,
+                                    method: 'getTransaction',
+                                    params: [signature, { maxSupportedTransactionVersion: 0, "encoding": "json" }]
+                                })
+                            });
+                            const txData = await txResponse.json();
+                            if (txData.error) throw new Error(`RPC Error (getTransaction): ${txData.error.message}`);
+                            const tx = txData.result;
 
-                        if(statusMessage) statusMessage.textContent = 'Por favor, confirma en tu billetera Phantom...';
-                        console.log("Solicitando firma y envío a Phantom...");
-                        
-                        const { signature } = await provider.signAndSendTransaction(transaction);
-                        console.log("Transacción enviada con firma:", signature);
-                        
-                        if(statusMessage) statusMessage.textContent = 'Confirmando transacción en la red...';
-                        await connection.confirmTransaction({
-                            signature,
-                            blockhash: transaction.recentBlockhash,
-                            lastValidBlockHeight: lastValidBlockHeight
-                        }, 'confirmed');
-                        console.log("Transacción confirmada por Phantom.");
+                            if (!tx || !tx.meta || tx.meta.err) {
+                                console.log(`Transacción ${signature.substring(0,6)} fallida o sin metadata. Saltando.`);
+                                continue; // Transacción fallida o sin metadata
+                            }
 
-                        await finalizeDeposit(amount);
+                            // 3. Verificar la cantidad enviada por el remitente
+                            const preSenderBalance = tx.meta.preTokenBalances.find(b => b.owner === senderWallet && b.mint === SPL_TOKEN_MINT);
+                            const postSenderBalance = tx.meta.postTokenBalances.find(b => b.owner === senderWallet && b.mint === SPL_TOKEN_MINT);
+
+                            if (!preSenderBalance || !postSenderBalance) {
+                                // console.log(`TX ${signature.substring(0,6)}: Remitente no movió el token BIT.`);
+                                continue; // Remitente no movió este token
+                            }
+
+                            const amountSent = BigInt(preSenderBalance.uiTokenAmount.amount) - BigInt(postSenderBalance.uiTokenAmount.amount);
+
+                            if (amountSent !== requiredAmountSmallestUnit) {
+                                // console.log(`TX ${signature.substring(0,6)}: Monto no coincide. Esperado: ${requiredAmountSmallestUnit}, Enviado: ${amountSent}`);
+                                continue; // Monto no coincide
+                            }
+
+                            // 4. Verificar la cantidad recibida por el destinatario
+                            const preReceiverBalance = tx.meta.preTokenBalances.find(b => b.owner === DEPOSIT_DESTINATION_WALLET && b.mint === SPL_TOKEN_MINT);
+                            const postReceiverBalance = tx.meta.postTokenBalances.find(b => b.owner === DEPOSIT_DESTINATION_WALLET && b.mint === SPL_TOKEN_MINT);
+
+                            // El receptor puede no tener balance previo, por eso `preAmount` es 0 por defecto
+                            const preAmount = preReceiverBalance ? BigInt(preReceiverBalance.uiTokenAmount.amount) : BigInt(0);
+                            const postAmount = postReceiverBalance ? BigInt(postReceiverBalance.uiTokenAmount.amount) : BigInt(0);
+                            
+                            if (postAmount === BigInt(0)) {
+                                // console.log(`TX ${signature.substring(0,6)}: Destinatario no tiene postBalance para este token.`);
+                                continue; // Destinatario no recibió este token (raro si el remitente lo envió)
+                            }
+
+                            const amountReceived = postAmount - preAmount;
+
+                            if (amountReceived === requiredAmountSmallestUnit) {
+                                // ¡COINCIDENCIA!
+                                console.log(`¡Pago encontrado! Firma: ${signature}`);
+                                matchFound = true;
+                                
+                                // Marcar la firma como usada ANTES de finalizar el depósito
+                                await setDoc(sigRef, { 
+                                    processedAt: serverTimestamp(), 
+                                    amount: requiredAmount,
+                                    txSignature: signature
+                                });
+                                
+                                await finalizeDeposit(requiredAmount);
+                                break; // Salir del bucle
+                            } else {
+                                // console.log(`TX ${signature.substring(0,6)}: Monto recibido por destino no coincide. Recibido: ${amountReceived}`);
+                            }
+                        }
+
+                        if (!matchFound) {
+                            throw new Error("No se encontró un pago coincidente. Verifique el monto y la wallet. (Puede tardar unos minutos en aparecer)");
+                        }
 
                     } catch (err) {
-                        console.error("Phantom payment error:", err);
-                        let userMessage = "Pago con Phantom fallido.";
-                        if (err.code === 4001 || (err.message && err.message.includes("User rejected the request"))) {
-                            userMessage = "Transacción cancelada por el usuario.";
-                        } else if (err.message && (err.message.includes("RPC request failed") || err.message.includes("Network error"))) {
-                             userMessage = "Error de red al enviar la transacción.";
-                        } else if (err.message) {
-                            userMessage = `Error: ${err.message.split(".")[0].substring(0, 100)}`; 
-                        }
-                         showToast(userMessage);
-                        resetToInitialState();
+                        console.error("Error en la verificación manual:", err);
+                        showToast(err.message || "Error al verificar el pago.");
+                        if(statusMessage) statusMessage.textContent = err.message || "Error al verificar.";
+                        if(paymentSpinner) paymentSpinner.classList.add('hidden');
+                        if(verifyPaymentBtn) verifyPaymentBtn.disabled = false;
+                        if(cancelBtn) cancelBtn.disabled = false;
                     }
                 };
                 
+                // Función de Pago QR (NO SE TOCA, necesita web3.js)
                 const handleQrPay = async () => { // Make async
                     // CORRECCIÓN: Verificar librerías con espera
                     if (!await checkSolanaLibs('QR Pay')) {
@@ -1183,7 +1323,7 @@
                     }
 
                     if(generateQrBtn) generateQrBtn.disabled = true;
-                    if(payWithPhantomBtn) payWithPhantomBtn.disabled = true;
+                    if(manualPayBtn) manualPayBtn.disabled = true; // CAMBIO: deshabilitar botón manual
 
                     const reference = new window.solanaWeb3.Keypair(); 
                     const label = 'Deposito LivePayout';
@@ -1208,15 +1348,22 @@
                     if(depositFormSection) depositFormSection.classList.add('hidden');
                     if(depositStatusSection) depositStatusSection.classList.remove('hidden');
                     if(qrCodeContainer) qrCodeContainer.classList.remove('hidden'); 
+                    if(manualInstructions) manualInstructions.classList.add('hidden'); // CAMBIO: ocultar instrucciones manuales
                     if(depositTitle) depositTitle.textContent = "Escanea para Pagar";
                     if(statusMessage) statusMessage.textContent = 'Esperando pago...';
-                    if(paymentSpinner) paymentSpinner.style.display = 'block';
+                    if(paymentSpinner) paymentSpinner.classList.remove('hidden');
 
                     listenForTransaction(reference.publicKey, amount);
                 };
 
-                payWithPhantomBtn.addEventListener('click', handlePhantomPay);
+                // CAMBIO: Event listener para el nuevo botón manual
+                manualPayBtn.addEventListener('click', handleManualPay);
+                // CAMBIO: Event listener para el botón de verificación
+                verifyPaymentBtn.addEventListener('click', handleVerification);
+                
+                // Event listener de QR (NO SE TOCA)
                 generateQrBtn.addEventListener('click', handleQrPay);
+                // Event listener de Cancelar (NO SE TOCA)
                 cancelBtn.addEventListener('click', resetToInitialState);
             }
             // --- FIN DE LA LÓGICA DE DEPÓSITO ---
@@ -1373,7 +1520,18 @@
 
                     if (!requireAuth()) {
                          // Re-subscribe if action fails due to auth
-                         unsubscribeFollow = onSnapshot(myFollowingRef, /* ... original snapshot logic ... */);
+                         unsubscribeFollow = onSnapshot(myFollowingRef, (docSnap) => {
+                            followBtn.classList.remove('purple-gradient-bg', 'bg-transparent', 'border', 'border-[var(--brand-color-purple)]', 'text-[var(--brand-color-purple)]', 'bg-gray-700', 'hover:bg-gray-600');
+                            followBtn.classList.add('text-white');
+                            if (docSnap.exists()) {
+                                followBtn.textContent = translations[currentLang].unfollow;
+                                followBtn.classList.add('bg-transparent', 'border', 'border-[var(--brand-color-purple)]', 'text-[var(--brand-color-purple)]');
+                                followBtn.classList.remove('text-white');
+                            } else {
+                                followBtn.textContent = translations[currentLang].follow;
+                                followBtn.classList.add('bg-gray-700', 'hover:bg-gray-600');
+                            }
+                        }, error => console.error("Error listening to follow status:", error));
                          return;
                     }
                     try {
@@ -1397,7 +1555,18 @@
                         showToast(translations[currentLang].action_error); 
                     } finally {
                         // Re-subscribe after action is complete
-                         unsubscribeFollow = onSnapshot(myFollowingRef, /* ... original snapshot logic ... */);
+                         unsubscribeFollow = onSnapshot(myFollowingRef, (docSnap) => {
+                            followBtn.classList.remove('purple-gradient-bg', 'bg-transparent', 'border', 'border-[var(--brand-color-purple)]', 'text-[var(--brand-color-purple)]', 'bg-gray-700', 'hover:bg-gray-600');
+                            followBtn.classList.add('text-white');
+                            if (docSnap.exists()) {
+                                followBtn.textContent = translations[currentLang].unfollow;
+                                followBtn.classList.add('bg-transparent', 'border', 'border-[var(--brand-color-purple)]', 'text-[var(--brand-color-purple)]');
+                                followBtn.classList.remove('text-white');
+                            } else {
+                                followBtn.textContent = translations[currentLang].follow;
+                                followBtn.classList.add('bg-gray-700', 'hover:bg-gray-600');
+                            }
+                        }, error => console.error("Error listening to follow status:", error));
                     }
                 };
 
