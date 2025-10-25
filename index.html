@@ -934,7 +934,7 @@
                 }, 2500);
             };
 
-            // **NUEVA LÓGICA CORRECTA PARA PHANTOM**
+            // **LÓGICA CORRECTA PARA PHANTOM SEGÚN DOCUMENTACIÓN**
             const getPhantomProvider = () => {
                 if ('phantom' in window) {
                     const provider = window.phantom?.solana;
@@ -942,6 +942,8 @@
                         return provider;
                     }
                 }
+                // Si no se encuentra Phantom, no devolver nada
+                // window.open('https://phantom.app/', '_blank'); // Evitar abrir la web
                 return null;
             };
 
@@ -956,8 +958,9 @@
                 
                 const provider = getPhantomProvider();
                 if (!provider) {
-                    showToast('La billetera Phantom no está instalada.');
-                    window.open('https://phantom.app/', '_blank');
+                    showToast('La billetera Phantom no está instalada o no se detecta.');
+                    // Considerar mostrar un enlace de descarga en lugar de abrirlo automáticamente
+                    // window.open('https://phantom.app/', '_blank');
                     return;
                 }
 
@@ -966,13 +969,20 @@
                 depositFormSection.classList.add('hidden');
                 depositStatusSection.classList.remove('hidden');
                 qrCodeContainer.innerHTML = ''; 
-                qrCodeContainer.classList.add('hidden');
+                qrCodeContainer.classList.add('hidden'); // Ocultar QR si se paga con Phantom
                 depositTitle.textContent = "Confirmar en Phantom";
                 statusMessage.textContent = 'Solicitando conexión a tu billetera...';
                 paymentSpinner.style.display = 'block';
 
                 try {
-                    await provider.connect({ onlyIfTrusted: false });
+                    // Solicitar conexión (si no está conectado, pedirá conectar)
+                    await provider.connect({ onlyIfTrusted: false }); 
+                    
+                    // Verificar si la conexión fue exitosa
+                    if (!provider.publicKey) {
+                        throw new Error("Conexión con Phantom fallida o rechazada.");
+                    }
+                    
                     statusMessage.textContent = 'Creando transacción...';
 
                     const fromWallet = provider.publicKey;
@@ -980,36 +990,71 @@
                     const splTokenMint = new solanaWeb3.PublicKey(SPL_TOKEN_MINT);
                     const amountInSmallestUnit = amount * Math.pow(10, SPL_TOKEN_DECIMALS);
 
+                    // Obtener o crear las cuentas de token asociadas (ATA)
                     const fromAta = await splToken.getAssociatedTokenAddress(splTokenMint, fromWallet);
                     const toAta = await splToken.getAssociatedTokenAddress(splTokenMint, toWallet);
                     
                     const transaction = new solanaWeb3.Transaction();
                     const toAtaAccount = await connection.getAccountInfo(toAta);
 
+                    // Si la cuenta de destino no existe, añadir instrucción para crearla
                     if (!toAtaAccount) {
+                        console.log("Creando cuenta ATA de destino...");
                         transaction.add(
-                            splToken.createAssociatedTokenAccountInstruction(fromWallet, toAta, toWallet, splTokenMint)
+                            splToken.createAssociatedTokenAccountInstruction(
+                                fromWallet, // Payer
+                                toAta, 
+                                toWallet, 
+                                splTokenMint
+                            )
                         );
                     }
 
+                    // Añadir la instrucción de transferencia
+                    console.log("Añadiendo instrucción de transferencia...");
                     transaction.add(
-                        splToken.createTransferInstruction(fromAta, toAta, fromWallet, amountInSmallestUnit)
+                        splToken.createTransferInstruction(
+                            fromAta, 
+                            toAta, 
+                            fromWallet, // Owner of source account
+                            amountInSmallestUnit
+                        )
                     );
                     
+                    // Establecer el pagador de la tarifa y obtener el blockhash reciente
                     transaction.feePayer = fromWallet;
-                    transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+                    console.log("Obteniendo blockhash reciente...");
+                    transaction.recentBlockhash = (await connection.getLatestBlockhash('confirmed')).blockhash;
 
-                    statusMessage.textContent = 'Por favor, confirma en tu billetera Phantom...';
+                    statusMessage.textContent = 'Por favor, confirma la transacción en tu billetera Phantom...';
+                    console.log("Solicitando firma y envío...");
+                    
+                    // Solicitar firma y envío a Phantom
                     const { signature } = await provider.signAndSendTransaction(transaction);
+                    console.log("Transacción enviada con firma:", signature);
                     
                     statusMessage.textContent = 'Confirmando transacción en la red...';
-                    await connection.confirmTransaction(signature, 'confirmed');
+                    // Confirmar la transacción en la red
+                    await connection.confirmTransaction({
+                        signature,
+                        blockhash: transaction.recentBlockhash,
+                        lastValidBlockHeight: (await connection.getLatestBlockhash('confirmed')).lastValidBlockHeight
+                    }, 'confirmed');
+                    console.log("Transacción confirmada.");
 
                     await finalizeDeposit(amount);
 
                 } catch (err) {
                     console.error("Phantom payment error:", err);
-                    showToast(err.message.includes("User rejected the request") ? "Transacción cancelada por el usuario." : "Pago con Phantom fallido.");
+                    let userMessage = "Pago con Phantom fallido.";
+                    if (err.message && err.message.includes("User rejected the request")) {
+                        userMessage = "Transacción cancelada por el usuario.";
+                    } else if (err.message && err.message.includes("RPC request failed")) {
+                         userMessage = "Error de red al enviar la transacción.";
+                    } else if (err.message) {
+                        userMessage = `Error: ${err.message.substring(0, 100)}`; // Mostrar parte del error
+                    }
+                     showToast(userMessage);
                     resetToInitialState();
                 }
             };
@@ -1033,7 +1078,12 @@
                 
                 qrCodeContainer.innerHTML = '';
                 QRCode.toCanvas(solanaPayUrl, { width: 192, errorCorrectionLevel: 'H', color: { dark: '#FFFFFF', light: '#1F2937' } }, (err, canvas) => {
-                    if (err) throw err;
+                    if (err) {
+                        console.error("Error generating QR code:", err);
+                        showToast("Error al generar el código QR.");
+                        resetToInitialState();
+                        return;
+                    }
                     canvas.style.borderRadius = '0.5rem';
                     canvas.style.border = '8px solid #374151';
                     qrCodeContainer.appendChild(canvas);
@@ -1041,7 +1091,7 @@
                 
                 depositFormSection.classList.add('hidden');
                 depositStatusSection.classList.remove('hidden');
-                qrCodeContainer.classList.remove('hidden');
+                qrCodeContainer.classList.remove('hidden'); // Asegurarse que el QR sea visible
                 depositTitle.textContent = "Escanea para Pagar";
                 statusMessage.textContent = 'Esperando pago...';
                 paymentSpinner.style.display = 'block';
@@ -1085,43 +1135,61 @@
         }
 
         const TOKEN_CONTRACT = "EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump";
+        let priceFetchAttempted = false; // Flag para intentar solo una vez
+
         async function updateWithdrawalStatus() {
             const usdEquivalentDisplay = document.getElementById("usd-equivalent-display");
             const tokenPriceInfo = document.getElementById("token-price-info");
             const withdrawButton = document.getElementById("withdraw-button");
             const withdrawalInfoText = document.getElementById("withdrawal-info-text");
+
             if (!currentUser || !withdrawalInfoText) return;
-            try {
-                const response = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${TOKEN_CONTRACT}`);
-                if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
-                const data = await response.json();
-                const firstPair = data.pairs && data.pairs.length > 0 ? data.pairs[0] : null;
-                const priceUsd = firstPair ? parseFloat(firstPair.priceUsd) : 0;
-                if (firstPair && !isNaN(priceUsd)) {
-                    const balanceUsd = currentUser.bitBalance * priceUsd;
-                    if (tokenPriceInfo) tokenPriceInfo.textContent = `1 BIT \u2248 $${priceUsd.toFixed(6)} USD`;
-                    if (usdEquivalentDisplay) usdEquivalentDisplay.textContent = `~ $${balanceUsd.toFixed(2)} USD`;
-                } else {
-                    if (usdEquivalentDisplay) usdEquivalentDisplay.textContent = `~ $---- USD`;
+
+            // Intentar obtener el precio solo si no se ha intentado antes o si el intervalo está activo
+            if (!priceFetchAttempted && withdrawalUpdateInterval) {
+                 priceFetchAttempted = true; // Marcar como intentado
+                try {
+                    const response = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${TOKEN_CONTRACT}`);
+                    if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
+                    const data = await response.json();
+                    const firstPair = data.pairs && data.pairs.length > 0 ? data.pairs[0] : null;
+                    const priceUsd = firstPair ? parseFloat(firstPair.priceUsd) : 0;
+                    if (firstPair && !isNaN(priceUsd)) {
+                        const balanceUsd = currentUser.bitBalance * priceUsd;
+                        if (tokenPriceInfo) tokenPriceInfo.textContent = `1 BIT \u2248 $${priceUsd.toFixed(6)} USD`;
+                        if (usdEquivalentDisplay) usdEquivalentDisplay.textContent = `~ $${balanceUsd.toFixed(2)} USD`;
+                    } else {
+                        if (usdEquivalentDisplay) usdEquivalentDisplay.textContent = `~ $---- USD`;
+                    }
+                } catch (e) {
+                    console.error("Error fetching token price:", e.message);
+                    // No limpiar el intervalo aquí, solo mostrar error y dejar de intentar
+                    if (usdEquivalentDisplay) usdEquivalentDisplay.textContent = translations[currentLang].price_fetch_error;
+                    if (tokenPriceInfo) tokenPriceInfo.textContent = '';
+                     // Detener futuros intentos si falla la primera vez
+                    if (withdrawalUpdateInterval) {
+                        clearInterval(withdrawalUpdateInterval);
+                        withdrawalUpdateInterval = null;
+                        console.log("Price fetch failed, stopping interval.");
+                    }
                 }
-            } catch (e) {
-                console.error("Error fetching token price:", e.message);
-                if (withdrawalUpdateInterval) {
-                    clearInterval(withdrawalUpdateInterval);
-                    withdrawalUpdateInterval = null;
-                }
-                if (usdEquivalentDisplay) usdEquivalentDisplay.textContent = translations[currentLang].price_fetch_error;
-                if (tokenPriceInfo) tokenPriceInfo.textContent = '';
-            } finally {
-                 const canWithdraw = currentUser.bitBalance >= WITHDRAWAL_MINIMUM_BIT;
-                if (withdrawButton) withdrawButton.disabled = !canWithdraw;
-                if (canWithdraw) {
-                    if(withdrawalInfoText) withdrawalInfoText.textContent = translations[currentLang].withdrawal_ready;
-                } else {
-                    const neededBits = WITHDRAWAL_MINIMUM_BIT - currentUser.bitBalance;
-                    if(withdrawalInfoText) withdrawalInfoText.textContent = translations[currentLang].need_more_to_withdraw.replace('%a', neededBits.toLocaleString());
-                }
+            } else if (!withdrawalUpdateInterval && usdEquivalentDisplay && !usdEquivalentDisplay.textContent.includes(translations[currentLang].price_fetch_error)) {
+                // Si el intervalo fue detenido previamente por un error, mostrar el error
+                 if (usdEquivalentDisplay) usdEquivalentDisplay.textContent = translations[currentLang].price_fetch_error;
+                 if (tokenPriceInfo) tokenPriceInfo.textContent = '';
             }
+
+
+            // Actualizar estado del botón de retiro independientemente del precio
+            const canWithdraw = currentUser.bitBalance >= WITHDRAWAL_MINIMUM_BIT;
+            if (withdrawButton) withdrawButton.disabled = !canWithdraw;
+            if (canWithdraw) {
+                if(withdrawalInfoText) withdrawalInfoText.textContent = translations[currentLang].withdrawal_ready;
+            } else {
+                const neededBits = WITHDRAWAL_MINIMUM_BIT - currentUser.bitBalance;
+                if(withdrawalInfoText) withdrawalInfoText.textContent = translations[currentLang].need_more_to_withdraw.replace('%a', neededBits.toLocaleString());
+            }
+
         }
         
         async function requestWithdrawal() {
@@ -1439,7 +1507,8 @@
         
         // --- INICIALIZACIÓN ---
         if (!withdrawalUpdateInterval) {
-            withdrawalUpdateInterval = setInterval(updateWithdrawalStatus, 60000);
+            withdrawalUpdateInterval = setInterval(updateWithdrawalStatus, 60000); // Check price every 60 seconds
+            updateWithdrawalStatus(); // Initial check
         }
     </script>
 </body>
