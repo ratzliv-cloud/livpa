@@ -10,7 +10,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="icon" type="image/jpeg" href="https://i.postimg.cc/4xL1nYWJ/android-chrome-512x512.png">
 
-    <link rel="manifest" href="/site.webmanifest">
+    <!-- <link rel="manifest" href="/site.webmanifest"> --> <!-- CORREGIDO: Comentado para evitar el error 404 -->
     
     <!-- Solana Web3.js para interactuar con la blockchain -->
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
@@ -929,7 +929,16 @@
                             console.log("Firma encontrada:", signature);
                             
                             statusMessage.textContent = 'Confirmando transacción...';
-                            const confirmation = await connection.confirmTransaction(signature, 'confirmed');
+
+                            // --- CORRECCIÓN: Usar la confirmación moderna ---
+                            const latestBlockhash = await connection.getLatestBlockhash('confirmed');
+                            const confirmation = await connection.confirmTransaction({
+                                signature,
+                                blockhash: latestBlockhash.blockhash,
+                                lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
+                            }, 'confirmed');
+                            // --- FIN DE LA CORRECCIÓN ---
+
                              if (confirmation.value.err) {
                                 throw new Error(`Error en la confirmación: ${confirmation.value.err}`);
                             }
@@ -1003,27 +1012,27 @@
                     const splTokenMint = new solanaWeb3.PublicKey(SPL_TOKEN_MINT);
                     const amountInSmallestUnit = BigInt(Math.round(amount * Math.pow(10, SPL_TOKEN_DECIMALS)));
 
-                    // **CORRECCIÓN: Usar la variable global 'splToken' que define la librería**
-                    const fromAta = await splToken.getAssociatedTokenAddress(splTokenMint, fromWallet);
-                    const toAta = await splToken.getAssociatedTokenAddress(splTokenMint, toWallet);
+                    // **CORRECCIÓN: Usar 'window.splToken' ya que estamos en un módulo**
+                    const fromAta = await window.splToken.getAssociatedTokenAddress(splTokenMint, fromWallet);
+                    const toAta = await window.splToken.getAssociatedTokenAddress(splTokenMint, toWallet);
                     
                     const transaction = new solanaWeb3.Transaction();
                     const toAtaAccount = await connection.getAccountInfo(toAta);
 
                     if (!toAtaAccount) {
                         console.log("Creando cuenta ATA de destino...");
-                         // **CORRECCIÓN: Usar la variable global 'splToken'**
+                         // **CORRECCIÓN: Usar 'window.splToken'**
                         transaction.add(
-                            splToken.createAssociatedTokenAccountInstruction(
+                            window.splToken.createAssociatedTokenAccountInstruction(
                                 fromWallet, toAta, toWallet, splTokenMint
                             )
                         );
                     }
 
                     console.log("Añadiendo instrucción de transferencia...");
-                     // **CORRECCIÓN: Usar la variable global 'splToken'**
+                     // **CORRECCIÓN: Usar 'window.splToken'**
                     transaction.add(
-                        splToken.createTransferInstruction(
+                        window.splToken.createTransferInstruction(
                             fromAta, toAta, fromWallet, amountInSmallestUnit
                         )
                     );
@@ -1519,4 +1528,3 @@
     </script>
 </body>
 </html>
-
