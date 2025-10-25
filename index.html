@@ -901,10 +901,11 @@
                 paymentSpinner.style.display = 'none';
                 showToast(`+${amount.toLocaleString()} BIT han sido añadidos a tu balance.`);
                 
+                // Re-fetch user data to update the header balance visually
                 const userSnap = await getDoc(userRef);
                 if (userSnap.exists()) {
                     currentUser = { ...userSnap.data(), walletAddress: userSnap.id };
-                    renderHeader();
+                    renderHeader(); 
                 }
 
                 await updateWithdrawalStatus();
@@ -942,8 +943,6 @@
                         return provider;
                     }
                 }
-                // Si no se encuentra Phantom, no devolver nada
-                // window.open('https://phantom.app/', '_blank'); // Evitar abrir la web
                 return null;
             };
 
@@ -959,8 +958,6 @@
                 const provider = getPhantomProvider();
                 if (!provider) {
                     showToast('La billetera Phantom no está instalada o no se detecta.');
-                    // Considerar mostrar un enlace de descarga en lugar de abrirlo automáticamente
-                    // window.open('https://phantom.app/', '_blank');
                     return;
                 }
 
@@ -969,18 +966,18 @@
                 depositFormSection.classList.add('hidden');
                 depositStatusSection.classList.remove('hidden');
                 qrCodeContainer.innerHTML = ''; 
-                qrCodeContainer.classList.add('hidden'); // Ocultar QR si se paga con Phantom
+                qrCodeContainer.classList.add('hidden');
                 depositTitle.textContent = "Confirmar en Phantom";
-                statusMessage.textContent = 'Solicitando conexión a tu billetera...';
+                statusMessage.textContent = 'Conectando con Phantom...';
                 paymentSpinner.style.display = 'block';
 
                 try {
-                    // Solicitar conexión (si no está conectado, pedirá conectar)
+                    // Solicitar conexión (mostrará pop-up si no está conectado)
                     await provider.connect({ onlyIfTrusted: false }); 
                     
-                    // Verificar si la conexión fue exitosa
+                    // Asegurarse de que el provider esté conectado
                     if (!provider.publicKey) {
-                        throw new Error("Conexión con Phantom fallida o rechazada.");
+                        throw new Error("El usuario no conectó la billetera.");
                     }
                     
                     statusMessage.textContent = 'Creando transacción...';
@@ -988,57 +985,62 @@
                     const fromWallet = provider.publicKey;
                     const toWallet = new solanaWeb3.PublicKey(currentUser.walletAddress);
                     const splTokenMint = new solanaWeb3.PublicKey(SPL_TOKEN_MINT);
-                    const amountInSmallestUnit = amount * Math.pow(10, SPL_TOKEN_DECIMALS);
+                    // Convertir el monto a la unidad más pequeña del token (lamports para SPL)
+                    const amountInSmallestUnit = BigInt(Math.round(amount * Math.pow(10, SPL_TOKEN_DECIMALS)));
 
-                    // Obtener o crear las cuentas de token asociadas (ATA)
-                    const fromAta = await splToken.getAssociatedTokenAddress(splTokenMint, fromWallet);
-                    const toAta = await splToken.getAssociatedTokenAddress(splTokenMint, toWallet);
+
+                    // Obtener las direcciones de las Cuentas de Token Asociadas (ATA)
+                    const fromAta = await window.splToken.getAssociatedTokenAddress(splTokenMint, fromWallet);
+                    const toAta = await window.splToken.getAssociatedTokenAddress(splTokenMint, toWallet);
                     
                     const transaction = new solanaWeb3.Transaction();
                     const toAtaAccount = await connection.getAccountInfo(toAta);
 
-                    // Si la cuenta de destino no existe, añadir instrucción para crearla
+                    // Si la cuenta ATA de destino no existe, añadir instrucción para crearla
                     if (!toAtaAccount) {
                         console.log("Creando cuenta ATA de destino...");
                         transaction.add(
-                            splToken.createAssociatedTokenAccountInstruction(
-                                fromWallet, // Payer
-                                toAta, 
-                                toWallet, 
-                                splTokenMint
+                            window.splToken.createAssociatedTokenAccountInstruction(
+                                fromWallet, // Payer (quien paga la creación)
+                                toAta,      // Associated account address
+                                toWallet,   // Owner of the new account
+                                splTokenMint // Token mint address
                             )
                         );
                     }
 
-                    // Añadir la instrucción de transferencia
+                    // Añadir la instrucción de transferencia del token
                     console.log("Añadiendo instrucción de transferencia...");
                     transaction.add(
-                        splToken.createTransferInstruction(
-                            fromAta, 
-                            toAta, 
-                            fromWallet, // Owner of source account
-                            amountInSmallestUnit
+                        window.splToken.createTransferInstruction(
+                            fromAta,        // Source account (ATA del que envía)
+                            toAta,          // Destination account (ATA del que recibe)
+                            fromWallet,     // Owner of the source account
+                            amountInSmallestUnit // Amount in smallest unit (BigInt)
                         )
                     );
                     
-                    // Establecer el pagador de la tarifa y obtener el blockhash reciente
+                    // Establecer quién pagará la tarifa y obtener el blockhash más reciente
                     transaction.feePayer = fromWallet;
                     console.log("Obteniendo blockhash reciente...");
-                    transaction.recentBlockhash = (await connection.getLatestBlockhash('confirmed')).blockhash;
+                    const latestBlockhash = await connection.getLatestBlockhash('confirmed');
+                    transaction.recentBlockhash = latestBlockhash.blockhash;
+                    // Guardar lastValidBlockHeight para confirmación posterior
+                    const lastValidBlockHeight = latestBlockhash.lastValidBlockHeight;
 
                     statusMessage.textContent = 'Por favor, confirma la transacción en tu billetera Phantom...';
-                    console.log("Solicitando firma y envío...");
+                    console.log("Solicitando firma y envío a Phantom...");
                     
                     // Solicitar firma y envío a Phantom
                     const { signature } = await provider.signAndSendTransaction(transaction);
                     console.log("Transacción enviada con firma:", signature);
                     
                     statusMessage.textContent = 'Confirmando transacción en la red...';
-                    // Confirmar la transacción en la red
+                    // Confirmar la transacción en la red usando la firma y el blockhash
                     await connection.confirmTransaction({
                         signature,
                         blockhash: transaction.recentBlockhash,
-                        lastValidBlockHeight: (await connection.getLatestBlockhash('confirmed')).lastValidBlockHeight
+                        lastValidBlockHeight: lastValidBlockHeight
                     }, 'confirmed');
                     console.log("Transacción confirmada.");
 
@@ -1047,12 +1049,14 @@
                 } catch (err) {
                     console.error("Phantom payment error:", err);
                     let userMessage = "Pago con Phantom fallido.";
-                    if (err.message && err.message.includes("User rejected the request")) {
+                    // Mensajes de error comunes de Phantom
+                    if (err.code === 4001 || (err.message && err.message.includes("User rejected the request"))) {
                         userMessage = "Transacción cancelada por el usuario.";
-                    } else if (err.message && err.message.includes("RPC request failed")) {
+                    } else if (err.message && (err.message.includes("RPC request failed") || err.message.includes("Network error"))) {
                          userMessage = "Error de red al enviar la transacción.";
                     } else if (err.message) {
-                        userMessage = `Error: ${err.message.substring(0, 100)}`; // Mostrar parte del error
+                         // Mostrar un error más genérico o una parte del mensaje
+                        userMessage = `Error: ${err.message.split(".")[0].substring(0, 100)}`; 
                     }
                      showToast(userMessage);
                     resetToInitialState();
@@ -1091,7 +1095,7 @@
                 
                 depositFormSection.classList.add('hidden');
                 depositStatusSection.classList.remove('hidden');
-                qrCodeContainer.classList.remove('hidden'); // Asegurarse que el QR sea visible
+                qrCodeContainer.classList.remove('hidden'); 
                 depositTitle.textContent = "Escanea para Pagar";
                 statusMessage.textContent = 'Esperando pago...';
                 paymentSpinner.style.display = 'block';
@@ -1173,7 +1177,7 @@
                         console.log("Price fetch failed, stopping interval.");
                     }
                 }
-            } else if (!withdrawalUpdateInterval && usdEquivalentDisplay && !usdEquivalentDisplay.textContent.includes(translations[currentLang].price_fetch_error)) {
+            } else if (!withdrawalUpdateInterval && usdEquivalentDisplay && usdEquivalentDisplay.textContent === "...") { // Solo mostrar error si no hay un valor ya
                 // Si el intervalo fue detenido previamente por un error, mostrar el error
                  if (usdEquivalentDisplay) usdEquivalentDisplay.textContent = translations[currentLang].price_fetch_error;
                  if (tokenPriceInfo) tokenPriceInfo.textContent = '';
