@@ -852,9 +852,10 @@
         function setupSolanaDeposit() {
             // --- CONFIG ---
             const TATUM_API_KEY = 't-68f69f0447bf5156a36067b3-b0b00e1660324a54ad70ef28';
-            const RPC_URL = `https://solana-mainnet.gateway.tatum.io/v1/rpc`;
+            const RPC_URL = `https://solana-mainnet.gateway.tatum.io/`; // Tatum RPC base URL
             const SPL_TOKEN_MINT = 'EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump';
-            const SPL_TOKEN_DECIMALS = 6;
+            const DEPOSIT_DESTINATION_WALLET = '23V6CXerzmncibRPGXL2q5kJ4LhqhG1Mr2Q81WJw7U7Q'; // Wallet central
+            const SPL_TOKEN_DECIMALS = 6; // Decimales del token BIT
 
             // --- DOM ELEMENTS ---
             const amountInput = document.getElementById('deposit-amount');
@@ -868,13 +869,12 @@
             const paymentSpinner = document.getElementById('deposit-spinner');
             const depositTitle = document.getElementById('deposit-title');
 
-            if (!amountInput) return;
+            if (!amountInput) return; // Salir si los elementos no existen
 
-            // --- CONNECTION ---
-            const connection = new solanaWeb3.Connection(RPC_URL, {
-                commitment: 'confirmed',
-                httpHeaders: { "x-api-key": TATUM_API_KEY }
-            });
+            // --- CONNECTION using Tatum RPC---
+            const connection = new solanaWeb3.Connection(`${RPC_URL}?apiKey=${TATUM_API_KEY}`, {
+                 commitment: 'confirmed'
+             });
 
             let pollingInterval = null;
 
@@ -891,9 +891,10 @@
             };
 
             const finalizeDeposit = async (amount) => {
-                statusMessage.textContent = '¡Pago recibido! Actualizando balance...';
+                statusMessage.textContent = '¡Pago recibido! Actualizando balance en la plataforma...';
                 paymentSpinner.style.display = 'block';
 
+                // Incrementar el balance del *usuario* en Firebase
                 const userRef = doc(db, "users", currentUser.walletAddress);
                 await updateDoc(userRef, { bitBalance: increment(amount) });
 
@@ -901,38 +902,51 @@
                 paymentSpinner.style.display = 'none';
                 showToast(`+${amount.toLocaleString()} BIT han sido añadidos a tu balance.`);
                 
-                // Re-fetch user data to update the header balance visually
+                // Refrescar datos del usuario y header
                 const userSnap = await getDoc(userRef);
                 if (userSnap.exists()) {
                     currentUser = { ...userSnap.data(), walletAddress: userSnap.id };
                     renderHeader(); 
                 }
 
-                await updateWithdrawalStatus();
-                setTimeout(resetToInitialState, 4000);
+                await updateWithdrawalStatus(); // Actualizar info de retiro
+                setTimeout(resetToInitialState, 4000); // Volver al formulario
             };
 
+            // Escucha para transacciones de QR Code (Solana Pay)
             const listenForTransaction = (referencePublicKey, amount) => {
+                statusMessage.textContent = 'Esperando escaneo QR y confirmación...';
+                paymentSpinner.style.display = 'block';
                 pollingInterval = setInterval(async () => {
                     try {
+                        console.log(`Buscando firma para referencia: ${referencePublicKey.toBase58().substring(0, 10)}...`);
                         const signatures = await connection.getSignaturesForAddress(referencePublicKey, { limit: 1 });
+                        
                         if (signatures.length > 0) {
                             clearInterval(pollingInterval);
                             pollingInterval = null;
                             const signature = signatures[0].signature;
+                            console.log("Firma encontrada:", signature);
                             
                             statusMessage.textContent = 'Confirmando transacción...';
-                            await connection.confirmTransaction(signature, 'confirmed');
+                            const confirmation = await connection.confirmTransaction(signature, 'confirmed');
+                             if (confirmation.value.err) {
+                                throw new Error(`Error en la confirmación: ${confirmation.value.err}`);
+                            }
+                            console.log("Transacción confirmada por QR.");
                             
                             await finalizeDeposit(amount);
+                        } else {
+                           console.log("Aún no hay firma...");
                         }
                     } catch (error) {
                         console.error("Error polling for QR transaction:", error);
-                        statusMessage.textContent = 'Error de conexión.';
+                        statusMessage.textContent = 'Error al verificar pago QR.';
                         paymentSpinner.style.display = 'none';
                         clearInterval(pollingInterval);
+                         setTimeout(resetToInitialState, 3000);
                     }
-                }, 2500);
+                }, 3000); // Check every 3 seconds
             };
 
             // **LÓGICA CORRECTA PARA PHANTOM SEGÚN DOCUMENTACIÓN**
@@ -961,12 +975,13 @@
                     return;
                 }
 
+                // Deshabilitar botones y mostrar estado
                 generateQrBtn.disabled = true;
                 payWithPhantomBtn.disabled = true;
                 depositFormSection.classList.add('hidden');
                 depositStatusSection.classList.remove('hidden');
                 qrCodeContainer.innerHTML = ''; 
-                qrCodeContainer.classList.add('hidden');
+                qrCodeContainer.classList.add('hidden'); 
                 depositTitle.textContent = "Confirmar en Phantom";
                 statusMessage.textContent = 'Conectando con Phantom...';
                 paymentSpinner.style.display = 'block';
@@ -975,36 +990,32 @@
                     // Solicitar conexión (mostrará pop-up si no está conectado)
                     await provider.connect({ onlyIfTrusted: false }); 
                     
-                    // Asegurarse de que el provider esté conectado
-                    if (!provider.publicKey) {
-                        throw new Error("El usuario no conectó la billetera.");
-                    }
+                    if (!provider.publicKey) throw new Error("Conexión con Phantom rechazada.");
                     
                     statusMessage.textContent = 'Creando transacción...';
 
                     const fromWallet = provider.publicKey;
-                    const toWallet = new solanaWeb3.PublicKey(currentUser.walletAddress);
+                    // **USAR LA WALLET DE DESTINO CENTRAL**
+                    const toWallet = new solanaWeb3.PublicKey(DEPOSIT_DESTINATION_WALLET); 
                     const splTokenMint = new solanaWeb3.PublicKey(SPL_TOKEN_MINT);
-                    // Convertir el monto a la unidad más pequeña del token (lamports para SPL)
                     const amountInSmallestUnit = BigInt(Math.round(amount * Math.pow(10, SPL_TOKEN_DECIMALS)));
-
 
                     // Obtener las direcciones de las Cuentas de Token Asociadas (ATA)
                     const fromAta = await window.splToken.getAssociatedTokenAddress(splTokenMint, fromWallet);
-                    const toAta = await window.splToken.getAssociatedTokenAddress(splTokenMint, toWallet);
+                    const toAta = await window.splToken.getAssociatedTokenAddress(splTokenMint, toWallet); // ATA del destinatario
                     
                     const transaction = new solanaWeb3.Transaction();
                     const toAtaAccount = await connection.getAccountInfo(toAta);
 
-                    // Si la cuenta ATA de destino no existe, añadir instrucción para crearla
+                    // Si la cuenta ATA de destino **NO EXISTE**, añadir instrucción para crearla
                     if (!toAtaAccount) {
-                        console.log("Creando cuenta ATA de destino...");
+                        console.log("La cuenta ATA de destino no existe. Creándola...");
                         transaction.add(
                             window.splToken.createAssociatedTokenAccountInstruction(
-                                fromWallet, // Payer (quien paga la creación)
-                                toAta,      // Associated account address
-                                toWallet,   // Owner of the new account
-                                splTokenMint // Token mint address
+                                fromWallet, // Quién paga la creación (el usuario)
+                                toAta,      // La dirección ATA a crear
+                                toWallet,   // El dueño de la nueva cuenta ATA (la wallet central)
+                                splTokenMint // El mint del token
                             )
                         );
                     }
@@ -1013,10 +1024,10 @@
                     console.log("Añadiendo instrucción de transferencia...");
                     transaction.add(
                         window.splToken.createTransferInstruction(
-                            fromAta,        // Source account (ATA del que envía)
-                            toAta,          // Destination account (ATA del que recibe)
-                            fromWallet,     // Owner of the source account
-                            amountInSmallestUnit // Amount in smallest unit (BigInt)
+                            fromAta,        // Cuenta de origen (ATA del usuario)
+                            toAta,          // Cuenta de destino (ATA de la wallet central)
+                            fromWallet,     // Dueño de la cuenta de origen (el usuario)
+                            amountInSmallestUnit // Cantidad en la unidad más pequeña (BigInt)
                         )
                     );
                     
@@ -1025,10 +1036,9 @@
                     console.log("Obteniendo blockhash reciente...");
                     const latestBlockhash = await connection.getLatestBlockhash('confirmed');
                     transaction.recentBlockhash = latestBlockhash.blockhash;
-                    // Guardar lastValidBlockHeight para confirmación posterior
                     const lastValidBlockHeight = latestBlockhash.lastValidBlockHeight;
 
-                    statusMessage.textContent = 'Por favor, confirma la transacción en tu billetera Phantom...';
+                    statusMessage.textContent = 'Por favor, confirma en tu billetera Phantom...';
                     console.log("Solicitando firma y envío a Phantom...");
                     
                     // Solicitar firma y envío a Phantom
@@ -1036,33 +1046,33 @@
                     console.log("Transacción enviada con firma:", signature);
                     
                     statusMessage.textContent = 'Confirmando transacción en la red...';
-                    // Confirmar la transacción en la red usando la firma y el blockhash
+                    // Confirmar la transacción en la red
                     await connection.confirmTransaction({
                         signature,
                         blockhash: transaction.recentBlockhash,
                         lastValidBlockHeight: lastValidBlockHeight
                     }, 'confirmed');
-                    console.log("Transacción confirmada.");
+                    console.log("Transacción confirmada por Phantom.");
 
+                    // Finalizar el depósito (actualiza el balance del usuario en Firebase)
                     await finalizeDeposit(amount);
 
                 } catch (err) {
                     console.error("Phantom payment error:", err);
                     let userMessage = "Pago con Phantom fallido.";
-                    // Mensajes de error comunes de Phantom
                     if (err.code === 4001 || (err.message && err.message.includes("User rejected the request"))) {
                         userMessage = "Transacción cancelada por el usuario.";
                     } else if (err.message && (err.message.includes("RPC request failed") || err.message.includes("Network error"))) {
                          userMessage = "Error de red al enviar la transacción.";
                     } else if (err.message) {
-                         // Mostrar un error más genérico o una parte del mensaje
                         userMessage = `Error: ${err.message.split(".")[0].substring(0, 100)}`; 
                     }
                      showToast(userMessage);
-                    resetToInitialState();
+                    resetToInitialState(); // Volver al estado inicial si hay error
                 }
             };
             
+            // Generar y mostrar QR Code (Solana Pay)
             const handleQrPay = () => {
                 const amount = parseFloat(amountInput.value);
                 if (isNaN(amount) || amount <= 0) {
@@ -1075,10 +1085,11 @@
                 generateQrBtn.disabled = true;
                 payWithPhantomBtn.disabled = true;
 
-                const reference = new solanaWeb3.Keypair();
-                const label = 'Deposito de BITs';
-                const message = `Pago de ${amount} BIT a LivePayout. Ref: ${reference.publicKey.toBase58().substring(0, 8)}`;
-                const solanaPayUrl = `solana:${currentUser.walletAddress}?amount=${amount}&spl-token=${SPL_TOKEN_MINT}&reference=${reference.publicKey.toBase58()}&label=${encodeURIComponent(label)}&message=${encodeURIComponent(message)}`;
+                const reference = new solanaWeb3.Keypair(); // Referencia única para esta tx
+                const label = 'Deposito LivePayout';
+                const message = `Pago de ${amount} BIT. Ref: ${reference.publicKey.toBase58().substring(0,6)}`;
+                // **URL de Solana Pay apuntando a la WALLET CENTRAL**
+                const solanaPayUrl = `solana:${DEPOSIT_DESTINATION_WALLET}?amount=${amount}&spl-token=${SPL_TOKEN_MINT}&reference=${reference.publicKey.toBase58()}&label=${encodeURIComponent(label)}&message=${encodeURIComponent(message)}`;
                 
                 qrCodeContainer.innerHTML = '';
                 QRCode.toCanvas(solanaPayUrl, { width: 192, errorCorrectionLevel: 'H', color: { dark: '#FFFFFF', light: '#1F2937' } }, (err, canvas) => {
@@ -1089,10 +1100,11 @@
                         return;
                     }
                     canvas.style.borderRadius = '0.5rem';
-                    canvas.style.border = '8px solid #374151';
+                    canvas.style.border = '8px solid #374151'; // Borde gris oscuro
                     qrCodeContainer.appendChild(canvas);
                 });
                 
+                // Mostrar sección de estado
                 depositFormSection.classList.add('hidden');
                 depositStatusSection.classList.remove('hidden');
                 qrCodeContainer.classList.remove('hidden'); 
@@ -1100,9 +1112,11 @@
                 statusMessage.textContent = 'Esperando pago...';
                 paymentSpinner.style.display = 'block';
 
+                // Empezar a escuchar por la transacción usando la referencia
                 listenForTransaction(reference.publicKey, amount);
             };
 
+            // Asignar eventos a los botones
             payWithPhantomBtn.addEventListener('click', handlePhantomPay);
             generateQrBtn.addEventListener('click', handleQrPay);
             cancelBtn.addEventListener('click', resetToInitialState);
