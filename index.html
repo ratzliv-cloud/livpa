@@ -3,19 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Depósito Token SPL</title>
-    <!-- Carga de Tailwind CSS -->
+    <title>Depósito en Solana</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Carga de la biblioteca qrcode.min.js para generar los QR -->
+    <!-- Biblioteca para generar QR -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
-    <!-- --- ¡NUEVO! Bibliotecas de Solana --- -->
+    <!-- --- Bibliotecas de Solana --- -->
     
     <!-- 1. Buffer (necesario para web3.js en el navegador) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/buffer/6.0.3/buffer.min.js"></script>
     
-    <!-- ¡FIX! Asignar Buffer globalmente ANTES de cargar solanaWeb3 -->
+    <!-- Asignar Buffer globalmente ANTES de cargar solanaWeb3 -->
     <script>
         if (typeof buffer !== 'undefined') {
             window.Buffer = buffer.Buffer;
@@ -23,321 +22,383 @@
     </script>
 
     <!-- 2. Solana Web3.js (Núcleo de Solana) -->
-    <!-- Esto expone un objeto global 'solanaWeb3' -->
-    <!-- ¡FIX! Cambiado de cdnjs a unpkg para asegurar la carga del build IIFE (para navegador) -->
+    <!-- Usamos 'unpkg' para obtener el build 'iife' (para navegador) -->
     <script src="https://unpkg.com/@solana/web3.js@1.91.8/lib/index.iife.min.js"></script>
     
     <!-- 3. Solana SPL Token (Para interactuar con tokens) -->
-    <!-- Esto expone un objeto global 'splToken' -->
-    <script src="https://unpkg.com/@solana/spl-token@0.4.6/lib/index.iife.min.js"></script>
+    <!-- Usamos 'cdnjs' para obtener el build 'iife' (para navegador) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/solana-spl-token/0.3.11/spl-token.iife.min.js"></script>
 
     <style>
-        /* Estilos para el contenedor del QR para que el canvas/img se centre */
-        #qr-container canvas,
-        #qr-container img {
-            margin: 0 auto;
-            border-radius: 8px; /* Bordes redondeados para el QR */
-            border: 6px solid white; /* Borde blanco alrededor del QR */
+        /* Estilos personalizados */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .qr-container canvas, .qr-container img {
+            margin: auto;
+            border-radius: 8px;
+            border: 6px solid white;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #6d28d9;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-gray-900 text-gray-200 font-sans">
+<body class="bg-gray-900 text-gray-200 flex items-center justify-center min-h-screen p-4">
 
-    <!-- Contenedor principal centrado -->
-    <div class="min-h-screen flex items-center justify-center p-4">
+    <div class="bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-2xl w-full max-w-md">
         
-        <!-- Tarjeta del sistema de pago -->
-        <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-md">
-            
-            <!-- Encabezado -->
-            <div class="text-center mb-6">
-                <h1 class="text-3xl font-bold text-white mb-2">
-                    Depósito de <span class="text-purple-400">Token</span>
-                </h1>
-                <p class="text-gray-400">
-                    Genere su código QR para pagar con un token SPL.
-                </p>
-            </div>
-
-            <!-- Mostrar la Wallet de destino (informativo) -->
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-300 mb-2">Se depositará a la billetera:</label>
-                <div class="bg-gray-700 p-3 rounded-lg text-center text-xs text-purple-300 break-all">
-                    23V6CXerzmncibRPGXL2q5kJ4LhqhG1Mr2Q81WJw7U7Q
-                </div>
-            </div>
-
-            <!-- Mostrar el Token Mint (NUEVO) -->
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-300 mb-2">Token (Mint Address):</label>
-                <div class="bg-gray-700 p-3 rounded-lg text-center text-xs text-green-300 break-all" id="token-mint-address">
-                    <!-- El token se insertará aquí desde JS -->
-                </div>
-            </div>
-
-            <!-- Formulario de entrada -->
-            <div>
-                <!-- Campo para el monto -->
-                <div class="mb-4">
-                    <label for="sol-amount" class="block text-sm font-medium text-gray-300 mb-2">
-                        Monto a depositar (en Tokens)
-                    </label>
-                    <input type="number"
-                           id="sol-amount"
-                           min="0.000001"
-                           step="0.01"
-                           placeholder="Ej: 0.5"
-                           class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
-                </div>
-
-                <!-- Botón para generar -->
-                <button id="generate-qr-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition duration-300 ease-in-out">
-                    Generar QR de Pago
-                </button>
-            </div>
-
-            <!-- Mensaje de error -->
-            <div id="error-message" class="text-red-400 text-center text-sm mt-4"></div>
-
-            <!-- Contenedor para el Código QR -->
-            <div id="qr-container" class="mt-6 flex justify-center p-4 bg-gray-700 rounded-lg min-h-[280px] items-center">
-                 <span class="text-gray-500">Aquí aparecerá el código QR</span>
-            </div>
-
-            <!-- --- ¡NUEVO! Sección de pago directo --- -->
-            
-            <!-- Divisor "O" -->
-            <div class="relative flex items-center my-6">
-                <div class="flex-grow border-t border-gray-600"></div>
-                <span class="flex-shrink mx-4 text-gray-500 text-sm">O</span>
-                <div class="flex-grow border-t border-gray-600"></div>
-            </div>
-
-            <!-- Botón de Conectar y Pagar -->
-            <div>
-                <button id="connect-pay-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition duration-300 ease-in-out disabled:opacity-50 disabled:cursor-wait">
-                    Conectar Phantom y Pagar
-                </button>
-            </div>
-
-            <!-- Mensajes para el pago directo -->
-            <div id="connect-message" class="text-center text-sm mt-4 min-h-[20px]"></div>
-            <!-- Fin de la nueva sección -->
-
-            <!-- Disclaimer de seguridad -->
-            <div class="mt-6 text-center">
-                <p class="text-xs text-gray-500">
-                    <strong>Importante:</strong> Esta herramienta solo genera la solicitud de pago.
-                    No verifica si la transacción ha sido completada.
-                </p>
-            </div>
-
+        <!-- Billetera de Destino -->
+        <div class="mb-5">
+            <label class="block text-sm font-medium text-gray-400 mb-1">Se depositará a la billetera:</label>
+            <input 
+                type="text" 
+                readonly 
+                value="23V6CXerzmncibRPGXL2q5kJ4LhqhG1Mr2Q81WJw7U7Q" 
+                class="w-full p-2.5 bg-gray-700 border border-gray-600 rounded-lg text-gray-300 text-xs truncate select-all"
+            >
         </div>
+
+        <!-- Token (Mint Address) -->
+        <div class="mb-5">
+            <label class="block text-sm font-medium text-gray-400 mb-1">Token (Mint Address):</label>
+            <input 
+                type="text" 
+                readonly 
+                value="EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump" 
+                class="w-full p-2.5 bg-gray-700 border border-gray-600 rounded-lg text-gray-300 text-xs truncate select-all"
+                id="tokenMintAddress"
+            >
+        </div>
+
+        <!-- Monto a Depositar -->
+        <div class="mb-6">
+            <label for="amount" class="block text-sm font-medium text-gray-400 mb-1">Monto a depositar (en Tokens)</label>
+            <input 
+                type="number" 
+                id="amount" 
+                min="0.000000001" 
+                step="0.01" 
+                placeholder="Ej: 10.5" 
+                class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+            >
+        </div>
+
+        <!-- Pestañas para QR / Pago Directo -->
+        <div class="mb-4 border-b border-gray-700">
+            <nav class="-mb-px flex space-x-4" aria-label="Tabs">
+                <button id="tab-qr" class="tab-button whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-purple-500 text-purple-400">
+                    Opción 1: Pagar con QR
+                </button>
+                <button id="tab-direct" class="tab-button whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-500">
+                    Opción 2: Pagar Directo
+                </button>
+            </nav>
+        </div>
+
+        <!-- Contenido de Pestañas -->
+        <div id="tab-content-qr" class="tab-content">
+            <!-- Botón Generar QR -->
+            <button id="generateQR" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 shadow-lg">
+                Generar QR de Pago
+            </button>
+            
+            <!-- Contenedor del QR -->
+            <div id="qr-message" class="text-center text-gray-400 text-sm mt-4"></div>
+            <div id="qrcode" class="mt-6 qr-container bg-gray-700 rounded-lg p-4" style="display: none;">
+                <p class="text-center text-gray-300 mb-3 font-medium">Escanea con tu billetera (Phantom, Solflare, etc.)</p>
+                <!-- El QR se genera aquí -->
+            </div>
+        </div>
+
+        <div id="tab-content-direct" class="tab-content" style="display: none;">
+            <!-- Botón Conectar Phantom -->
+            <button id="connectAndPay" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.102 1.101m.758 4.899l-5.656 5.656"></path></svg>
+                <span>Conectar Phantom y Pagar</span>
+            </button>
+            <div id="direct-payment-loader" class="mt-4 justify-center" style="display: none;">
+                <div class="loader mx-auto"></div>
+                <p class="text-center text-gray-400 text-sm mt-2">Procesando, por favor revisa tu billetera...</p>
+            </div>
+            <div id="direct-payment-message" class="text-center text-sm mt-4 break-words"></div>
+        </div>
+
     </div>
 
+    <!-- Script principal de la aplicación -->
     <script>
-    // --- ¡MODIFICADO! Esperar a que todo el DOM y TODOS LOS SCRIPTS estén cargados ---
-    window.addEventListener('load', () => {
+        // Este script espera a que TODA la página (incluyendo las bibliotecas externas) se cargue.
+        window.addEventListener('load', () => {
 
-        // --- Lógica de la Aplicación ---
-        
-        // ¡Importante! La asignación de Buffer se movió al <head>
-        // para que solanaWeb3.js la encuentre al cargarse.
-
-        // La billetera de destino fija
-        const RECIPIENT_WALLET = "23V6CXerzmncibRPGXL2q5kJ4LhqhG1Mr2Q81WJw7U7Q";
-        
-        // --- ¡NUEVO! Dirección del Mint del Token SPL ---
-        const SPL_TOKEN_MINT = "EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump";
-
-        // Elementos del DOM
-        const generateBtn = document.getElementById("generate-qr-btn");
-        const amountInput = document.getElementById("sol-amount");
-        const qrContainer = document.getElementById("qr-container");
-        const errorMessage = document.getElementById("error-message");
-        const tokenMintDisplay = document.getElementById("token-mint-address"); // Nuevo elemento
-
-        // --- ¡NUEVOS Elementos del DOM para Pago Directo ---
-        const connectPayBtn = document.getElementById("connect-pay-btn");
-        const connectMessage = document.getElementById("connect-message");
-
-        // Instancia del QR (para poder limpiarla si es necesario)
-        let qrCodeInstance = null;
-        
-        // --- ¡NUEVO! Poblar la dirección del token al cargar la página ---
-        if(tokenMintDisplay) {
-            tokenMintDisplay.textContent = SPL_TOKEN_MINT;
-        }
-
-        // Event Listener para el botón
-        generateBtn.addEventListener('click', () => {
-            const amount = parseFloat(amountInput.value);
-
-            // Limpiar estado anterior
-            errorMessage.textContent = "";
+            // --- Lógica de la Aplicación ---
             
-            // --- Validación de entrada ---
-            if (!amount || amount <= 0) {
-                errorMessage.textContent = "Por favor, ingrese un monto válido y mayor a cero.";
-                // Limpiar el contenedor del QR
-                if (qrCodeInstance) {
-                    qrCodeInstance.clear(); // Limpia el QR existente
+            // La asignación de Buffer se movió al <head>
+            // para que solanaWeb3.js la encuentre al cargarse.
+
+            // La billetera de destino fija
+            const RECIPIENT_WALLET = "23V6CXerzmncibRPGXL2q5kJ4LhqhG1Mr2Q81WJw7U7Q";
+            // El token mint fijo
+            const TOKEN_MINT = "EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump";
+
+            // Elementos del DOM
+            const amountInput = document.getElementById('amount');
+            const qrButton = document.getElementById('generateQR');
+            const qrCodeContainer = document.getElementById('qrcode');
+            const qrMessage = document.getElementById('qr-message');
+            
+            const directPayButton = document.getElementById('connectAndPay');
+            const directPayMessage = document.getElementById('direct-payment-message');
+            const directPayLoader = document.getElementById('direct-payment-loader');
+
+            const tabQr = document.getElementById('tab-qr');
+            const tabDirect = document.getElementById('tab-direct');
+            const tabContentQr = document.getElementById('tab-content-qr');
+            const tabContentDirect = document.getElementById('tab-content-direct');
+
+            let qrCodeInstance = null; // Para almacenar la instancia del QR
+
+            // --- Lógica de Pestañas ---
+            function switchTab(tabToShow) {
+                if (tabToShow === 'qr') {
+                    // Activar Tab QR
+                    tabQr.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-300', 'hover:border-gray-500');
+                    tabQr.classList.add('border-purple-500', 'text-purple-400');
+                    tabContentQr.style.display = 'block';
+                    
+                    // Desactivar Tab Directo
+                    tabDirect.classList.remove('border-purple-500', 'text-purple-400');
+                    tabDirect.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-300', 'hover:border-gray-500');
+                    tabContentDirect.style.display = 'none';
+                } else {
+                    // Activar Tab Directo
+                    tabDirect.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-300', 'hover:border-gray-500');
+                    tabDirect.classList.add('border-purple-500', 'text-purple-400');
+                    tabContentDirect.style.display = 'block';
+
+                    // Desactivar Tab QR
+                    tabQr.classList.remove('border-purple-500', 'text-purple-400');
+                    tabQr.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-300', 'hover:border-gray-500');
+                    tabContentQr.style.display = 'none';
                 }
-                qrContainer.innerHTML = '<span class="text-gray-500">Aquí aparecerá el código QR</span>';
-                return;
             }
 
-            // --- Construcción de la URL de Solana Pay ---
-            // solana:<recipient_address>?amount=<amount>&label=<label>&message=<message>
-            // --- ¡MODIFICADO! Se añade el parámetro &spl-token= ---
-            
-            // --- MODIFICADO ---
-            // Se eliminan 'label' y 'message' para acortar la URL
-            // y prevenir el error "code length overflow" si el monto es muy largo.
-            // const label = encodeURIComponent("Depósito Token");
-            // const message = encodeURIComponent(`Pago de ${amount} Tokens por servicios.`);
-            
-            // Esta es la URL estándar de Solana Pay para TOKENS (versión corta)
-            const solanaPayUrl = `solana:${RECIPIENT_WALLET}?amount=${amount}&spl-token=${SPL_TOKEN_MINT}`;
+            tabQr.addEventListener('click', () => switchTab('qr'));
+            tabDirect.addEventListener('click', () => switchTab('direct'));
 
-            // --- Generación del QR ---
-            
-            // Limpiar el contenedor antes de generar uno nuevo
-            qrContainer.innerHTML = ""; 
-            
-            // Crear una nueva instancia de QRCode
-            // La biblioteca qrcode.js se encargará de dibujar el QR dentro de 'qrContainer'
-            qrCodeInstance = new QRCode(qrContainer, {
-                text: solanaPayUrl,
-                width: 256,
-                height: 256,
-                colorDark: "#000000",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.H // Alta corrección de errores
+            // --- Lógica del Generador de QR ---
+            qrButton.addEventListener('click', () => {
+                const amount = amountInput.value;
+                
+                // Limpiar mensajes y QR anterior
+                qrCodeContainer.innerHTML = '<p class="text-center text-gray-300 mb-3 font-medium">Escanea con tu billetera (Phantom, Solflare, etc.)</p>';
+                qrCodeContainer.style.display = 'none';
+                qrMessage.textContent = '';
+                qrMessage.classList.remove('text-red-400', 'text-green-400');
+
+                // Validar monto
+                if (!amount || parseFloat(amount) <= 0) {
+                    qrMessage.textContent = 'Por favor, introduce un monto válido.';
+                    qrMessage.classList.add('text-red-400');
+                    return;
+                }
+
+                // Construir la URL de Solana Pay (versión corta para evitar overflow)
+                // solana:<recipient_address>?amount=<amount>&spl-token=<token_mint>
+                const solanaPayUrl = `solana:${RECIPIENT_WALLET}?amount=${amount}&spl-token=${TOKEN_MINT}`;
+
+                try {
+                    // Mostrar contenedor y generar QR
+                    qrCodeContainer.style.display = 'block';
+                    
+                    // Usar el contenedor interno (después del texto) para el QR
+                    const qrElement = document.createElement('div');
+                    qrCodeContainer.appendChild(qrElement);
+
+                    if (qrCodeInstance) {
+                         // Limpiar QR anterior si existe (aunque ya limpiamos el innerHTML)
+                    }
+
+                    qrCodeInstance = new QRCode(qrElement, {
+                        text: solanaPayUrl,
+                        width: 256,
+                        height: 256,
+                        colorDark: "#ffffff",
+                        colorLight: "#374151", // bg-gray-700
+                        correctLevel: QRCode.CorrectLevel.M
+                    });
+                    
+                    qrMessage.textContent = '¡QR generado exitosamente!';
+                    qrMessage.classList.add('text-green-400');
+
+                } catch (error) {
+                    console.error("Error al generar QR:", error);
+                    qrMessage.textContent = `Error al generar QR: ${error.message}`;
+                    qrMessage.classList.add('text-red-400');
+                    qrCodeContainer.style.display = 'none';
+                }
             });
-        });
 
-        // --- ¡NUEVA LÓGICA DE PAGO DIRECTO! ---
 
-        // 1. Configuración de Solana
-        // Estas definiciones ahora son seguras porque 'solanaWeb3' existe
-        const RPC_URL = "https://api.mainnet-beta.solana.com"; // RPC Público de Solana
-        const connection = new solanaWeb3.Connection(RPC_URL, "confirmed");
-        
-        // Convertimos las direcciones string a PublicKeys
-        const recipientPubKey = new solanaWeb3.PublicKey(RECIPIENT_WALLET);
-        const mintPubKey = new solanaWeb3.PublicKey(SPL_TOKEN_MINT);
+            // --- Lógica de Pago Directo (Phantom) ---
+            
+            // Función helper para mostrar mensajes
+            function showDirectMessage(message, isError = false) {
+                directPayMessage.textContent = message;
+                if (isError) {
+                    directPayMessage.classList.remove('text-green-400');
+                    directPayMessage.classList.add('text-red-400');
+                } else {
+                    directPayMessage.classList.remove('text-red-400');
+                    directPayMessage.classList.add('text-green-400');
+                }
+                directPayLoader.style.display = 'none';
+                directPayButton.disabled = false;
+            }
 
-        // 2. Event Listener para el nuevo botón
-        connectPayBtn.addEventListener('click', async () => {
-            // Deshabilitar botón y limpiar mensajes
-            connectPayBtn.disabled = true;
-            connectPayBtn.textContent = "Conectando...";
-            connectMessage.textContent = "";
-            errorMessage.textContent = ""; // Limpiar también el error del QR
+            // Evento principal del botón de pago directo
+            directPayButton.addEventListener('click', async () => {
+                directPayMessage.textContent = '';
+                directPayLoader.style.display = 'flex';
+                directPayButton.disabled = true;
 
-            try {
-                // 3. Verificar si Phantom (o una wallet compatible) está instalado
-                const { solana } = window;
-                if (!solana || !solana.isPhantom) {
-                    throw new Error("Por favor, instale la billetera Phantom para usar esta función.");
+                // 1. Verificar si Phantom (window.solana) existe
+                const provider = window.solana;
+                if (!provider || !provider.isPhantom) {
+                    showDirectMessage('Error: No se detectó Phantom Wallet. Por favor, instálalo.', true);
+                    return;
                 }
 
-                // 4. Conectar la billetera
-                await solana.connect();
-                const senderPubKey = solana.publicKey;
+                // 2. Conectar a la billetera
+                let connection;
+                let senderPublicKey;
+                try {
+                    const resp = await provider.connect();
+                    senderPublicKey = resp.publicKey;
+                    // Usar la red principal (mainnet-beta)
+                    const rpcUrl = "https://api.mainnet-beta.solana.com"; 
+                    connection = new solanaWeb3.Connection(rpcUrl, 'confirmed');
+                } catch (err) {
+                    showDirectMessage('Error: El usuario rechazó la conexión.', true);
+                    return;
+                }
 
-                // 5. Obtener el monto (misma validación que el QR)
+                // 3. Validar el monto
                 const amount = parseFloat(amountInput.value);
-                if (!amount || amount <= 0) {
-                    throw new Error("Por favor, ingrese un monto válido y mayor a cero.");
+                if (isNaN(amount) || amount <= 0) {
+                    showDirectMessage('Por favor, introduce un monto válido.', true);
+                    return;
                 }
 
-                connectPayBtn.textContent = "Preparando transacción...";
+                try {
+                    showDirectMessage('Preparando transacción...', false);
+                    
+                    // 4. Definir direcciones
+                    const mintPublicKey = new solanaWeb3.PublicKey(TOKEN_MINT);
+                    const recipientPublicKey = new solanaWeb3.PublicKey(RECIPIENT_WALLET);
 
-                // 6. Obtener decimales del Token (MUY IMPORTANTE)
-                // Las transacciones de tokens se hacen en su unidad mínima (como centavos)
-                const mintInfo = await splToken.getMint(connection, mintPubKey);
-                const decimals = mintInfo.decimals;
-                const amountInSmallestUnit = BigInt(Math.round(amount * Math.pow(10, decimals)));
+                    // 5. Obtener los decimales del token (¡MUY IMPORTANTE!)
+                    // Usamos splToken (del script cargado)
+                    const mintInfo = await splToken.getMint(connection, mintPublicKey);
+                    const decimals = mintInfo.decimals;
+                    
+                    // Calcular el monto en la unidad más pequeña (lamports para tokens)
+                    const amountInSmallestUnit = BigInt(Math.round(amount * Math.pow(10, decimals)));
+                    
+                    if (amountInSmallestUnit === 0n) {
+                         showDirectMessage('Error: El monto es demasiado pequeño.', true);
+                         return;
+                    }
 
-                // 7. Encontrar las Cuentas de Token (ATA)
-                // El que envía (sender) y el que recibe (recipient)
-                const fromAta = await splToken.getAssociatedTokenAddress(mintPubKey, senderPubKey);
-                const toAta = await splToken.getAssociatedTokenAddress(mintPubKey, recipientPubKey);
+                    // 6. Encontrar la cuenta de token (ATA) del *remitente* (el que paga)
+                    const senderTokenAccountAddress = await splToken.getAssociatedTokenAddress(
+                        mintPublicKey,
+                        senderPublicKey
+                    );
 
-                // 8. Crear la transacción
-                const transaction = new solanaWeb3.Transaction();
+                    // 7. Encontrar la cuenta de token (ATA) del *destinatario* (el que recibe)
+                    const recipientTokenAccountAddress = await splToken.getAssociatedTokenAddress(
+                        mintPublicKey,
+                        recipientPublicKey
+                    );
 
-                // 9. (Opcional pero recomendado) Verificar si el destinatario tiene una cuenta de este token
-                // Si no la tiene, se la creamos en la misma transacción.
-                const toAtaInfo = await connection.getAccountInfo(toAta);
-                if (!toAtaInfo) {
-                    transaction.add(
-                        splToken.createAssociatedTokenAccountInstruction(
-                            senderPubKey, // El que paga la creación
-                            toAta,
-                            recipientPubKey,
-                            mintPubKey
+                    // 8. Verificar si la cuenta de token del destinatario existe
+                    const recipientAtaInfo = await connection.getAccountInfo(recipientTokenAccountAddress);
+
+                    const transaction = new solanaWeb3.Transaction();
+                    const instructions = [];
+
+                    // 9. Si la cuenta del destinatario NO existe, añadir instrucción para crearla
+                    if (recipientAtaInfo === null) {
+                        instructions.push(
+                            splToken.createAssociatedTokenAccountInstruction(
+                                senderPublicKey, // El que paga la creación (payer)
+                                recipientTokenAccountAddress, // La nueva cuenta ATA
+                                recipientPublicKey, // El dueño de la nueva cuenta
+                                mintPublicKey // El mint del token
+                            )
+                        );
+                    }
+
+                    // 10. Añadir la instrucción de transferencia
+                    instructions.push(
+                        splToken.createTransferInstruction(
+                            senderTokenAccountAddress,    // Desde (fuente)
+                            recipientTokenAccountAddress, // Hacia (destino)
+                            senderPublicKey,              // Autoridad (dueño de la cuenta fuente)
+                            amountInSmallestUnit          // Cantidad (en unidades pequeñas)
                         )
                     );
+                    
+                    transaction.add(...instructions);
+
+                    // 11. Obtener el blockhash reciente
+                    const { blockhash } = await connection.getLatestBlockhash();
+                    transaction.recentBlockhash = blockhash;
+                    transaction.feePayer = senderPublicKey;
+
+                    // 12. Solicitar firma y envío (NUEVO MÉTODO RECOMENDADO)
+                    const { signature } = await provider.signAndSendTransaction(transaction);
+                    
+                    showDirectMessage('Transacción enviada. Esperando confirmación...', false);
+
+                    // 13. Confirmar la transacción
+                    await connection.confirmTransaction(signature, 'confirmed');
+
+                    const explorerUrl = `https://solscan.io/tx/${signature}?cluster=mainnet`;
+                    showDirectMessage(`¡Pago exitoso! Ver transacción: ${explorerUrl}`, false);
+                    // Opcionalmente, limpiar el campo de monto
+                    // amountInput.value = '';
+
+                } catch (error) {
+                    console.error("Error en el pago directo:", error);
+                    let errorMessage = 'Error al procesar el pago.';
+                    if (error.message.includes('User rejected')) {
+                        errorMessage = 'Transacción rechazada por el usuario.';
+                    } else if (error.message.includes('0x1')) {
+                         errorMessage = 'Error: Fondos insuficientes o cuenta de token incorrecta.';
+                    }
+                    showDirectMessage(errorMessage, true);
+                } finally {
+                    directPayLoader.style.display = 'none';
+                    directPayButton.disabled = false;
                 }
+            });
 
-                // 10. Añadir la instrucción de transferencia
-                transaction.add(
-                    splToken.createTransferInstruction(
-                        fromAta,
-                        toAta,
-                        senderPubKey,
-                        amountInSmallestUnit 
-                        // NOTA: Si usas una versión antigua de spl-token, el 'amount' podría no aceptar BigInt.
-                        // En ese caso, usa 'Number(amountInSmallestUnit)' si el monto no es astronómico.
-                    )
-                );
-
-                // 11. Establecer el pagador de la tarifa y el blockhash
-                transaction.feePayer = senderPubKey;
-                transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-
-                connectPayBtn.textContent = "Confirme en su Billetera...";
-
-                // 12. Firmar y enviar la transacción
-                const { signature } = await solana.signAndSendTransaction(transaction);
-
-                // 13. Confirmar la transacción
-                connectPayBtn.textContent = "Confirmando en la red...";
-                await connection.confirmTransaction(signature, 'confirmed');
-
-                // 14. Éxito
-                connectMessage.textContent = "¡Pago exitoso!";
-                connectMessage.className = "text-green-400 text-center text-sm mt-4 min-h-[20px]";
-                
-                // Opcional: Mostrar la firma
-                console.log("Firma de la transacción:", signature);
-
-            } catch (error) {
-                // 15. Manejo de errores
-                console.error("Error en el pago:", error);
-                const userDidCancel = error.code === 4001; // Código de error si el usuario rechaza
-                
-                if (userDidCancel) {
-                    connectMessage.textContent = "Transacción cancelada por el usuario.";
-                } else {
-                    connectMessage.textContent = error.message || "Ocurrió un error desconocido.";
-                }
-                connectMessage.className = "text-red-400 text-center text-sm mt-4 min-h-[20px]";
-            } finally {
-                // 16. Reactivar el botón
-                connectPayBtn.disabled = false;
-                connectPayBtn.textContent = "Conectar Phantom y Pagar";
-            }
         });
-
-    }); // --- Fin del 'load' listener ---
     </script>
-
 </body>
 </html>
-
-
 
