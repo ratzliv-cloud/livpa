@@ -15,9 +15,17 @@
     <!-- 1. Buffer (necesario para web3.js en el navegador) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/buffer/6.0.3/buffer.min.js"></script>
     
+    <!-- ¡FIX! Asignar Buffer globalmente ANTES de cargar solanaWeb3 -->
+    <script>
+        if (typeof buffer !== 'undefined') {
+            window.Buffer = buffer.Buffer;
+        }
+    </script>
+
     <!-- 2. Solana Web3.js (Núcleo de Solana) -->
     <!-- Esto expone un objeto global 'solanaWeb3' -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/solana-web3.js/1.91.8/solana-web3.min.js"></script>
+    <!-- ¡FIX! Cambiado de cdnjs a unpkg para asegurar la carga del build IIFE (para navegador) -->
+    <script src="https://unpkg.com/@solana/web3.js@1.91.8/lib/index.iife.min.js"></script>
     
     <!-- 3. Solana SPL Token (Para interactuar con tokens) -->
     <!-- Esto expone un objeto global 'splToken' -->
@@ -133,11 +141,8 @@
 
         // --- Lógica de la Aplicación ---
         
-        // ¡Importante! Asignar Buffer globalmente para que solanaWeb3 lo encuentre
-        // Las bibliotecas de Solana en el navegador dependen de 'Buffer'
-        if (typeof buffer !== 'undefined') {
-            window.Buffer = buffer.Buffer;
-        }
+        // ¡Importante! La asignación de Buffer se movió al <head>
+        // para que solanaWeb3.js la encuentre al cargarse.
 
         // La billetera de destino fija
         const RECIPIENT_WALLET = "23V6CXerzmncibRPGXL2q5kJ4LhqhG1Mr2Q81WJw7U7Q";
@@ -333,4 +338,6 @@
 
 </body>
 </html>
+
+
 
