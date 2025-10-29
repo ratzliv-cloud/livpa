@@ -12,9 +12,9 @@
 
     <!-- <link rel="manifest" href="/site.webmanifest"> --> 
     
-    <!-- CORRECCIÓN: Scripts de Solana actualizados y con 'async' -->
-    <script src="https://unpkg.com/@solana/web3.js@1.81.0/lib/index.iife.min.js" async></script>
-    <script src="https://unpkg.com/@solana/spl-token@0.4.7/lib/index.iife.min.js" async></script>
+    <!-- CORRECCIÓN: Scripts de Solana con 'defer' para asegurar que carguen antes del DOMContentLoaded -->
+    <script src="https://unpkg.com/@solana/web3.js@1.81.0/lib/index.iife.min.js" defer></script>
+    <script src="https://unpkg.com/@solana/spl-token@0.4.7/lib/index.iife.min.js" defer></script>
     
     <!-- Biblioteca para generar códigos QR -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
@@ -1079,8 +1079,14 @@
                 const listenForTransaction = (referencePublicKey, amount) => {
                      if (statusMessage) statusMessage.textContent = 'Esperando escaneo QR y confirmación...';
                      if (paymentSpinner) paymentSpinner.classList.remove('hidden');
+                    
+                     // Convertir el monto requerido a la unidad más pequeña (lamports para token)
+                     const requiredAmountSmallestUnit = BigInt(Math.round(amount * Math.pow(10, SPL_TOKEN_DECIMALS)));
+                     const rpcUrl = `${RPC_URL}?apiKey=${TATUM_API_KEY}`;
+
                     pollingInterval = setInterval(async () => {
-                        if (!await checkSolanaLibs('QR Polling')) { // Re-check libs each time
+                        // Esta función SÍ necesita las librerías web3 para 'connection.getSignaturesForAddress'
+                        if (!await checkSolanaLibs('QR Polling')) { 
                              clearInterval(pollingInterval);
                              resetToInitialState();
                              return;
@@ -1095,21 +1101,66 @@
                                 const signature = signatures[0].signature;
                                 console.log("Firma encontrada:", signature);
                                 
-                                 if (statusMessage) statusMessage.textContent = 'Confirmando transacción...';
+                                 if (statusMessage) statusMessage.textContent = 'Verificando monto de la transacción...';
 
-                                const latestBlockhash = await connection.getLatestBlockhash('confirmed');
-                                const confirmation = await connection.confirmTransaction({
-                                    signature,
-                                    blockhash: latestBlockhash.blockhash,
-                                    lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
-                                }, 'confirmed');
-
-                                 if (confirmation.value.err) {
-                                    throw new Error(`Error en la confirmación: ${confirmation.value.err}`);
-                                }
-                                console.log("Transacción confirmada por QR.");
+                                // --- INICIO DE LA VERIFICACIÓN (COPIADO DE handleVerification) ---
                                 
-                                await finalizeDeposit(amount);
+                                // 1. Verificar si esta firma ya fue usada para este usuario
+                                const sigRef = doc(db, "users", currentUser.walletAddress, "usedSignatures", signature);
+                                const sigSnap = await getDoc(sigRef);
+                                if (sigSnap.exists()) {
+                                    throw new Error(`Esta transacción (${signature.substring(0,6)}) ya fue procesada.`);
+                                }
+
+                                // 2. Obtener detalles de la transacción (usando fetch)
+                                const txResponse = await fetch(rpcUrl, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        jsonrpc: '2.0',
+                                        id: 1,
+                                        method: 'getTransaction',
+                                        params: [signature, { maxSupportedTransactionVersion: 0, "encoding": "json" }]
+                                    })
+                                });
+                                const txData = await txResponse.json();
+                                if (txData.error) throw new Error(`RPC Error (getTransaction): ${txData.error.message}`);
+                                const tx = txData.result;
+
+                                if (!tx || !tx.meta || tx.meta.err) {
+                                    throw new Error(`Transacción ${signature.substring(0,6)} fallida o sin metadata.`);
+                                }
+                                
+                                // 3. Verificar la cantidad recibida por el DESTINATARIO
+                                const preReceiverBalance = tx.meta.preTokenBalances.find(b => b.owner === DEPOSIT_DESTINATION_WALLET && b.mint === SPL_TOKEN_MINT);
+                                const postReceiverBalance = tx.meta.postTokenBalances.find(b => b.owner === DEPOSIT_DESTINATION_WALLET && b.mint === SPL_TOKEN_MINT);
+
+                                const preAmount = preReceiverBalance ? BigInt(preReceiverBalance.uiTokenAmount.amount) : BigInt(0);
+                                const postAmount = postReceiverBalance ? BigInt(postReceiverBalance.uiTokenAmount.amount) : BigInt(0);
+                                
+                                if (postAmount === BigInt(0)) {
+                                    throw new Error(`TX ${signature.substring(0,6)}: Destinatario no tiene postBalance para este token.`);
+                                }
+
+                                const amountReceived = postAmount - preAmount;
+
+                                if (amountReceived === requiredAmountSmallestUnit) {
+                                    // ¡COINCIDENCIA!
+                                    console.log(`¡Pago QR verificado! Firma: ${signature}`);
+                                    
+                                    // Marcar la firma como usada ANTES de finalizar el depósito
+                                    await setDoc(sigRef, { 
+                                        processedAt: serverTimestamp(), 
+                                        amount: amount,
+                                        txSignature: signature
+                                    });
+                                    
+                                    await finalizeDeposit(amount); // ¡Ahora sí!
+                                
+                                } else {
+                                    throw new Error(`TX ${signature.substring(0,6)}: Monto recibido no coincide. Recibido: ${amountReceived}, Esperado: ${requiredAmountSmallestUnit}`);
+                                }
+                                // --- FIN DE LA VERIFICACIÓN ---
                             } else {
                                console.log("Aún no hay firma...");
                             }
@@ -1118,7 +1169,7 @@
                             if (error.message && error.message.includes('429')) {
                                 if (statusMessage) statusMessage.textContent = 'Verificación lenta (límite de red). Reintentando...';
                             } else {
-                                if (statusMessage) statusMessage.textContent = 'Error al verificar pago QR.';
+                                if (statusMessage) statusMessage.textContent = error.message || 'Error al verificar pago QR.';
                                 if (paymentSpinner) paymentSpinner.classList.add('hidden');
                                 clearInterval(pollingInterval);
                                  setTimeout(resetToInitialState, 3000);
@@ -2122,4 +2173,6 @@
     </script>
 </body>
 </html>
+
+
 
