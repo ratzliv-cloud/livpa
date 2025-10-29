@@ -1,2178 +1,336 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="monetag" content="2dc4448d78fbcf7944504727860de63e">
-    <title>Live Payout - Tu Plataforma de Streaming</title>
+    <title>Sistema de Depósito Token SPL</title>
+    <!-- Carga de Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="icon" type="image/jpeg" href="https://i.postimg.cc/4xL1nYWJ/android-chrome-512x512.png">
-
-    <!-- <link rel="manifest" href="/site.webmanifest"> --> 
     
-    <!-- CORRECCIÓN: Scripts de Solana con 'defer' para asegurar que carguen antes del DOMContentLoaded -->
-    <script src="https://unpkg.com/@solana/web3.js@1.81.0/lib/index.iife.min.js" defer></script>
-    <script src="https://unpkg.com/@solana/spl-token@0.4.7/lib/index.iife.min.js" defer></script>
+    <!-- Carga de la biblioteca qrcode.min.js para generar los QR -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
-    <!-- Biblioteca para generar códigos QR -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
+    <!-- --- ¡NUEVO! Bibliotecas de Solana --- -->
+    
+    <!-- 1. Buffer (necesario para web3.js en el navegador) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/buffer/6.0.3/buffer.min.js"></script>
+    
+    <!-- 2. Solana Web3.js (Núcleo de Solana) -->
+    <!-- Esto expone un objeto global 'solanaWeb3' -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/solana-web3.js/1.91.8/solana-web3.min.js"></script>
+    
+    <!-- 3. Solana SPL Token (Para interactuar con tokens) -->
+    <!-- Esto expone un objeto global 'splToken' -->
+    <script src="https://unpkg.com/@solana/spl-token@0.4.6/lib/index.iife.min.js"></script>
 
     <style>
-        :root {
-            --brand-color-1: #4ade80; /* green */
-            --brand-color-2: #3b82f6; /* blue */
-            --brand-color-purple: #8347dd;
-            --brand-color-purple-dark: #8347dd;
-            --background-primary: #0D0D10;
-            --background-secondary: #141418;
-            --background-tertiary: #1E1E24;
-            --border-color: #2a2a32;
-            --text-primary: #EAEAEA;
-            --text-secondary: #A0A0B0;
-        }
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--background-primary);
-            color: var(--text-primary);
-        }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--background-secondary); }
-        ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
-        
-        .animate-fade-in { animation: fadeIn 0.5s ease-in-out; }
-        .animate-slide-in { animation: slideIn 0.5s cubic-bezier(0.25, 1, 0.5, 1); }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-        .brand-gradient-text {
-            background: linear-gradient(90deg, var(--brand-color-purple-dark), var(--brand-color-purple));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .purple-gradient-bg {
-             background: linear-gradient(90deg, var(--brand-color-purple-dark), var(--brand-color-purple));
-        }
-        .btn-glow {
-            box-shadow: 0 0 5px var(--brand-color-purple), 0 0 10px var(--brand-color-purple);
-        }
-        .nav-link.active {
-            background-color: var(--background-tertiary);
-            color: white;
-            font-weight: 600;
-        }
-        .nav-link.active i {
-            color: var(--brand-color-purple);
-        }
-        video {
-            width: 100%;
-            background-color: black;
-            border-radius: 0.75rem;
-        }
-        .member-badge {
-            display: inline-block;
-            width: 1rem;
-            height: 1rem;
-            margin-right: 0.25rem;
-            vertical-align: text-bottom;
-        }
-        .super-chat {
-            background: linear-gradient(45deg, #1e3a8a, #4c1d95);
-            border: 1px solid #3b82f6;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            margin: 0.5rem 0;
-        }
-        .category-card img {
-            aspect-ratio: 3 / 4;
-            object-fit: cover;
-        }
-         .spinner-deposit {
-            border-top-color: #8347dd;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        /* Estilo para el campo de solo lectura */
-        .readonly-input-field {
-            background-color: var(--background-tertiary);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 0.5rem 0.75rem;
-            border-radius: 0.5rem;
-            font-family: monospace;
-            font-size: 0.9rem;
-            width: 100%;
-            overflow-x: auto;
-            white-space: nowrap;
-            cursor: text;
-            -webkit-user-select: text; /* Safari */
-            -ms-user-select: text; /* IE 10+ */
-            user-select: text; /* Standard */
+        /* Estilos para el contenedor del QR para que el canvas/img se centre */
+        #qr-container canvas,
+        #qr-container img {
+            margin: 0 auto;
+            border-radius: 8px; /* Bordes redondeados para el QR */
+            border: 6px solid white; /* Borde blanco alrededor del QR */
         }
     </style>
 </head>
-<body class="overflow-y-auto">
+<body class="bg-gray-900 text-gray-200 font-sans">
 
-    <div id="sidebar-backdrop" class="fixed inset-0 bg-black/50 z-30 hidden md:hidden"></div>
-
-    <div id="app-container" class="h-screen w-screen flex flex-col transition-opacity duration-500 opacity-0">
-
-        <header class="bg-gradient-to-b from-[#18181c] to-[var(--background-secondary)] h-16 flex items-center justify-between px-4 md:px-6 border-b border-[var(--border-color)] z-20 flex-shrink-0">
-            <div class="flex items-center gap-4">
-                <button id="back-button" class="hidden p-2 -ml-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--background-tertiary)] md:hidden">
-                    <i data-lucide="arrow-left"></i>
-                </button>
-                <button id="mobile-menu-btn" class="md:hidden p-2 -ml-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--background-tertiary)]">
-                    <i data-lucide="menu" id="mobile-menu-icon"></i>
-                </button>
-                <a href="#" class="flex items-center nav-action" data-target="explore">
-                    <img src="https://i.postimg.cc/50KvH8vD/log-peque.png" alt="Live Payout Logo" class="w-10 h-10 rounded-full">
-                </a>
-                <div class="hidden md:flex items-center gap-2 text-[var(--text-secondary)]">
-                    <a href="#" class="nav-link nav-action px-3 py-2 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-all flex items-center gap-2" data-target="explore" data-key="explore"><i data-lucide="compass"></i>Explore</a>
-                    <a href="#" class="nav-link nav-action px-3 py-2 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-all flex items-center gap-2" data-target="categories" data-key="categories"><i data-lucide="layout-grid"></i>Categories</a>
-                </div>
-            </div>
-            <div id="user-profile-area" class="flex items-center gap-2 md:gap-4">
-                <!-- Se rellena dinámicamente -->
-            </div>
-        </header>
-
-        <div class="flex flex-1 overflow-hidden">
-            <aside id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-[var(--background-secondary)] flex flex-col z-40 transform -translate-x-full transition-transform duration-300 md:relative md:translate-x-0 md:border-r md:border-[var(--border-color)] md:flex-shrink-0">
-                <div class="p-4 border-b border-[var(--border-color)] md:hidden">
-                    <a href="#" class="flex items-center gap-2 nav-action" data-target="explore">
-                        <img src="https://i.postimg.cc/50KvH8vD/log-peque.png" alt="Live Payout Logo" class="w-8 h-8 rounded-full">
-                        <span class="font-bold text-lg">Live Payout</span>
-                    </a>
-                </div>
-                <nav class="flex flex-col space-y-2 p-4 md:p-0 md:mt-4">
-                    <div class="md:hidden">
-                        <a href="#" class="nav-link nav-action flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-colors" data-target="explore" data-key="explore"><i data-lucide="compass" class="w-5 h-5"></i>Explore</a>
-                        <a href="#" class="nav-link nav-action flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-colors" data-target="categories" data-key="categories"><i data-lucide="layout-grid" class="w-5 h-5"></i>Categories</a>
-                        <div class="my-2 border-t border-[var(--border-color)]"></div>
-                    </div>
-                    <div id="creator-section">
-                        <h3 class="px-3 text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider" data-key="creator">Creator</h3>
-                        <a href="#" class="nav-link nav-action flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 bg-[var(--background-tertiary)] border border-[var(--border-color)] hover:border-[var(--brand-color-purple)] hover:shadow-[0_0_15px_rgba(167,139,250,0.4)]" data-target="studio">
-                            <img src='https://i.postimg.cc/PxTt1gVn/7219b8450aa254b2d47645e0660295c1-icono-o-logotipo-de-camara-de-video.png' class='w-5 h-5 flex-shrink-0' alt='Creator Studio Icon'>
-                            <span data-key="creator_studio">Creator Studio</span>
-                        </a>
-                    </div>
-                </nav>
-                <div class="my-4 border-t border-[var(--border-color)]"></div>
-                <div class="px-4 md:px-0 flex-1 overflow-y-auto">
-                  <h3 class="px-3 text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-2" data-key="recommended_channels">Recommended Channels</h3>
-                  <div id="recommended-channels" class="space-y-3">
-                      <!-- Canales recomendados se cargan aquí -->
-                  </div>
-                </div>
-            </aside>
-
-            <main id="main-content" class="flex-1 bg-[var(--background-primary)] flex flex-col overflow-y-auto">
-                <!-- Contenido por defecto: Explorar -->
-            </main>
-        </div>
-    </div>
-
-    <div id="login-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in hidden">
-        <div class="bg-[var(--background-secondary)] p-8 rounded-2xl shadow-2xl w-full max-w-md border border-[var(--border-color)] text-center transform transition-all duration-300 scale-95">
-            <img src="https://i.postimg.cc/d1N7CQs2/photo-2025-09-19-11-13-33-2.jpg" alt="Logo" class="w-24 h-24 rounded-full mx-auto mb-4">
-            <h1 class="text-4xl font-extrabold mb-4">
-                <span data-key="welcome_to">Welcome to</span> 
-                <span style="color: var(--brand-color-purple);">Live</span><span class="text-white">Payout</span>
-            </h1>
-            <p class="text-[var(--text-secondary)] mb-8" data-key="login_prompt">Enter with your public Solana wallet address to start.</p>
-            <form id="login-form" class="space-y-4">
-                <input type="text" id="wallet-address" placeholder="Ej: 5x...yZ" class="w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-1)] transition-all">
-                <button type="submit" class="w-full purple-gradient-bg text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:btn-glow" data-key="login_button">
-                    Enter / Create Account
-                </button>
-            </form>
-            <p id="login-error" class="text-red-500 mt-4 text-sm h-5"></p>
-        </div>
-    </div>
-
-    <div id="loader" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]">
-        <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-[var(--brand-color-purple)]"></div>
-    </div>
-    
-    <div id="toast" class="fixed bottom-8 right-8 bg-green-600 text-white py-3 px-6 rounded-lg shadow-xl transform translate-y-20 opacity-0 transition-all duration-500 z-[100]">
-        <p id="toast-message"></p>
-    </div>
-
-    <div id="ad-container" class="fixed inset-0 bg-black/90 z-[200] flex flex-col items-center justify-center text-white text-2xl hidden">
-        <p id="ad-warning" class="mb-4 text-center font-bold"></p>
-        <div id="ad-slot" class="w-full max-w-lg h-auto flex items-center justify-center"></div>
-    </div>
-
-    <script type="module">
-        // --- Imports (deben estar en el nivel superior) ---
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, addDoc, serverTimestamp, updateDoc, increment, deleteDoc, getDocs, query, where, writeBatch, orderBy, limit, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <!-- Contenedor principal centrado -->
+    <div class="min-h-screen flex items-center justify-center p-4">
         
-        // --- Esperar a que el DOM esté cargado ---
-        window.addEventListener('DOMContentLoaded', () => {
+        <!-- Tarjeta del sistema de pago -->
+        <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-md">
             
-            // --- Mover todas las variables y lógica aquí dentro ---
-            const firebaseConfig = {
-                apiKey: "AIzaSyACz8EaihKTwAQHAnNCZJ-k8WxF1BDUOGs",
-                authDomain: "livep-d622a.firebaseapp.com",
-                projectId: "livep-d622a",
-                storageBucket: "livep-d622a.firebasestorage.app",
-                messagingSenderId: "257830156699",
-                appId: "1:257830156699:web:30f1b92479ea035d4ac93e",
-                measurementId: "G-EHBX5PD4G4"
-            };
-            
-            const CATEGORIES = ['Just Chatting', 'Crypto Raiders', 'Axie Infinity', 'Star Atlas', 'Decentraland', 'The Sandbox', 'Gods Unchained', 'Music', 'Gaming', 'DeFi'];
-            const CATEGORY_IMAGES = {
-                'Just Chatting': 'https://i.scdn.co/image/ab6765630000ba8a1b9084981ea8acabb928955b', 'Crypto Raiders': 'https://assets.gam3s.gg/crypto_raiders_cover_3156b1065c/crypto_raiders_cover_3156b1065c.png', 'Axie Infinity': 'https://cdn.axieinfinity.com/axieinfinity-website/branding/axie-infinity-logo.png', 'Star Atlas': 'https://s2.coinmarketcap.com/static/img/coins/200x200/11212.png', 'Decentraland': 'https://www.shutterstock.com/image-vector/vector-image-crypto-currency-logo-600nw-2109327635.jpg', 'The Sandbox': 'https://altcoinsbox.com/wp-content/uploads/2023/03/full-the-sandbox-logo.webp', 'Gods Unchained': 'https://cdn1.epicgames.com/spt-assets/0668c386b36843ee816eccaa027005a8/gods-unchained-1cime.jpg', 'Music': 'https://png.pngtree.com/element_our/sm/20180415/sm_5ad31d9b53530.jpg', 'Gaming': 'https://img.freepik.com/vector-gratis/plantilla-logotipo-juegos-degradados_52683-132733.jpg?semt=ais_incoming&w=740&q=80', 'DeFi': 'https://images-platform.99static.com/DVhnqMGIzJRSQ_Jm4MxWYDGEVYg=/178x53:1458x1333/500x500/top/smart/99designs-contests-attachments/129/129813/attachment_129813968'
-            };
-            const VIP_EMOJIS = [
-                { id: 'penguinsip', url: 'https://i.postimg.cc/DwVTxSBC/40196-penguinsip.gif', price: 20 }, { id: 'pinguin', url: 'https://i.postimg.cc/VLmTvXZP/45541-pinguin.gif', price: 20 }, { id: 'minecraft', url: 'https://i.postimg.cc/Lss1xyx3/403691-minecraft.png', price: 25 }, { id: 'pengubitcoin', url: 'https://i.postimg.cc/tCBrgwVF/42410-pengubitcoin.gif', price: 30 }, { id: 'smart_vegeta', url: 'https://i.postimg.cc/FH2Vd4Fk/793771-smart-vegeta.png', price: 30 }, { id: 'mewgrey', url: 'https://i.postimg.cc/jjWjWB8m/44097-mewgrey.gif', price: 35 }, { id: 'peperain', url: 'https://i.postimg.cc/85CcTF8R/93659-pepemoneyrain.gif', price: 40 }, { id: 'pepemonster', url: 'https://i.postimg.cc/P5z5ZbTb/345529-pepemonster.png', price: 40 }, { id: 'star', url: 'https://i.postimg.cc/fTwT7V2x/990874-star.gif', price: 45 }, { id: 'pepecard', url: 'https://i.postimg.cc/ryr0sr0j/761219-pepe-credit-card.gif', price: 50 }, { id: 'pepecry', url: 'https://i.postimg.cc/sXZXMkXx/471114-pepecry.png', price: 50 }, { id: 'pepesipspin', url: 'https://i.postimg.cc/T2QX6C0D/75754-pepesipspin.gif', price: 55 }
-            ];
-            const REWARD_INTERVAL_MINUTES = 5;
-            const REWARD_AMOUNT = 3000;
-            const WITHDRAWAL_MINIMUM_BIT = 1000000;
-            const BIT_COIN_LOGO_URL = "https://images.pump.fun/coin-image/EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump?variant=600x600&ipfs=bafybeiekzpu4uxvcrbvzmzteiqmia3fe2ana2ttyueqgvxodlhcsbpibre&src=https%3A%2F%2Fipfs.io%2Fipfs%2Fbafybeiekzpu4uxvcrbvzmzteiqmia3fe2ana2ttyueqgvxodlhcsbpibre";
+            <!-- Encabezado -->
+            <div class="text-center mb-6">
+                <h1 class="text-3xl font-bold text-white mb-2">
+                    Depósito de <span class="text-purple-400">Token</span>
+                </h1>
+                <p class="text-gray-400">
+                    Genere su código QR para pagar con un token SPL.
+                </p>
+            </div>
 
-            let app, auth, db;
-            let currentUser = null;
-            let unsubscribeUser = null;
-            let currentLang = 'en';
-            let currentPageRender = () => renderExplorePage();
-            let navigationHistory = [];
-            let withdrawalUpdateInterval = null;
+            <!-- Mostrar la Wallet de destino (informativo) -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-300 mb-2">Se depositará a la billetera:</label>
+                <div class="bg-gray-700 p-3 rounded-lg text-center text-xs text-purple-300 break-all">
+                    23V6CXerzmncibRPGXL2q5kJ4LhqhG1Mr2Q81WJw7U7Q
+                </div>
+            </div>
 
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-            
-            // --- Mover selectores de DOM aquí ---
-            const loginModal = document.getElementById('login-modal');
-            const appContainer = document.getElementById('app-container');
-            const loginForm = document.getElementById('login-form');
-            const walletAddressInput = document.getElementById('wallet-address');
-            const loginError = document.getElementById('login-error');
-            const mainContent = document.getElementById('main-content');
-            const userProfileArea = document.getElementById('user-profile-area');
-            const loader = document.getElementById('loader');
-            const recommendedChannelsContainer = document.getElementById('recommended-channels');
-            const sidebar = document.getElementById('sidebar');
-            const sidebarBackdrop = document.getElementById('sidebar-backdrop');
-            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-            const mobileMenuIcon = document.getElementById('mobile-menu-icon');
-            const backButton = document.getElementById('back-button');
+            <!-- Mostrar el Token Mint (NUEVO) -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-300 mb-2">Token (Mint Address):</label>
+                <div class="bg-gray-700 p-3 rounded-lg text-center text-xs text-green-300 break-all" id="token-mint-address">
+                    <!-- El token se insertará aquí desde JS -->
+                </div>
+            </div>
 
-            // --- Mover funciones y lógica aquí ---
+            <!-- Formulario de entrada -->
+            <div>
+                <!-- Campo para el monto -->
+                <div class="mb-4">
+                    <label for="sol-amount" class="block text-sm font-medium text-gray-300 mb-2">
+                        Monto a depositar (en Tokens)
+                    </label>
+                    <input type="number"
+                           id="sol-amount"
+                           min="0.000001"
+                           step="0.01"
+                           placeholder="Ej: 0.5"
+                           class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                </div>
+
+                <!-- Botón para generar -->
+                <button id="generate-qr-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition duration-300 ease-in-out">
+                    Generar QR de Pago
+                </button>
+            </div>
+
+            <!-- Mensaje de error -->
+            <div id="error-message" class="text-red-400 text-center text-sm mt-4"></div>
+
+            <!-- Contenedor para el Código QR -->
+            <div id="qr-container" class="mt-6 flex justify-center p-4 bg-gray-700 rounded-lg min-h-[280px] items-center">
+                 <span class="text-gray-500">Aquí aparecerá el código QR</span>
+            </div>
+
+            <!-- --- ¡NUEVO! Sección de pago directo --- -->
             
-            function requireAuth() {
-                if (!currentUser) {
-                    loginModal.style.display = 'flex';
-                    setTimeout(() => document.querySelector('#login-modal > div').classList.remove('scale-95'), 10);
-                    return false;
+            <!-- Divisor "O" -->
+            <div class="relative flex items-center my-6">
+                <div class="flex-grow border-t border-gray-600"></div>
+                <span class="flex-shrink mx-4 text-gray-500 text-sm">O</span>
+                <div class="flex-grow border-t border-gray-600"></div>
+            </div>
+
+            <!-- Botón de Conectar y Pagar -->
+            <div>
+                <button id="connect-pay-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition duration-300 ease-in-out disabled:opacity-50 disabled:cursor-wait">
+                    Conectar Phantom y Pagar
+                </button>
+            </div>
+
+            <!-- Mensajes para el pago directo -->
+            <div id="connect-message" class="text-center text-sm mt-4 min-h-[20px]"></div>
+            <!-- Fin de la nueva sección -->
+
+            <!-- Disclaimer de seguridad -->
+            <div class="mt-6 text-center">
+                <p class="text-xs text-gray-500">
+                    <strong>Importante:</strong> Esta herramienta solo genera la solicitud de pago.
+                    No verifica si la transacción ha sido completada.
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+    // --- ¡MODIFICADO! Esperar a que todo el DOM y TODOS LOS SCRIPTS estén cargados ---
+    window.addEventListener('load', () => {
+
+        // --- Lógica de la Aplicación ---
+        
+        // ¡Importante! Asignar Buffer globalmente para que solanaWeb3 lo encuentre
+        // Las bibliotecas de Solana en el navegador dependen de 'Buffer'
+        if (typeof buffer !== 'undefined') {
+            window.Buffer = buffer.Buffer;
+        }
+
+        // La billetera de destino fija
+        const RECIPIENT_WALLET = "23V6CXerzmncibRPGXL2q5kJ4LhqhG1Mr2Q81WJw7U7Q";
+        
+        // --- ¡NUEVO! Dirección del Mint del Token SPL ---
+        const SPL_TOKEN_MINT = "EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump";
+
+        // Elementos del DOM
+        const generateBtn = document.getElementById("generate-qr-btn");
+        const amountInput = document.getElementById("sol-amount");
+        const qrContainer = document.getElementById("qr-container");
+        const errorMessage = document.getElementById("error-message");
+        const tokenMintDisplay = document.getElementById("token-mint-address"); // Nuevo elemento
+
+        // --- ¡NUEVOS Elementos del DOM para Pago Directo ---
+        const connectPayBtn = document.getElementById("connect-pay-btn");
+        const connectMessage = document.getElementById("connect-message");
+
+        // Instancia del QR (para poder limpiarla si es necesario)
+        let qrCodeInstance = null;
+        
+        // --- ¡NUEVO! Poblar la dirección del token al cargar la página ---
+        if(tokenMintDisplay) {
+            tokenMintDisplay.textContent = SPL_TOKEN_MINT;
+        }
+
+        // Event Listener para el botón
+        generateBtn.addEventListener('click', () => {
+            const amount = parseFloat(amountInput.value);
+
+            // Limpiar estado anterior
+            errorMessage.textContent = "";
+            
+            // --- Validación de entrada ---
+            if (!amount || amount <= 0) {
+                errorMessage.textContent = "Por favor, ingrese un monto válido y mayor a cero.";
+                // Limpiar el contenedor del QR
+                if (qrCodeInstance) {
+                    qrCodeInstance.clear(); // Limpia el QR existente
                 }
-                return true;
+                qrContainer.innerHTML = '<span class="text-gray-500">Aquí aparecerá el código QR</span>';
+                return;
             }
 
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    const storedWallet = localStorage.getItem('walletAddress');
-                    if (storedWallet) {
-                        await setupUser(storedWallet);
-                    } else {
-                        currentUser = null;
-                        updateUIForAuthState();
-                        loader.classList.add('hidden');
-                    }
-                } else {
-                    currentUser = null;
-                    currentLang = localStorage.getItem('lang') || 'en';
-                    setLanguage(currentLang);
-                    updateUIForAuthState();
-                    renderExplorePage();
-                    appContainer.classList.remove('opacity-0');
-                    loader.classList.add('hidden');
-                }
+            // --- Construcción de la URL de Solana Pay ---
+            // solana:<recipient_address>?amount=<amount>&label=<label>&message=<message>
+            // --- ¡MODIFICADO! Se añade el parámetro &spl-token= ---
+            
+            // --- MODIFICADO ---
+            // Se eliminan 'label' y 'message' para acortar la URL
+            // y prevenir el error "code length overflow" si el monto es muy largo.
+            // const label = encodeURIComponent("Depósito Token");
+            // const message = encodeURIComponent(`Pago de ${amount} Tokens por servicios.`);
+            
+            // Esta es la URL estándar de Solana Pay para TOKENS (versión corta)
+            const solanaPayUrl = `solana:${RECIPIENT_WALLET}?amount=${amount}&spl-token=${SPL_TOKEN_MINT}`;
+
+            // --- Generación del QR ---
+            
+            // Limpiar el contenedor antes de generar uno nuevo
+            qrContainer.innerHTML = ""; 
+            
+            // Crear una nueva instancia de QRCode
+            // La biblioteca qrcode.js se encargará de dibujar el QR dentro de 'qrContainer'
+            qrCodeInstance = new QRCode(qrContainer, {
+                text: solanaPayUrl,
+                width: 256,
+                height: 256,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H // Alta corrección de errores
             });
+        });
 
-            loginForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                loginError.textContent = '';
-                const walletAddress = walletAddressInput.value.trim();
-                if (walletAddress.length < 32 || walletAddress.length > 44) {
-                    loginError.textContent = 'Please enter a valid Solana wallet address.';
-                    return;
-                }
-                loader.classList.remove('hidden');
-                try {
-                    localStorage.setItem('walletAddress', walletAddress);
-                    if (!auth.currentUser) {
-                        await signInAnonymously(auth);
-                    } else {
-                        await setupUser(walletAddress);
-                    }
-                } catch (error) {
-                    console.error("Login error:", error);
-                    loginError.textContent = 'There was an error logging in. Please try again.';
-                    localStorage.removeItem('walletAddress');
-                    loader.classList.add('hidden');
-                }
-            });
-            
-            async function setupUser(wallet) {
-                const userRef = doc(db, "users", wallet);
-                const userSnap = await getDoc(userRef);
-                if (!userSnap.exists()) {
-                    await setDoc(userRef, {
-                        walletAddress: wallet, username: `Wallet...${wallet.substring(wallet.length - 4)}`, profilePicture: `https://placehold.co/128x128/1a1a1a/4ade80?text=${wallet.substring(0,1)}`, bitBalance: 1000, creatorRewardsBalance: 0, createdAt: serverTimestamp(), authUid: auth.currentUser.uid, followersCount: 0, followingCount: 0
-                    });
-                } else {
-                    if (!userSnap.data().username) await updateDoc(userRef, { username: `Wallet...${wallet.substring(wallet.length - 4)}` });
-                    if (userSnap.data().authUid !== auth.currentUser.uid) await updateDoc(userRef, { authUid: auth.currentUser.uid });
-                }
-                loadUserProfile(wallet);
-            }
+        // --- ¡NUEVA LÓGICA DE PAGO DIRECTO! ---
 
-            async function loadUserProfile(wallet) {
-                if (unsubscribeUser) unsubscribeUser();
-                const userRef = doc(db, "users", wallet);
-                let isInitialLoad = true;
-                unsubscribeUser = onSnapshot(userRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        currentUser = { ...docSnap.data(), walletAddress: docSnap.id };
-                        if (isInitialLoad) {
-                            currentLang = localStorage.getItem('lang') || 'en';
-                            setLanguage(currentLang);
-                            updateUIForAuthState();
-                            loginModal.style.display = 'none';
-                            appContainer.classList.remove('opacity-0');
-                            loader.classList.add('hidden');
-                            isInitialLoad = false;
-                            currentPageRender();
-                        }
-                        renderHeader();
-                    } else { logout(); }
-                }, (error) => { console.error("Error listening to user changes:", error); logout(); });
-            }
+        // 1. Configuración de Solana
+        // Estas definiciones ahora son seguras porque 'solanaWeb3' existe
+        const RPC_URL = "https://api.mainnet-beta.solana.com"; // RPC Público de Solana
+        const connection = new solanaWeb3.Connection(RPC_URL, "confirmed");
+        
+        // Convertimos las direcciones string a PublicKeys
+        const recipientPubKey = new solanaWeb3.PublicKey(RECIPIENT_WALLET);
+        const mintPubKey = new solanaWeb3.PublicKey(SPL_TOKEN_MINT);
 
-            function updateUIForAuthState() {
-                renderHeader();
-                const creatorSection = document.getElementById('creator-section');
-                if (creatorSection) creatorSection.style.display = currentUser ? 'block' : 'none';
-                if (currentUser) {
-                    loadRecommendedChannels();
-                } else if (recommendedChannelsContainer) { // Ensure container exists
-                    recommendedChannelsContainer.innerHTML = '';
-                }
-                if (!navigationHistory.length) { 
-                     setupNavigation();
-                }
-            }
-            
-            function logout() {
-                stopStream();
-                if (withdrawalUpdateInterval) clearInterval(withdrawalUpdateInterval);
-                if(unsubscribeUser) unsubscribeUser();
-                localStorage.removeItem('walletAddress');
-                if(auth.currentUser) auth.signOut();
-                else {
-                    currentUser = null;
-                    updateUIForAuthState();
-                    renderExplorePage();
-                }
-            }
+        // 2. Event Listener para el nuevo botón
+        connectPayBtn.addEventListener('click', async () => {
+            // Deshabilitar botón y limpiar mensajes
+            connectPayBtn.disabled = true;
+            connectPayBtn.textContent = "Conectando...";
+            connectMessage.textContent = "";
+            errorMessage.textContent = ""; // Limpiar también el error del QR
 
-            function renderHeader() {
-                // Check if userProfileArea exists before modifying it
-                if (!userProfileArea) return; 
-
-                if (currentUser) {
-                    userProfileArea.innerHTML = `
-                        <div class="flex items-center gap-1 md:gap-2 bg-[var(--background-tertiary)] px-2 md:px-3 py-1.5 rounded-full">
-                            <img src="${BIT_COIN_LOGO_URL}" class="w-5 h-5 rounded-full object-cover">
-                            <span class="font-semibold text-white text-sm md:text-base">${currentUser.bitBalance.toLocaleString()} <span class="hidden sm:inline">BIT</span></span>
-                        </div>
-                        <button id="profile-button" class="group flex items-center gap-2">
-                            <img src="${currentUser.profilePicture}" alt="Profile Picture" class="w-9 h-9 md:w-10 md:h-10 rounded-full object-cover border-2 border-[var(--border-color)] group-hover:border-[var(--brand-color-purple)] transition-colors">
-                            <span class="hidden md:block font-semibold group-hover:text-[var(--brand-color-purple)]">${currentUser.username}</span>
-                        </button>`;
-                } else {
-                    userProfileArea.innerHTML = `
-                        <button id="login-button-header" class="purple-gradient-bg text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 transform hover:scale-105">
-                            Log In
-                        </button>`;
-                    const loginButton = document.getElementById('login-button-header');
-                    if (loginButton) { // Check if button exists before adding listener
-                        loginButton.addEventListener('click', () => {
-                             loginModal.style.display = 'flex';
-                        });
-                    }
-                }
-                lucide.createIcons();
-            }
-            
-            async function loadRecommendedChannels() {
-                if(!currentUser || !recommendedChannelsContainer) return; // Ensure container exists
-                const usersQuery = query(collection(db, "users"), where("walletAddress", "!=", currentUser.walletAddress), limit(5));
-                const usersSnapshot = await getDocs(usersQuery);
-                recommendedChannelsContainer.innerHTML = ''; // Clear existing content
-                usersSnapshot.forEach(doc => {
-                    const user = doc.data();
-                    const channelEl = document.createElement('div');
-                    channelEl.className = 'flex items-center gap-3 p-1 rounded-lg hover:bg-[var(--background-tertiary)] cursor-pointer';
-                    channelEl.innerHTML = `
-                        <img src="${user.profilePicture}" class="w-8 h-8 rounded-full">
-                        <div class="flex-1 overflow-hidden">
-                            <p class="text-sm font-semibold truncate">${user.username || user.walletAddress.substring(0,6)}</p>
-                            <p class="text-xs text-[var(--text-secondary)]">${user.followersCount || 0} ${translations[currentLang].followers}</p>
-                        </div>`;
-                    recommendedChannelsContainer.appendChild(channelEl);
-                });
-            }
-
-            function showToast(message) {
-                const toast = document.getElementById('toast');
-                const toastMessage = document.getElementById('toast-message');
-                if (!toast || !toastMessage) return; // Ensure elements exist
-                toastMessage.textContent = message;
-                toast.classList.remove('translate-y-20', 'opacity-0');
-                setTimeout(() => {
-                    toast.classList.add('translate-y-20', 'opacity-0');
-                }, 3000);
-            }
-
-            // --- RENDER FUNCTIONS ---
-
-            async function renderExplorePage() {
-                currentPageRender = renderExplorePage;
-                let streamsQuery = query(collection(db, "streams"), where("status", "==", "live"));
-                
-                let streamsHTML = '';
-                try {
-                    const querySnapshot = await getDocs(streamsQuery);
-                    if (querySnapshot.empty) {
-                        streamsHTML = `<p class="text-center text-[var(--text-secondary)] col-span-full">${translations[currentLang].no_one_live.replace('%s', 'any')}</p>`;
-                    } else {
-                        querySnapshot.forEach(doc => {
-                            const stream = doc.data();
-                            streamsHTML += `
-                                <div class="stream-card group bg-[var(--background-secondary)] rounded-xl overflow-hidden border border-[var(--border-color)] hover:border-[var(--brand-color-purple)] transition-all transform hover:-translate-y-1 duration-300 cursor-pointer" data-streamer-wallet="${doc.id}">
-                                    <div class="relative"><img src="${stream.thumbnailUrl || 'https://placehold.co/400x225/141418/2a2a32?text=En+Vivo'}" class="w-full h-40 object-cover" onerror="this.src='https://placehold.co/400x225/141418/2a2a32?text=Error'">
-                                        <div class="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md">LIVE</div>
-                                        <div class="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-md flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i> ${stream.viewerCount || 0}</div>
-                                    </div>
-                                    <div class="p-4 flex items-start gap-3"><img src="${stream.streamerPic}" class="w-10 h-10 rounded-full" onerror="this.src='https://placehold.co/40x40/1a1a1a/eaeaea?text=?';">
-                                        <div><h3 class="font-bold text-md truncate">${stream.title}</h3>
-                                            <p class="text-sm text-[var(--text-secondary)]">${stream.streamerUsername || stream.streamerWallet.substring(0, 6)}</h6>
-                                            <span class="text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full">${stream.category}</span>
-                                        </div>
-                                    </div>
-                                </div>`;
-                        });
-                    }
-                } catch (error) {
-                    console.error("Error fetching streams:", error);
-                    streamsHTML = `<p class="text-center text-red-500 col-span-full">Error loading streams.</p>`;
-                }
-                
-                renderPage(`<h1 class="text-3xl font-bold mb-6" data-key="explore_title">${translations[currentLang].explore_title}</h1>
-                    <div id="streams-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">${streamsHTML}</div>`, 'explore');
-                
-                document.querySelectorAll('.stream-card').forEach(card => {
-                    card.addEventListener('click', () => {
-                        navigationHistory.push(currentPageRender);
-                        const streamerWallet = card.dataset.streamerWallet;
-                        renderWatchStreamPage(streamerWallet);
-                    });
-                });
-            }
-            
-            function renderCategoriesPage() {
-                currentPageRender = renderCategoriesPage;
-                const categoriesHTML = CATEGORIES.map(cat => `
-                    <div class="category-card group bg-[var(--background-secondary)] rounded-xl overflow-hidden border border-[var(--border-color)] hover:border-[var(--brand-color-purple)] transition-all transform hover:-translate-y-1 duration-300 cursor-pointer" data-category="${cat}">
-                        <img src="${CATEGORY_IMAGES[cat] || `https://placehold.co/300x400/141418/2a2a32?text=${cat.replace(' ', '+')}`}" class="w-full h-auto object-cover" onerror="this.src='https://placehold.co/300x400/141418/2a2a32?text=Error'">
-                        <div class="p-4 bg-[var(--background-secondary)]"><h3 class="font-bold text-lg truncate">${cat}</h3></div>
-                    </div>`).join('');
-                
-                renderPage(`<h1 class="text-3xl font-bold mb-6" data-key="categories_title">Explore Categories</h1>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">${categoriesHTML}</div>`, 'categories');
-
-                document.querySelectorAll('.category-card').forEach(card => {
-                    card.addEventListener('click', () => {
-                        const category = card.dataset.category;
-                        mainContent.innerHTML = `<div class="text-center p-8">${translations[currentLang].loading}...</div>`; 
-                        renderExplorePage(category); // Note: This might need adjustment if category filtering isn't implemented
-                    });
-                });
-            }
-            
-            function renderSettingsPage() {
-                 currentPageRender = renderSettingsPage;
-                 if (!currentUser) return; // Prevent rendering if user isn't loaded
-                 const profileHTML = `
-                 <div class="space-y-4">
-                    <div><img src="https://placehold.co/1200x300/1f1f1f/1f1f1f" class="w-full h-40 object-cover rounded-2xl"></div>
-                    <div class="flex flex-col items-center -mt-20"><img src="${currentUser.profilePicture}" class="w-32 h-32 rounded-full object-cover border-4 border-[var(--background-primary)]" onerror="this.src='https://placehold.co/128x128/1a1a1a/eaeaea?text=?';">
-                        <div class="text-center mt-2"><h1 class="text-2xl font-bold">${currentUser.username}</h1><p class="text-sm text-[var(--text-secondary)] break-all px-2">${currentUser.walletAddress}</p></div>
-                    </div>
-                    <div class="pt-4 grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div class="lg:col-span-1 space-y-6">
-                            <div class="bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)]"><h3 class="font-semibold text-lg mb-4" data-key="settings">Settings</h3>
-                                <label for="lang-select" class="font-semibold text-sm" data-key="language">Language</label>
-                                <select id="lang-select" class="mt-1 w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg p-2">
-                                    <option value="en" ${currentLang === 'en' ? 'selected' : ''}>English</option><option value="es" ${currentLang === 'es' ? 'selected' : ''}>Español</option>
-                                </select>
-                            </div>
-                            <div class="bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)]"><h3 class="font-semibold text-lg mb-4" data-key="edit_profile">Edit Profile</h3>
-                                <div class="space-y-3">
-                                    <div><label for="username-input" class="text-sm font-medium text-[var(--text-secondary)]" data-key="username">Username</label><input type="text" id="username-input" value="${currentUser.username}" class="mt-1 w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-purple)]"></div>
-                                    <div><label for="profile-pic-url" class="text-sm font-medium text-[var(--text-secondary)]" data-key="profile_pic_url">Profile Picture URL</label><input type="text" id="profile-pic-url" value="${currentUser.profilePicture}" class="mt-1 w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-purple)]"></div>
-                                </div>
-                                <button id="save-profile" class="mt-4 w-full purple-gradient-bg text-white font-semibold py-2 rounded-lg transition-all hover:scale-105" data-key="save">Save Changes</button>
-                                <button id="logout-button" class="mt-3 w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 rounded-lg transition-all" data-key="logout">Log Out</button>
-                            </div>
-                        </div>
-                        <div class="lg:col-span-2 space-y-6">
-                            <div class="bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)]">
-                                 <h3 class="font-semibold text-lg mb-4">Depositar BITS</h3>
-                                <!-- Contenedor del sistema de depósito -->
-                                <div id="solana-deposit-container">
-                                    <!-- INICIO: Sección de formulario (Paso 1) -->
-                                    <div id="deposit-form-section">
-                                        <label for="deposit-amount" class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Monto a Depositar</label>
-                                        <div class="relative">
-                                            <input type="number" id="deposit-amount" class="w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-purple)]" placeholder="Ej: 100.50">
-                                            <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-sm text-gray-400">BIT</span>
-                                        </div>
-                                        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            <button id="generate-qr-btn" class="w-full purple-gradient-bg text-white font-bold py-3 rounded-lg transition-all hover:opacity-90 flex items-center justify-center gap-2">
-                                                <i data-lucide="qr-code"></i> Pagar con QR
-                                            </button>
-                                            <!-- CAMBIO: Botón de Phantom ahora es Pago Manual -->
-                                            <button id="manual-pay-btn" class="w-full bg-purple-800 text-white font-bold py-3 rounded-lg transition-all hover:bg-purple-700 flex items-center justify-center gap-2">
-                                                <i data-lucide="wallet"></i> Pagar con Wallet (Manual)
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <!-- FIN: Sección de formulario -->
-
-                                    <!-- INICIO: Sección de Estado/Verificación (Paso 2) -->
-                                    <div id="deposit-status-section" class="text-center hidden">
-                                         
-                                         <!-- Título dinámico -->
-                                         <h4 id="deposit-title" class="text-md font-semibold mb-3">Escanea para Pagar</h4>
-                                         
-                                         <!-- Contenedor QR (para Pago QR) -->
-                                         <div id="deposit-qr-code" class="flex justify-center items-center my-4"></div>
-                                         
-                                         <!-- CAMBIO: Contenedor para instrucciones de pago manual -->
-                                         <div id="manual-payment-instructions" class="hidden text-left space-y-3 my-4">
-                                            <p class="text-sm text-yellow-400 text-center font-semibold">¡IMPORTANTE! Debes enviar el monto EXACTO.</p>
-                                            <div>
-                                                <label class="block text-xs font-medium text-[var(--text-secondary)]">Monto a Enviar (Exacto)</label>
-                                                <div id="manual-amount-display" class="readonly-input-field font-bold text-lg"></div>
-                                            </div>
-                                            <div>
-                                                <label class="block text-xs font-medium text-[var(--text-secondary)]">Wallet de Destino (Token BIT)</label>
-                                                <div id="manual-wallet-display" class="readonly-input-field"></div>
-                                            </div>
-                                            <div>
-                                                <label class="block text-xs font-medium text-[var(--text-secondary)]">Token Mint (BIT)</label>
-                                                <div id="manual-token-display" class="readonly-input-field"></div>
-                                            </div>
-                                            
-                                            <hr class="border-[var(--border-color)] my-4">
-                                            
-                                            <!-- Formulario de verificación -->
-                                            <div>
-                                                <label for="sender-wallet-input" class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Ingresa la wallet PÚBLICA desde la que enviaste</label>
-                                                <input type="text" id="sender-wallet-input" class="w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-purple)]" placeholder="Ej: 5x...yZ">
-                                            </div>
-                                            <button id="verify-payment-btn" class="mt-2 w-full purple-gradient-bg text-white font-bold py-3 rounded-lg transition-all hover:opacity-90 flex items-center justify-center gap-2">
-                                                <i data-lucide="check-check"></i> Ya realicé el pago
-                                            </button>
-                                         </div>
-                                         
-                                         <!-- Estado y Spinner (usado por ambos) -->
-                                         <div class="flex items-center justify-center space-x-2 mt-4">
-                                            <div id="deposit-spinner" class="spinner-deposit h-5 w-5 rounded-full border-2 border-gray-600 border-t-purple-500 hidden"></div>
-                                            <p id="deposit-status-message" class="text-[var(--text-secondary)] text-sm">Esperando pago...</p>
-                                         </div>
-                                         
-                                         <!-- Botón de cancelar (usado por ambos) -->
-                                         <button id="deposit-cancel-btn" class="mt-4 w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 rounded-lg transition-all">Cancelar</button>
-                                    </div>
-                                    <!-- FIN: Sección de Estado/Verificación -->
-                                </div>
-                            </div>
-                            <div class="bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)]">
-                                <h3 class="font-semibold text-lg mb-4" data-key="balance_withdrawal">Balance & Withdrawal</h3>
-                                <div class="bg-[var(--background-tertiary)] p-6 rounded-lg mb-6">
-                                    <p class="text-sm text-[var(--text-secondary)]" data-key="current_balance">Your Current Balance</p>
-                                    <div class="flex items-center gap-2"><img src="${BIT_COIN_LOGO_URL}" class="w-10 h-10 rounded-full object-cover"><p class="text-4xl font-bold text-white">${currentUser.bitBalance.toLocaleString()} <span class="text-2xl font-normal text-purple-300">BIT</span></p></div>
-                                    <p class="text-lg text-green-400 h-7 mt-2" id="usd-equivalent-display">...</p>
-                                </div>
-                                <p class="text-sm text-[var(--text-secondary)]" id="withdrawal-info-text" data-key="withdrawal_minimum_bit">You need a minimum of ${WITHDRAWAL_MINIMUM_BIT.toLocaleString()} BIT to withdraw.</p>
-                                <div id="token-price-info" class="text-xs text-gray-500 h-4 mt-1"></div>
-                                <button id="withdraw-button" class="mt-4 w-full purple-gradient-bg text-white font-bold py-3 rounded-lg transition-all disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed" disabled data-key="request_withdrawal">Request Withdrawal</button>
-                                <div id="withdraw-message" class="text-center text-sm h-5 mt-2"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>`;
-                renderPage(profileHTML, null, true); 
-                document.getElementById('save-profile')?.addEventListener('click', saveProfile); 
-                document.getElementById('logout-button')?.addEventListener('click', logout); 
-                document.getElementById('withdraw-button')?.addEventListener('click', requestWithdrawal); 
-                document.getElementById('lang-select')?.addEventListener('change', (e) => setLanguage(e.target.value));
-                if (withdrawalUpdateInterval) clearInterval(withdrawalUpdateInterval);
-                withdrawalUpdateInterval = setInterval(updateWithdrawalStatus, 30000);
-                updateWithdrawalStatus();
-                setupSolanaDeposit(); // <-- Inicializa la lógica de depósito
-            }
-            
-            // ... (Resto de las funciones renderStudioPage, renderWatchStreamPage, etc. sin cambios significativos) ...
-             function renderStudioPage() {
-                currentPageRender = renderStudioPage;
-                const studioHTML = `
-                    <div class="bg-[var(--background-secondary)] rounded-2xl border border-[var(--border-color)] min-h-[70vh] flex flex-col md:flex-row">
-                        <div class="w-full md:w-1/3 lg:w-1/4 border-b md:border-b-0 md:border-r border-[var(--border-color)] p-4 space-y-2">
-                            <h2 class="text-xl font-bold p-2" data-key="creator_studio">Creator Studio</h2>
-                            <button class="studio-tab-btn w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg" data-target="studio-stream"><i data-lucide="video"></i><span data-key="stream">Stream</span></button>
-                            <button class="studio-tab-btn w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg" data-target="studio-analytics"><i data-lucide="bar-chart-2"></i><span data-key="analytics_rewards">Analytics & Rewards</span></button>
-                        </div><div id="studio-content" class="w-full md:w-2/3 lg:w-3/4 p-4 md:p-8"></div>
-                    </div>`;
-                renderPage(studioHTML, 'studio', true);
-                const tabButtons = document.querySelectorAll('.studio-tab-btn');
-                const studioContent = document.getElementById('studio-content');
-                const tabs = { 'studio-stream': renderStudioStream, 'studio-analytics': renderStudioAnalytics };
-                function switchTab(targetId) {
-                    tabButtons.forEach(btn => btn.classList.toggle('bg-[var(--background-tertiary)]', btn.dataset.target === targetId));
-                    if (studioContent) { // Check if element exists
-                        studioContent.innerHTML = `<div class="animate-fade-in">${tabs[targetId]()}</div>`;
-                        setLanguage(currentLang);
-                        lucide.createIcons();
-                        if(targetId === 'studio-analytics') attachAnalyticsListeners();
-                        if(targetId === 'studio-stream') attachStreamListeners();
-                    }
-                }
-                tabButtons.forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.target)));
-                switchTab('studio-stream'); // Initial tab
-            }
-
-            let unsubscribeChat = null;
-            let unsubscribeStream = null;
-            let viewerPeerConnection = null;
-            async function renderWatchStreamPage(streamerWallet) {
-                currentPageRender = () => renderWatchStreamPage(streamerWallet);
-                 if (mainContent) {
-                    mainContent.classList.add('!p-0', 'md:!p-0', '!overflow-hidden');
-                 }
-
-                let streamerData = { profilePicture: '', followersCount: 0, username: 'Streamer' };
-                try {
-                    const streamerDoc = await getDoc(doc(db, "users", streamerWallet));
-                    if (streamerDoc.exists()) {
-                        streamerData = streamerDoc.data();
-                    }
-                } catch (error) {
-                    console.error("Error fetching streamer data:", error);
+            try {
+                // 3. Verificar si Phantom (o una wallet compatible) está instalado
+                const { solana } = window;
+                if (!solana || !solana.isPhantom) {
+                    throw new Error("Por favor, instale la billetera Phantom para usar esta función.");
                 }
 
-                const watchHTML = `
-                <div class="w-full h-full flex flex-col lg:flex-row">
-                    <!-- Top section (scrollable): Video + info -->
-                    <div class="flex-1 lg:p-8 p-4 overflow-y-auto">
-                        <div class="flex flex-col gap-4 max-w-4xl mx-auto">
-                             <div id="video-container" class="relative w-full aspect-video bg-black rounded-lg flex items-center justify-center flex-shrink-0">
-                                <div id="video-overlay" class="absolute inset-0 flex items-center justify-center text-white text-xl z-10" data-key="connecting_stream">Connecting to stream...</div>
-                                <video id="remote-video" autoplay playsinline class="w-full h-full object-contain opacity-0 transition-opacity duration-500"></video>
-                            </div>
-                            <div id="stream-info-panel">
-                                <div class="bg-[var(--background-secondary)] p-4 rounded-lg border border-[var(--border-color)] flex flex-col sm:flex-row justify-between items-center gap-4">
-                                    <div class="flex items-center gap-4">
-                                        <h2 id="stream-title-display" class="font-bold text-lg">Loading...</h2>
-                                        <p class="text-sm text-[var(--text-secondary)]">${streamerData.username} | ${streamerData.followersCount || 0} <span data-key="followers">followers</span></p>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-2 mt-2">
-                                    <button id="follow-btn" class="font-bold py-2 px-6 rounded-lg transition-all h-11 flex-1 bg-gray-800 text-center"></button>
-                                    <button id="subscribe-btn" class="purple-gradient-bg hover:opacity-90 text-white font-bold py-2 px-6 rounded-lg flex items-center justify-center gap-2 h-11 flex-1">
-                                        <i data-lucide="star" class="w-4 h-4"></i> <span data-key="subscribe">Subscribe</span> (100 BIT)
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                // 4. Conectar la billetera
+                await solana.connect();
+                const senderPubKey = solana.publicKey;
 
-                    <!-- Bottom section (fixed height on mobile): Chat -->
-                    <div class="w-full lg:w-80 lg:max-h-full flex-shrink-0 bg-[var(--background-secondary)] lg:rounded-lg p-4 flex flex-col border-t lg:border-l lg:border-t-0 border-[var(--border-color)] h-1/2 lg:h-auto">
-                        <h3 class="font-bold text-lg mb-2 flex-shrink-0" data-key="live_chat">Live Chat</h3>
-                        <div id="chat-messages" class="flex-grow space-y-2 overflow-y-auto pr-2 min-h-0"></div>
-                        <div id="chat-input-container" class="flex-shrink-0 relative mt-auto pt-4" style="padding-bottom: env(safe-area-inset-bottom);">
-                             <div id="vip-emoji-panel" class="hidden absolute bottom-full mb-2 left-0 w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg p-2 grid grid-cols-5 gap-2">
-                               ${VIP_EMOJIS.map(e => `<button class="vip-emoji-btn group" data-emoji-id="${e.id}"><img src="${e.url}" class="w-10 h-10 transition-transform group-hover:scale-110"><div class="text-xs flex items-center justify-center gap-1">${e.price} <img src="${BIT_COIN_LOGO_URL}" class="w-3 h-3 rounded-full object-cover inline-block"></div></button>`).join('')}
-                            </div>
-                            <form id="chat-form" class="flex gap-2">
-                               <button type="button" id="open-vip-emojis" class="flex-shrink-0 p-2 purple-gradient-bg hover:opacity-90 rounded-lg"><i data-lucide="smile"></i></button>
-                               <input type="text" id="chat-input" data-key-placeholder="chat_placeholder" placeholder="Send a message..." class="flex-grow bg-[var(--background-tertiary)] rounded-lg px-3 py-2 text-sm min-w-0" required>
-                               <button type="submit" class="flex-shrink-0 purple-gradient-bg px-3 rounded-lg"><i data-lucide="send"></i></button>
-                            </form>
-                        </div>
-                    </div>
-                </div>`;
-                if (mainContent) mainContent.innerHTML = watchHTML; // Check before setting innerHTML
-                setLanguage(currentLang);
-                lucide.createIcons();
-                updateHeaderButtons(true);
-                
-                joinStream(streamerWallet);
-
-                const chatInputContainer = document.getElementById('chat-input-container');
-                const streamInfoPanel = document.getElementById('stream-info-panel');
-                if (!currentUser) {
-                    if (chatInputContainer) {
-                        chatInputContainer.innerHTML = `<div class="text-center p-4 py-6 text-sm text-gray-400 rounded-lg bg-[var(--background-tertiary)]">Please <button id="login-prompt-chat" class="text-purple-400 font-bold hover:underline">log in</button> to chat or interact.</div>`;
-                        document.getElementById('login-prompt-chat')?.addEventListener('click', () => { loginModal.style.display = 'flex'; });
-                    }
-                    if (streamInfoPanel) streamInfoPanel.style.display = 'none';
-                } else {
-                    setupFollowButton(streamerWallet);
-                    setupSubscribeButton(streamerWallet);
-                    setupVipEmojiPanel(streamerWallet);
-                }
-                
-                unsubscribeStream = onSnapshot(doc(db, "streams", streamerWallet), (docSnap) => {
-                    if (!docSnap.exists()) {
-                        showToast(translations[currentLang].stream_ended);
-                        renderExplorePage();
-                    } else {
-                        const streamTitleDisplay = document.getElementById('stream-title-display');
-                        if (streamTitleDisplay) streamTitleDisplay.textContent = docSnap.data().title;
-                    }
-                }, error => console.error("Error listening to stream:", error));
-                
-                const chatMessages = document.getElementById('chat-messages');
-                const chatForm = document.getElementById('chat-form');
-                const chatInput = document.getElementById('chat-input');
-                const chatRef = collection(db, 'streams', streamerWallet, 'chat');
-                const q = query(chatRef, orderBy("createdAt", "desc"), limit(50));
-                
-                unsubscribeChat = onSnapshot(q, async (snapshot) => {
-                   if (!chatMessages) return; // Check if chatMessages exists
-                    snapshot.docChanges().reverse().forEach(async change => {
-                        if (change.type === "added") {
-                            const msg = change.doc.data();
-                            const msgEl = document.createElement('div');
-                            if (msg.vipEmoji) {
-                                msgEl.className = 'super-chat';
-                                msgEl.innerHTML = `<div class="flex items-center gap-2 mb-2"><img src="${msg.vipEmoji.url}" class="w-10 h-10"><div class="font-bold text-lg">${msg.userName} ${translations[currentLang].sent} ${msg.vipEmoji.price} BIT</div></div><p class="text-white text-md">${msg.text}</p>`;
-                            } else {
-                                let isSub = false;
-                                try {
-                                    isSub = currentUser && (await getDoc(doc(db, "users", streamerWallet, "subscribers", msg.userWallet))).exists();
-                                } catch (e) { console.error("Error checking subscription:", e);}
-                                msgEl.className = 'text-sm';
-                                msgEl.innerHTML = `<p>${isSub ? '<svg class="member-badge" viewBox="0 0 24 24" fill="gold"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path></svg>' : ''}<strong class="font-semibold" style="color: ${msg.userColor || '#FFFFFF'}">${msg.userName}:</strong> ${msg.text}</p>`;
-                            }
-                            chatMessages.appendChild(msgEl);
-                        }
-                    });
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
-                }, error => console.error("Error listening to chat:", error));
-                
-                if(chatForm) chatForm.addEventListener('submit', async (e) => { // Make async
-                    e.preventDefault();
-                    if (!requireAuth()) return;
-                    const text = chatInput?.value.trim(); // Check if chatInput exists
-                    if (text) {
-                       try {
-                            await addDoc(chatRef, { text, userName: currentUser.username, userWallet: currentUser.walletAddress, userColor: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'), createdAt: serverTimestamp() });
-                            if(chatInput) chatInput.value = '';
-                        } catch (error) {
-                             console.error("Error sending chat message:", error);
-                             showToast("Error sending message.");
-                        }
-                    }
-                });
-            }
-            
-            function cleanupWatchPage() {
-                 if (mainContent) {
-                     mainContent.classList.remove('!p-0', 'md:!p-0', '!overflow-hidden');
-                     mainContent.classList.add('p-4', 'md:p-8');
-                 }
-                if (unsubscribeChat) { unsubscribeChat(); unsubscribeChat = null; }
-                if (unsubscribeStream) { unsubscribeStream(); unsubscribeStream = null; }
-                if (viewerPeerConnection) {
-                    viewerPeerConnection.close();
-                    viewerPeerConnection = null;
-                }
-                if(adInterval) { clearInterval(adInterval); adInterval = null; }
-            }
-
-            function renderStudioStream() {
-                currentPageRender = renderStudioStream;
-                const categoriesOptions = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
-                return `
-                    <div class="flex flex-col lg:flex-row gap-6 h-full">
-                        <div class="w-full lg:w-2/3 space-y-4"><h2 class="text-2xl font-bold" data-key="stream_dashboard">Stream Dashboard</h2>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                 <div><label class="font-semibold text-sm" data-key="stream_title">Stream Title</label><input id="stream-title-input" type="text" value="My awesome stream on Live Payout!" class="mt-1 w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg p-2"></div>
-                                 <div><label class="font-semibold text-sm" data-key="category">Category</label><select id="stream-category-select" class="mt-1 w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg p-2">${categoriesOptions}</select></div>
-                            </div>
-                             <div><label class="font-semibold text-sm" data-key="thumbnail_url">Thumbnail URL (Optional)</label><input id="stream-thumbnail-input" type="text" data-key-placeholder="thumbnail_placeholder" placeholder="https://example.com/image.png" class="mt-1 w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg p-2"></div>
-                            <div><label class="font-semibold text-sm" data-key="microphone">Microphone</label><select id="mic-select" class="mt-1 w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg p-2"></select></div>
-                            <div class="flex flex-col sm:flex-row gap-4">
-                                <button id="select-cam-btn" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50" data-key="use_camera"><i data-lucide="camera"></i>Use Camera</button>
-                                <button id="select-screen-btn" class="flex-1 purple-gradient-bg hover:opacity-90 text-white p-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50" data-key="share_screen"><i data-lucide="screen-share"></i>Share Screen</button>
-                            </div>
-                            <div class="bg-black p-2 rounded-lg">
-                                <h3 class="font-semibold text-center mb-2 flex items-center justify-center gap-2" id="stream-status-container">
-                                    <span id="stream-status-text" data-key="preview">Preview</span><span id="studio-viewer-count" class="flex items-center gap-1 text-sm text-gray-400"></span><span id="stream-timer" class="font-mono"></span>
-                                </h3><video id="local-video-preview" muted autoplay playsinline></video>
-                            </div>
-                        </div>
-                        <div class="w-full lg:w-1/3 flex flex-col gap-4">
-                             <div class="flex items-center justify-between"><h2 class="text-2xl font-bold" data-key="chat">Chat</h2></div>
-                            <div id="studio-chat-messages" class="flex-grow bg-[var(--background-tertiary)] rounded-lg p-2 space-y-2 overflow-y-auto border border-[var(--border-color)] h-64 lg:h-auto"></div>
-                            <div class="flex gap-4">
-                                <button id="start-stream-btn" class="flex-1 purple-gradient-bg text-white font-bold p-3 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50" disabled><i data-lucide="play-circle"></i><span data-key="start_stream">Start</span></button>
-                                <button id="stop-stream-btn" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold p-3 rounded-lg flex items-center justify-center gap-2 disabled:bg-gray-600 disabled:opacity-50" disabled><i data-lucide="stop-circle"></i><span data-key="stop_stream">Stop</span></button>
-                            </div>
-                        </div>
-                    </div>`;
-            }
-            
-            function renderStudioAnalytics() {
-                currentPageRender = renderStudioAnalytics;
-                if (!currentUser) return `<div class="text-center">Loading data...</div>`;
-                return `
-                    <h2 class="text-2xl font-bold mb-6" data-key="analytics_rewards">Analytics & Rewards</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                         <div class="bg-[var(--background-tertiary)] p-6 rounded-xl border border-[var(--border-color)] md:col-span-2">
-                             <div class="flex items-center justify-between mb-4">
-                                <h3 class="font-semibold text-lg" data-key="earnings_summary">Earnings Summary</h3>
-                                <i data-lucide="award" class="w-6 h-6 text-purple-400"></i>
-                            </div>
-                            <div class="flex items-center gap-2 my-2">
-                                <img src="${BIT_COIN_LOGO_URL}" class="w-10 h-10 rounded-full object-cover">
-                                <p class="text-4xl font-bold">${currentUser.creatorRewardsBalance.toLocaleString()} <span class="text-purple-300">BIT</span></p>
-                            </div>
-                            <p class="text-xs text-[var(--text-secondary)] mt-4">${translations[currentLang].rewards_info.replace('%a', REWARD_AMOUNT.toLocaleString()).replace('%m', REWARD_INTERVAL_MINUTES)}</p>
-                            <button id="transfer-rewards" class="w-full purple-gradient-bg hover:opacity-90 text-white font-bold py-3 rounded-lg transition-all mt-4 disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed" data-key="send_to_balance">Send to Main Balance</button>
-                        </div>
-                    </div>
-                    <div class="mt-6"><img src="https://placehold.co/800x400/1e1e24/2a2a32?text=Performance+Charts" class="w-full rounded-lg"></div>`;
-            }
-            
-            // --- NAVIGATION & UI HELPERS ---
-
-            function setupNavigation() {
-                const pages = {
-                    'explore': { render: renderExplorePage, pageKey: 'explore', auth: false },
-                    'categories': { render: renderCategoriesPage, pageKey: 'categories', auth: false },
-                    'studio': { render: renderStudioPage, pageKey: 'studio', auth: true }
-                };
-
-                document.body.addEventListener('click', (e) => {
-                    const profileButton = e.target.closest('#profile-button');
-                    if (profileButton) {
-                        if (!requireAuth()) return;
-                        e.preventDefault();
-                        navigationHistory.push(currentPageRender);
-                        cleanupWatchPage();
-                        renderSettingsPage();
-                    }
-
-                    const navAction = e.target.closest('.nav-action');
-                    if (navAction) {
-                        e.preventDefault();
-                        const targetPageKey = navAction.dataset.target;
-                        const page = pages[targetPageKey];
-                        if (page) {
-                            if(page.auth && !requireAuth()) return;
-                            navigationHistory.push(currentPageRender);
-                            cleanupWatchPage();
-                            currentPageRender = page.render;
-                            currentPageRender();
-                        }
-                    }
-                });
-                
-                if (backButton) { // Check if button exists
-                    backButton.addEventListener('click', () => {
-                        if (navigationHistory.length > 0) {
-                            cleanupWatchPage();
-                            const previousPage = navigationHistory.pop();
-                            if (typeof previousPage === 'function') {
-                                currentPageRender = previousPage;
-                                previousPage();
-                            }
-                        }
-                    });
+                // 5. Obtener el monto (misma validación que el QR)
+                const amount = parseFloat(amountInput.value);
+                if (!amount || amount <= 0) {
+                    throw new Error("Por favor, ingrese un monto válido y mayor a cero.");
                 }
 
-                function toggleSidebar() {
-                    if (!sidebar || !sidebarBackdrop || !mobileMenuIcon) return; // Check elements exist
-                    sidebar.classList.toggle('-translate-x-full');
-                    sidebarBackdrop.classList.toggle('hidden');
-                    mobileMenuIcon.setAttribute('data-lucide', sidebar.classList.contains('-translate-x-full') ? 'menu' : 'x');
-                    lucide.createIcons();
+                connectPayBtn.textContent = "Preparando transacción...";
+
+                // 6. Obtener decimales del Token (MUY IMPORTANTE)
+                // Las transacciones de tokens se hacen en su unidad mínima (como centavos)
+                const mintInfo = await splToken.getMint(connection, mintPubKey);
+                const decimals = mintInfo.decimals;
+                const amountInSmallestUnit = BigInt(Math.round(amount * Math.pow(10, decimals)));
+
+                // 7. Encontrar las Cuentas de Token (ATA)
+                // El que envía (sender) y el que recibe (recipient)
+                const fromAta = await splToken.getAssociatedTokenAddress(mintPubKey, senderPubKey);
+                const toAta = await splToken.getAssociatedTokenAddress(mintPubKey, recipientPubKey);
+
+                // 8. Crear la transacción
+                const transaction = new solanaWeb3.Transaction();
+
+                // 9. (Opcional pero recomendado) Verificar si el destinatario tiene una cuenta de este token
+                // Si no la tiene, se la creamos en la misma transacción.
+                const toAtaInfo = await connection.getAccountInfo(toAta);
+                if (!toAtaInfo) {
+                    transaction.add(
+                        splToken.createAssociatedTokenAccountInstruction(
+                            senderPubKey, // El que paga la creación
+                            toAta,
+                            recipientPubKey,
+                            mintPubKey
+                        )
+                    );
                 }
 
-               if(mobileMenuBtn) mobileMenuBtn.addEventListener('click', toggleSidebar); // Check button exists
-               if(sidebarBackdrop) sidebarBackdrop.addEventListener('click', toggleSidebar); // Check backdrop exists
-               if(sidebar) { // Check sidebar exists
-                    sidebar.addEventListener('click', (e) => {
-                        if (e.target.closest('a.nav-action')) {
-                            toggleSidebar();
-                        }
-                    });
-               }
-            }
-            
-            function updateHeaderButtons(isSubPage) {
-               if(backButton) backButton.classList.toggle('hidden', !isSubPage); // Check button exists
-               if(mobileMenuBtn) mobileMenuBtn.classList.toggle('hidden', isSubPage); // Check button exists
-            }
-
-            function setActiveLink(activeTarget) {
-                 document.querySelectorAll('.nav-action[data-target]').forEach(link => {
-                    link.classList.toggle('active', link.dataset.target === activeTarget);
-                });
-            }
-
-            function renderPage(content, activeTargetKey, isSubPage = false) {
-                 if (!mainContent) return; // Check if mainContent exists
-                mainContent.innerHTML = `<div class="animate-slide-in">${content}</div>`;
-                setActiveLink(activeTargetKey);
-                updateHeaderButtons(isSubPage);
-                setLanguage(currentLang);
-                lucide.createIcons();
-            }
-
-            // --- INICIO DE LA LÓGICA DE DEPÓSITO DE SOLANA ---
-            function setupSolanaDeposit() {
-                // --- CONFIG ---
-                const TATUM_API_KEY = 't-68f69f0447bf5156a36067b3-b0b00e1660324a54ad70ef28';
-                const RPC_URL = `https://solana-mainnet.gateway.tatum.io/`; // Tatum RPC base URL
-                const SPL_TOKEN_MINT = 'EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump';
-                const DEPOSIT_DESTINATION_WALLET = '23V6CXerzmncibRPGXL2q5kJ4LhqhG1Mr2Q81WJw7U7Q'; // Wallet central
-                const SPL_TOKEN_DECIMALS = 6; // Decimales del token BIT
-
-                // --- DOM ELEMENTS ---
-                const amountInput = document.getElementById('deposit-amount');
-                const generateQrBtn = document.getElementById('generate-qr-btn');
-                // CAMBIO: ID del botón
-                const manualPayBtn = document.getElementById('manual-pay-btn');
-                const depositFormSection = document.getElementById('deposit-form-section');
-                const depositStatusSection = document.getElementById('deposit-status-section');
-                const qrCodeContainer = document.getElementById('deposit-qr-code');
-                const statusMessage = document.getElementById('deposit-status-message');
-                const cancelBtn = document.getElementById('deposit-cancel-btn');
-                const paymentSpinner = document.getElementById('deposit-spinner');
-                const depositTitle = document.getElementById('deposit-title');
-
-                // CAMBIO: Nuevos elementos para pago manual
-                const manualInstructions = document.getElementById('manual-payment-instructions');
-                const manualAmountDisplay = document.getElementById('manual-amount-display');
-                const manualWalletDisplay = document.getElementById('manual-wallet-display');
-                const manualTokenDisplay = document.getElementById('manual-token-display');
-                const senderWalletInput = document.getElementById('sender-wallet-input');
-                const verifyPaymentBtn = document.getElementById('verify-payment-btn');
-
-                if (!amountInput || !generateQrBtn || !manualPayBtn || !cancelBtn || !verifyPaymentBtn || !manualInstructions) {
-                     console.error("Deposit elements not found!");
-                     return; // Salir si los elementos no existen
-                }
-
-                // --- CONNECTION using Tatum RPC---
-                 const connection = new window.solanaWeb3.Connection(`${RPC_URL}?apiKey=${TATUM_API_KEY}`, {
-                     commitment: 'confirmed'
-                 });
-
-                let pollingInterval = null;
-                let currentDepositAmount = 0; // Almacenar el monto
-
-                const resetToInitialState = () => {
-                    if (pollingInterval) clearInterval(pollingInterval);
-                    pollingInterval = null;
-                    currentDepositAmount = 0;
-                    if(amountInput) amountInput.value = '';
-                    if(senderWalletInput) senderWalletInput.value = '';
-                    if(generateQrBtn) generateQrBtn.disabled = false;
-                    if(manualPayBtn) manualPayBtn.disabled = false;
-                    if(depositFormSection) depositFormSection.classList.remove('hidden');
-                    if(depositStatusSection) depositStatusSection.classList.add('hidden');
-                    if(qrCodeContainer) {
-                        qrCodeContainer.innerHTML = '';
-                        qrCodeContainer.classList.add('hidden'); // Asegurarse que esté oculto
-                    }
-                    if(manualInstructions) manualInstructions.classList.add('hidden'); // Ocultar instrucciones
-                    if(statusMessage) statusMessage.textContent = 'Esperando pago...';
-                    if(paymentSpinner) paymentSpinner.classList.add('hidden');
-                    if(verifyPaymentBtn) verifyPaymentBtn.disabled = false;
-                };
-
-                const finalizeDeposit = async (amount) => {
-                    if (statusMessage) statusMessage.textContent = '¡Pago recibido! Actualizando balance en la plataforma...';
-                    if (paymentSpinner) paymentSpinner.classList.remove('hidden');
-
-                    try {
-                        const userRef = doc(db, "users", currentUser.walletAddress);
-                        await updateDoc(userRef, { bitBalance: increment(amount) });
-
-                         if (statusMessage) statusMessage.textContent = '¡Depósito Confirmado!';
-                         if (paymentSpinner) paymentSpinner.classList.add('hidden');
-                        showToast(`+${amount.toLocaleString()} BIT han sido añadidos a tu balance.`);
-                        
-                        // Refrescar datos del usuario y header (renderHeader handles null check)
-                        const userSnap = await getDoc(userRef);
-                        if (userSnap.exists()) {
-                            currentUser = { ...userSnap.data(), walletAddress: userSnap.id };
-                            renderHeader(); 
-                        }
-
-                        await updateWithdrawalStatus(); // Actualizar info de retiro
-                    } catch (error) {
-                         console.error("Error finalizing deposit:", error);
-                         if (statusMessage) statusMessage.textContent = 'Error al actualizar balance.';
-                         if (paymentSpinner) paymentSpinner.classList.add('hidden');
-                         showToast("Error al actualizar tu balance.");
-                    } finally {
-                        setTimeout(resetToInitialState, 4000); // Volver al formulario
-                    }
-                };
-                
-                 // Helper function for delays
-                const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-
-                // Helper function to check if libraries are loaded
-                const checkSolanaLibs = async (source) => {
-                     let attempts = 0;
-                     while ((typeof window.solanaWeb3 === 'undefined' || typeof window.splToken === 'undefined') && attempts < 10) {
-                         console.log(`${source}: Solana libraries not ready, waiting... (Attempt ${attempts + 1})`);
-                         await delay(300); // Wait 300ms
-                         attempts++;
-                     }
-                     if (typeof window.solanaWeb3 === 'undefined' || typeof window.splToken === 'undefined') {
-                        console.error(`${source}: Solana libraries failed to load after multiple attempts.`);
-                        showToast("Error: Las librerías de Solana no cargaron. Refresca la página.");
-                        return false;
-                     }
-                     console.log(`${source}: Solana libraries loaded.`);
-                     return true;
-                };
-
-
-                // Escucha para transacciones de QR Code (Solana Pay)
-                // ESTA FUNCIÓN NO SE TOCA (Usa web3.js)
-                const listenForTransaction = (referencePublicKey, amount) => {
-                     if (statusMessage) statusMessage.textContent = 'Esperando escaneo QR y confirmación...';
-                     if (paymentSpinner) paymentSpinner.classList.remove('hidden');
-                    
-                     // Convertir el monto requerido a la unidad más pequeña (lamports para token)
-                     const requiredAmountSmallestUnit = BigInt(Math.round(amount * Math.pow(10, SPL_TOKEN_DECIMALS)));
-                     const rpcUrl = `${RPC_URL}?apiKey=${TATUM_API_KEY}`;
-
-                    pollingInterval = setInterval(async () => {
-                        // Esta función SÍ necesita las librerías web3 para 'connection.getSignaturesForAddress'
-                        if (!await checkSolanaLibs('QR Polling')) { 
-                             clearInterval(pollingInterval);
-                             resetToInitialState();
-                             return;
-                        }
-                        try {
-                            console.log(`Buscando firma para referencia: ${referencePublicKey.toBase58().substring(0, 10)}...`);
-                            const signatures = await connection.getSignaturesForAddress(referencePublicKey, { limit: 1 });
-                            
-                            if (signatures.length > 0) {
-                                clearInterval(pollingInterval);
-                                pollingInterval = null;
-                                const signature = signatures[0].signature;
-                                console.log("Firma encontrada:", signature);
-                                
-                                 if (statusMessage) statusMessage.textContent = 'Verificando monto de la transacción...';
-
-                                // --- INICIO DE LA VERIFICACIÓN (COPIADO DE handleVerification) ---
-                                
-                                // 1. Verificar si esta firma ya fue usada para este usuario
-                                const sigRef = doc(db, "users", currentUser.walletAddress, "usedSignatures", signature);
-                                const sigSnap = await getDoc(sigRef);
-                                if (sigSnap.exists()) {
-                                    throw new Error(`Esta transacción (${signature.substring(0,6)}) ya fue procesada.`);
-                                }
-
-                                // 2. Obtener detalles de la transacción (usando fetch)
-                                const txResponse = await fetch(rpcUrl, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        jsonrpc: '2.0',
-                                        id: 1,
-                                        method: 'getTransaction',
-                                        params: [signature, { maxSupportedTransactionVersion: 0, "encoding": "json" }]
-                                    })
-                                });
-                                const txData = await txResponse.json();
-                                if (txData.error) throw new Error(`RPC Error (getTransaction): ${txData.error.message}`);
-                                const tx = txData.result;
-
-                                if (!tx || !tx.meta || tx.meta.err) {
-                                    throw new Error(`Transacción ${signature.substring(0,6)} fallida o sin metadata.`);
-                                }
-                                
-                                // 3. Verificar la cantidad recibida por el DESTINATARIO
-                                const preReceiverBalance = tx.meta.preTokenBalances.find(b => b.owner === DEPOSIT_DESTINATION_WALLET && b.mint === SPL_TOKEN_MINT);
-                                const postReceiverBalance = tx.meta.postTokenBalances.find(b => b.owner === DEPOSIT_DESTINATION_WALLET && b.mint === SPL_TOKEN_MINT);
-
-                                const preAmount = preReceiverBalance ? BigInt(preReceiverBalance.uiTokenAmount.amount) : BigInt(0);
-                                const postAmount = postReceiverBalance ? BigInt(postReceiverBalance.uiTokenAmount.amount) : BigInt(0);
-                                
-                                if (postAmount === BigInt(0)) {
-                                    throw new Error(`TX ${signature.substring(0,6)}: Destinatario no tiene postBalance para este token.`);
-                                }
-
-                                const amountReceived = postAmount - preAmount;
-
-                                if (amountReceived === requiredAmountSmallestUnit) {
-                                    // ¡COINCIDENCIA!
-                                    console.log(`¡Pago QR verificado! Firma: ${signature}`);
-                                    
-                                    // Marcar la firma como usada ANTES de finalizar el depósito
-                                    await setDoc(sigRef, { 
-                                        processedAt: serverTimestamp(), 
-                                        amount: amount,
-                                        txSignature: signature
-                                    });
-                                    
-                                    await finalizeDeposit(amount); // ¡Ahora sí!
-                                
-                                } else {
-                                    throw new Error(`TX ${signature.substring(0,6)}: Monto recibido no coincide. Recibido: ${amountReceived}, Esperado: ${requiredAmountSmallestUnit}`);
-                                }
-                                // --- FIN DE LA VERIFICACIÓN ---
-                            } else {
-                               console.log("Aún no hay firma...");
-                            }
-                        } catch (error) {
-                            console.error("Error polling for QR transaction:", error);
-                            if (error.message && error.message.includes('429')) {
-                                if (statusMessage) statusMessage.textContent = 'Verificación lenta (límite de red). Reintentando...';
-                            } else {
-                                if (statusMessage) statusMessage.textContent = error.message || 'Error al verificar pago QR.';
-                                if (paymentSpinner) paymentSpinner.classList.add('hidden');
-                                clearInterval(pollingInterval);
-                                 setTimeout(resetToInitialState, 3000);
-                            }
-                        }
-                    }, 15000); 
-                };
-
-                // CAMBIO: Nueva función para manejar el pago manual (Paso 1 del nuevo flujo)
-                const handleManualPay = async () => {
-                    const amount = parseFloat(amountInput.value);
-                    if (isNaN(amount) || amount <= 0) {
-                        showToast("Por favor, ingresa un monto válido.");
-                        if(amountInput) {
-                            amountInput.classList.add('ring-2', 'ring-red-500');
-                            setTimeout(() => amountInput.classList.remove('ring-2', 'ring-red-500'), 2000);
-                        }
-                        return;
-                    }
-                    
-                    currentDepositAmount = amount; // Guardar el monto
-                    
-                    if(generateQrBtn) generateQrBtn.disabled = true;
-                    if(manualPayBtn) manualPayBtn.disabled = true;
-                    if(depositFormSection) depositFormSection.classList.add('hidden');
-                    if(depositStatusSection) depositStatusSection.classList.remove('hidden');
-
-                    // Ocultar QR y mostrar instrucciones manuales
-                    if(qrCodeContainer) qrCodeContainer.classList.add('hidden'); 
-                    if(manualInstructions) manualInstructions.classList.remove('hidden');
-
-                    if(depositTitle) depositTitle.textContent = "Instrucciones para Pago Manual";
-                    
-                    // Rellenar datos
-                    if(manualAmountDisplay) manualAmountDisplay.textContent = `${amount} BIT`;
-                    if(manualWalletDisplay) manualWalletDisplay.textContent = DEPOSIT_DESTINATION_WALLET;
-                    if(manualTokenDisplay) manualTokenDisplay.textContent = SPL_TOKEN_MINT;
-                    
-                    if(statusMessage) statusMessage.textContent = 'Esperando confirmación de pago...';
-                    if(paymentSpinner) paymentSpinner.classList.add('hidden'); // Ocultar spinner por ahora
-                };
-                
-                // CAMBIO: Nueva función para manejar la verificación (Paso 2 del nuevo flujo)
-                // MODIFICADA para usar FETCH en lugar de web3.js
-                const handleVerification = async () => {
-                    // NO SE NECESITA checkSolanaLibs AHORA
-                    
-                    const senderWallet = senderWalletInput.value.trim();
-                    if (senderWallet.length < 32 || senderWallet.length > 44) {
-                        showToast("Por favor, ingresa una wallet de Solana válida.");
-                        return;
-                    }
-                    
-                    if (currentDepositAmount <= 0) {
-                         showToast("Error: No se ha establecido un monto de depósito.");
-                         resetToInitialState();
-                         return;
-                    }
-                    
-                    if(statusMessage) statusMessage.textContent = 'Verificando pago...';
-                    if(paymentSpinner) paymentSpinner.classList.remove('hidden');
-                    if(verifyPaymentBtn) verifyPaymentBtn.disabled = true;
-                    if(cancelBtn) cancelBtn.disabled = true; // Deshabilitar cancelar durante la verificación
-                    
-                    const requiredAmount = currentDepositAmount;
-                    const requiredAmountSmallestUnit = BigInt(Math.round(requiredAmount * Math.pow(10, SPL_TOKEN_DECIMALS)));
-                    
-                    try {
-                        // CAMBIO: Usa fetch en lugar de connection.getSignaturesForAddress
-                        const rpcUrl = `${RPC_URL}?apiKey=${TATUM_API_KEY}`;
-                        const signaturesResponse = await fetch(rpcUrl, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                jsonrpc: '2.0',
-                                id: 1,
-                                method: 'getSignaturesForAddress',
-                                params: [senderWallet, { limit: 15 }]
-                            })
-                        });
-                        const signaturesData = await signaturesResponse.json();
-                        if (signaturesData.error) throw new Error(`RPC Error (getSignatures): ${signaturesData.error.message}`);
-                        const signatures = signaturesData.result;
-                        
-                        if (!signatures || signatures.length === 0) {
-                            throw new Error("No se encontraron transacciones recientes para esta wallet.");
-                        }
-
-                        let matchFound = false;
-                        for (const signatureInfo of signatures) {
-                            const { signature } = signatureInfo;
-                            
-                            // 1. Verificar si esta firma ya fue usada para este usuario
-                            const sigRef = doc(db, "users", currentUser.walletAddress, "usedSignatures", signature);
-                            const sigSnap = await getDoc(sigRef);
-                            if (sigSnap.exists()) {
-                                console.log(`Firma ${signature.substring(0,6)} ya procesada. Saltando.`);
-                                continue; // Ya se usó
-                            }
-                            
-                            // 2. Obtener detalles de la transacción
-                            // CAMBIO: Usa fetch en lugar de connection.getTransaction
-                            const txResponse = await fetch(rpcUrl, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    jsonrpc: '2.0',
-                                    id: 1,
-                                    method: 'getTransaction',
-                                    params: [signature, { maxSupportedTransactionVersion: 0, "encoding": "json" }]
-                                })
-                            });
-                            const txData = await txResponse.json();
-                            if (txData.error) throw new Error(`RPC Error (getTransaction): ${txData.error.message}`);
-                            const tx = txData.result;
-
-                            if (!tx || !tx.meta || tx.meta.err) {
-                                console.log(`Transacción ${signature.substring(0,6)} fallida o sin metadata. Saltando.`);
-                                continue; // Transacción fallida o sin metadata
-                            }
-
-                            // 3. Verificar la cantidad enviada por el remitente
-                            const preSenderBalance = tx.meta.preTokenBalances.find(b => b.owner === senderWallet && b.mint === SPL_TOKEN_MINT);
-                            const postSenderBalance = tx.meta.postTokenBalances.find(b => b.owner === senderWallet && b.mint === SPL_TOKEN_MINT);
-
-                            if (!preSenderBalance || !postSenderBalance) {
-                                // console.log(`TX ${signature.substring(0,6)}: Remitente no movió el token BIT.`);
-                                continue; // Remitente no movió este token
-                            }
-
-                            const amountSent = BigInt(preSenderBalance.uiTokenAmount.amount) - BigInt(postSenderBalance.uiTokenAmount.amount);
-
-                            if (amountSent !== requiredAmountSmallestUnit) {
-                                // console.log(`TX ${signature.substring(0,6)}: Monto no coincide. Esperado: ${requiredAmountSmallestUnit}, Enviado: ${amountSent}`);
-                                continue; // Monto no coincide
-                            }
-
-                            // 4. Verificar la cantidad recibida por el destinatario
-                            const preReceiverBalance = tx.meta.preTokenBalances.find(b => b.owner === DEPOSIT_DESTINATION_WALLET && b.mint === SPL_TOKEN_MINT);
-                            const postReceiverBalance = tx.meta.postTokenBalances.find(b => b.owner === DEPOSIT_DESTINATION_WALLET && b.mint === SPL_TOKEN_MINT);
-
-                            // El receptor puede no tener balance previo, por eso `preAmount` es 0 por defecto
-                            const preAmount = preReceiverBalance ? BigInt(preReceiverBalance.uiTokenAmount.amount) : BigInt(0);
-                            const postAmount = postReceiverBalance ? BigInt(postReceiverBalance.uiTokenAmount.amount) : BigInt(0);
-                            
-                            if (postAmount === BigInt(0)) {
-                                // console.log(`TX ${signature.substring(0,6)}: Destinatario no tiene postBalance para este token.`);
-                                continue; // Destinatario no recibió este token (raro si el remitente lo envió)
-                            }
-
-                            const amountReceived = postAmount - preAmount;
-
-                            if (amountReceived === requiredAmountSmallestUnit) {
-                                // ¡COINCIDENCIA!
-                                console.log(`¡Pago encontrado! Firma: ${signature}`);
-                                matchFound = true;
-                                
-                                // Marcar la firma como usada ANTES de finalizar el depósito
-                                await setDoc(sigRef, { 
-                                    processedAt: serverTimestamp(), 
-                                    amount: requiredAmount,
-                                    txSignature: signature
-                                });
-                                
-                                await finalizeDeposit(requiredAmount);
-                                break; // Salir del bucle
-                            } else {
-                                // console.log(`TX ${signature.substring(0,6)}: Monto recibido por destino no coincide. Recibido: ${amountReceived}`);
-                            }
-                        }
-
-                        if (!matchFound) {
-                            throw new Error("No se encontró un pago coincidente. Verifique el monto y la wallet. (Puede tardar unos minutos en aparecer)");
-                        }
-
-                    } catch (err) {
-                        console.error("Error en la verificación manual:", err);
-                        showToast(err.message || "Error al verificar el pago.");
-                        if(statusMessage) statusMessage.textContent = err.message || "Error al verificar.";
-                        if(paymentSpinner) paymentSpinner.classList.add('hidden');
-                        if(verifyPaymentBtn) verifyPaymentBtn.disabled = false;
-                        if(cancelBtn) cancelBtn.disabled = false;
-                    }
-                };
-                
-                // Función de Pago QR (NO SE TOCA, necesita web3.js)
-                const handleQrPay = async () => { // Make async
-                    // CORRECCIÓN: Verificar librerías con espera
-                    if (!await checkSolanaLibs('QR Pay')) {
-                        resetToInitialState();
-                        return;
-                    }
-
-                    const amount = parseFloat(amountInput.value);
-                    if (isNaN(amount) || amount <= 0) {
-                        showToast("Por favor, ingresa un monto válido.");
-                        if(amountInput) {
-                             amountInput.classList.add('ring-2', 'ring-red-500');
-                             setTimeout(() => amountInput.classList.remove('ring-2', 'ring-red-500'), 2000);
-                        }
-                        return;
-                    }
-
-                    if(generateQrBtn) generateQrBtn.disabled = true;
-                    if(manualPayBtn) manualPayBtn.disabled = true; // CAMBIO: deshabilitar botón manual
-
-                    const reference = new window.solanaWeb3.Keypair(); 
-                    const label = 'Deposito LivePayout';
-                    const message = `Pago de ${amount} BIT. Ref: ${reference.publicKey.toBase58().substring(0,6)}`;
-                    const solanaPayUrl = `solana:${DEPOSIT_DESTINATION_WALLET}?amount=${amount}&spl-token=${SPL_TOKEN_MINT}&reference=${reference.publicKey.toBase58()}&label=${encodeURIComponent(label)}&message=${encodeURIComponent(message)}`;
-                    
-                    if(qrCodeContainer) qrCodeContainer.innerHTML = ''; // Check if exists
-                    QRCode.toCanvas(solanaPayUrl, { width: 192, errorCorrectionLevel: 'H', color: { dark: '#FFFFFF', light: '#1F2937' } }, (err, canvas) => {
-                        if (err) {
-                            console.error("Error generating QR code:", err);
-                            showToast("Error al generar el código QR.");
-                            resetToInitialState();
-                            return;
-                        }
-                         if(qrCodeContainer) { // Check if exists
-                            canvas.style.borderRadius = '0.5rem';
-                            canvas.style.border = '8px solid #374151'; 
-                            qrCodeContainer.appendChild(canvas);
-                         }
-                    });
-                    
-                    if(depositFormSection) depositFormSection.classList.add('hidden');
-                    if(depositStatusSection) depositStatusSection.classList.remove('hidden');
-                    if(qrCodeContainer) qrCodeContainer.classList.remove('hidden'); 
-                    if(manualInstructions) manualInstructions.classList.add('hidden'); // CAMBIO: ocultar instrucciones manuales
-                    if(depositTitle) depositTitle.textContent = "Escanea para Pagar";
-                    if(statusMessage) statusMessage.textContent = 'Esperando pago...';
-                    if(paymentSpinner) paymentSpinner.classList.remove('hidden');
-
-                    listenForTransaction(reference.publicKey, amount);
-                };
-
-                // CAMBIO: Event listener para el nuevo botón manual
-                manualPayBtn.addEventListener('click', handleManualPay);
-                // CAMBIO: Event listener para el botón de verificación
-                verifyPaymentBtn.addEventListener('click', handleVerification);
-                
-                // Event listener de QR (NO SE TOCA)
-                generateQrBtn.addEventListener('click', handleQrPay);
-                // Event listener de Cancelar (NO SE TOCA)
-                cancelBtn.addEventListener('click', resetToInitialState);
-            }
-            // --- FIN DE LA LÓGICA DE DEPÓSITO ---
-
-            function attachAnalyticsListeners() {
-                if (!currentUser) return;
-                const transferBtn = document.getElementById("transfer-rewards");
-                if (transferBtn) { // Check if exists
-                    if(currentUser.creatorRewardsBalance <= 0) { transferBtn.disabled = true; }
-                    transferBtn.addEventListener("click", async () => {
-                        if(currentUser.creatorRewardsBalance <= 0) return;
-                        if(loader) loader.classList.remove("hidden"); // Check if exists
-                        try {
-                            const userRef = doc(db, "users", currentUser.walletAddress);
-                            const amount = currentUser.creatorRewardsBalance;
-                            await updateDoc(userRef, { bitBalance: increment(amount), creatorRewardsBalance: 0 });
-                            showToast(translations[currentLang].rewards_transferred.replace('%a', amount.toLocaleString()));
-                        } catch (error) {
-                             console.error("Error transferring rewards:", error);
-                             showToast("Error transferring rewards.");
-                        } finally {
-                            if(loader) loader.classList.add("hidden");
-                        }
-                    });
-                }
-            }
-
-            async function saveProfile() {
-                const profilePicUrlInput = document.getElementById("profile-pic-url");
-                const usernameInput = document.getElementById("username-input");
-                if (!profilePicUrlInput || !usernameInput || !currentUser) return; // Check elements and user exist
-
-                const newPicUrl = profilePicUrlInput.value.trim();
-                const newUsername = usernameInput.value.trim();
-                const updates = {};
-                if (newPicUrl && newPicUrl !== currentUser.profilePicture) updates.profilePicture = newPicUrl;
-                if (newUsername && newUsername !== currentUser.username) updates.username = newUsername;
-                if (Object.keys(updates).length > 0) {
-                   if(loader) loader.classList.remove("hidden");
-                    try {
-                        await updateDoc(doc(db, "users", currentUser.walletAddress), updates);
-                        showToast(translations[currentLang].profile_updated);
-                    } catch (error) {
-                         console.error("Error updating profile:", error);
-                         showToast("Error updating profile.");
-                    } finally {
-                        if(loader) loader.classList.add("hidden");
-                    }
-                }
-            }
-
-            const TOKEN_CONTRACT = "EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump";
-            let priceFetchAttempted = false; // Flag para intentar solo una vez
-
-            async function updateWithdrawalStatus() {
-                const usdEquivalentDisplay = document.getElementById("usd-equivalent-display");
-                const tokenPriceInfo = document.getElementById("token-price-info");
-                const withdrawButton = document.getElementById("withdraw-button");
-                const withdrawalInfoText = document.getElementById("withdrawal-info-text");
-
-                if (!currentUser || !withdrawalInfoText || !withdrawButton || !usdEquivalentDisplay || !tokenPriceInfo) return; // Check all elements exist
-
-                // Intentar obtener el precio solo si no se ha intentado antes o si el intervalo está activo
-                if (!priceFetchAttempted && withdrawalUpdateInterval) {
-                     priceFetchAttempted = true; // Marcar como intentado
-                    try {
-                        const response = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${TOKEN_CONTRACT}`);
-                        if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
-                        const data = await response.json();
-                        const firstPair = data.pairs && data.pairs.length > 0 ? data.pairs[0] : null;
-                        const priceUsd = firstPair ? parseFloat(firstPair.priceUsd) : 0;
-                        if (firstPair && !isNaN(priceUsd)) {
-                            const balanceUsd = currentUser.bitBalance * priceUsd;
-                            tokenPriceInfo.textContent = `1 BIT \u2248 $${priceUsd.toFixed(6)} USD`;
-                            usdEquivalentDisplay.textContent = `~ $${balanceUsd.toFixed(2)} USD`;
-                        } else {
-                            usdEquivalentDisplay.textContent = `~ $---- USD`;
-                        }
-                    } catch (e) {
-                        console.error("Error fetching token price:", e.message);
-                        usdEquivalentDisplay.textContent = translations[currentLang].price_fetch_error;
-                        tokenPriceInfo.textContent = '';
-                        if (withdrawalUpdateInterval) {
-                            clearInterval(withdrawalUpdateInterval);
-                            withdrawalUpdateInterval = null;
-                            console.log("Price fetch failed, stopping interval.");
-                        }
-                    }
-                } else if (!withdrawalUpdateInterval && usdEquivalentDisplay.textContent === "...") { 
-                    usdEquivalentDisplay.textContent = translations[currentLang].price_fetch_error;
-                    tokenPriceInfo.textContent = '';
-                }
-
-                // Actualizar estado del botón de retiro
-                const canWithdraw = currentUser.bitBalance >= WITHDRAWAL_MINIMUM_BIT;
-                withdrawButton.disabled = !canWithdraw;
-                if (canWithdraw) {
-                    withdrawalInfoText.textContent = translations[currentLang].withdrawal_ready;
-                } else {
-                    const neededBits = WITHDRAWAL_MINIMUM_BIT - currentUser.bitBalance;
-                    withdrawalInfoText.textContent = translations[currentLang].need_more_to_withdraw.replace('%a', neededBits.toLocaleString());
-                }
-            }
-            
-            async function requestWithdrawal() {
-                const withdrawButton = document.getElementById("withdraw-button");
-                const withdrawMessage = document.getElementById("withdraw-message");
-                if (!withdrawButton || withdrawButton.disabled || !withdrawMessage || !currentUser) return; // Check elements and state
-
-                if(loader) loader.classList.remove("hidden");
-                withdrawMessage.textContent = translations[currentLang].processing;
-                withdrawMessage.classList.remove("text-green-500", "text-red-500"); // Clear previous colors
-                try {
-                    await addDoc(collection(db, "withdrawalRequests"), {
-                        userWallet: currentUser.walletAddress, username: currentUser.username, amount: currentUser.bitBalance, status: "pending", requestedAt: serverTimestamp()
-                    });
-                    await updateDoc(doc(db, "users", currentUser.walletAddress), { bitBalance: 0 });
-                    withdrawMessage.textContent = translations[currentLang].withdrawal_requested;
-                    withdrawMessage.classList.add("text-green-500");
-                    showToast(translations[currentLang].withdrawal_requested_toast);
-                    // Refresh withdrawal status after successful request
-                    updateWithdrawalStatus(); 
-                } catch (error) {
-                    console.error("Error creating withdrawal request:", error);
-                    withdrawMessage.textContent = translations[currentLang].withdrawal_error;
-                    withdrawMessage.classList.add("text-red-500");
-                } finally {
-                   if(loader) loader.classList.add("hidden");
-                }
-            }
-
-            async function setupFollowButton(streamerWallet) {
-                const followBtn = document.getElementById('follow-btn');
-                if (!currentUser || !followBtn) return; // Check user and button exist
-                const myFollowingRef = doc(db, 'users', currentUser.walletAddress, 'following', streamerWallet);
-                
-                // Use a variable to hold the unsubscribe function
-                let unsubscribeFollow = onSnapshot(myFollowingRef, (docSnap) => {
-                    followBtn.classList.remove('purple-gradient-bg', 'bg-transparent', 'border', 'border-[var(--brand-color-purple)]', 'text-[var(--brand-color-purple)]', 'bg-gray-700', 'hover:bg-gray-600');
-                    followBtn.classList.add('text-white');
-                    if (docSnap.exists()) {
-                        followBtn.textContent = translations[currentLang].unfollow;
-                        followBtn.classList.add('bg-transparent', 'border', 'border-[var(--brand-color-purple)]', 'text-[var(--brand-color-purple)]');
-                        followBtn.classList.remove('text-white');
-                    } else {
-                        followBtn.textContent = translations[currentLang].follow;
-                        followBtn.classList.add('bg-gray-700', 'hover:bg-gray-600');
-                    }
-                }, error => console.error("Error listening to follow status:", error));
-
-                followBtn.onclick = async () => {
-                     // Unsubscribe before performing action to prevent potential race conditions
-                     if (unsubscribeFollow) unsubscribeFollow(); 
-
-                    if (!requireAuth()) {
-                         // Re-subscribe if action fails due to auth
-                         unsubscribeFollow = onSnapshot(myFollowingRef, (docSnap) => {
-                            followBtn.classList.remove('purple-gradient-bg', 'bg-transparent', 'border', 'border-[var(--brand-color-purple)]', 'text-[var(--brand-color-purple)]', 'bg-gray-700', 'hover:bg-gray-600');
-                            followBtn.classList.add('text-white');
-                            if (docSnap.exists()) {
-                                followBtn.textContent = translations[currentLang].unfollow;
-                                followBtn.classList.add('bg-transparent', 'border', 'border-[var(--brand-color-purple)]', 'text-[var(--brand-color-purple)]');
-                                followBtn.classList.remove('text-white');
-                            } else {
-                                followBtn.textContent = translations[currentLang].follow;
-                                followBtn.classList.add('bg-gray-700', 'hover:bg-gray-600');
-                            }
-                        }, error => console.error("Error listening to follow status:", error));
-                         return;
-                    }
-                    try {
-                        const docSnap = await getDoc(myFollowingRef);
-                        const streamerFollowersRef = doc(db, 'users', streamerWallet, 'followers', currentUser.walletAddress);
-                        const myUserRef = doc(db, 'users', currentUser.walletAddress);
-                        const streamerUserRef = doc(db, 'users', streamerWallet);
-
-                        const streamerSnap = await getDoc(streamerUserRef);
-                        const streamerUsername = (streamerSnap.data() || {}).username || streamerWallet.substring(0,6);
-
-                        if (docSnap.exists()) {
-                            await runTransaction(db, async (t) => { t.delete(myFollowingRef); t.delete(streamerFollowersRef); t.update(myUserRef, { followingCount: increment(-1) }); t.update(streamerUserRef, { followersCount: increment(-1) }); });
-                            showToast(translations[currentLang].unfollowed_user.replace('%s', streamerUsername));
-                        } else {
-                            await runTransaction(db, async (t) => { t.set(myFollowingRef, { followedAt: serverTimestamp() }); t.set(streamerFollowersRef, { followerAt: serverTimestamp() }); t.update(myUserRef, { followingCount: increment(1) }); t.update(streamerUserRef, { followersCount: increment(1) }); });
-                            showToast(translations[currentLang].followed_user.replace('%s', streamerUsername));
-                        }
-                    } catch (error) { 
-                        console.error("Follow/unfollow transaction error:", error); 
-                        showToast(translations[currentLang].action_error); 
-                    } finally {
-                        // Re-subscribe after action is complete
-                         unsubscribeFollow = onSnapshot(myFollowingRef, (docSnap) => {
-                            followBtn.classList.remove('purple-gradient-bg', 'bg-transparent', 'border', 'border-[var(--brand-color-purple)]', 'text-[var(--brand-color-purple)]', 'bg-gray-700', 'hover:bg-gray-600');
-                            followBtn.classList.add('text-white');
-                            if (docSnap.exists()) {
-                                followBtn.textContent = translations[currentLang].unfollow;
-                                followBtn.classList.add('bg-transparent', 'border', 'border-[var(--brand-color-purple)]', 'text-[var(--brand-color-purple)]');
-                                followBtn.classList.remove('text-white');
-                            } else {
-                                followBtn.textContent = translations[currentLang].follow;
-                                followBtn.classList.add('bg-gray-700', 'hover:bg-gray-600');
-                            }
-                        }, error => console.error("Error listening to follow status:", error));
-                    }
-                };
-
-                 // Cleanup listener when leaving the page (add this to cleanupWatchPage)
-                 // if (unsubscribeFollow) unsubscribeFollow(); 
-            }
-            
-            async function setupSubscribeButton(streamerWallet) {
-                const subBtn = document.getElementById('subscribe-btn');
-                 if (!currentUser || !subBtn) return; // Check user and button exist
-
-                const subRef = doc(db, 'users', streamerWallet, 'subscribers', currentUser.walletAddress);
-                try {
-                    const subSnap = await getDoc(subRef);
-                    if (subSnap.exists()) {
-                        subBtn.disabled = true;
-                        subBtn.innerHTML = `<i data-lucide="check"></i> <span data-key="subscribed">${translations[currentLang].subscribed}</span>`;
-                        lucide.createIcons();
-                    }
-                } catch(e) { console.error("Error checking initial subscription status:", e); }
-
-                subBtn.onclick = async () => {
-                    if (!requireAuth()) return;
-                    if (currentUser.bitBalance < 100) return showToast(translations[currentLang].insufficient_bits_subscribe);
-                   if(loader) loader.classList.remove('hidden');
-                    try {
-                        const streamerUserRef = doc(db, "users", streamerWallet);
-                        const streamerSnap = await getDoc(streamerUserRef); // Get streamer data for username
-                        const streamerUsername = (streamerSnap.data() || {}).username || streamerWallet.substring(0,6);
-                        
-                        await runTransaction(db, async (t) => {
-                            const myUserRef = doc(db, "users", currentUser.walletAddress);
-                            const myDoc = await t.get(myUserRef);
-                            if (!myDoc.exists() || myDoc.data().bitBalance < 100) throw new Error("Insufficient balance during transaction."); // More specific error
-                            t.update(myUserRef, { bitBalance: increment(-100) });
-                            t.update(streamerUserRef, { creatorRewardsBalance: increment(100) });
-                            t.set(subRef, { subscribedAt: serverTimestamp(), expiresAt: 'never' }); // Consider adding 'expiresAt' logic if needed
-                        });
-                        showToast(translations[currentLang].subscribed_to_user.replace('%s', streamerUsername));
-                        subBtn.disabled = true;
-                        subBtn.innerHTML = `<i data-lucide="check"></i> <span data-key="subscribed">${translations[currentLang].subscribed}</span>`;
-                        lucide.createIcons();
-                    } catch (e) { 
-                        console.error("Subscription transaction error: ", e.message || e); 
-                        showToast(translations[currentLang].subscription_error + (e.message ? `: ${e.message}` : '')); 
-                    } finally { 
-                        if(loader) loader.classList.add('hidden'); 
-                    }
-                };
-            }
-
-            function setupVipEmojiPanel(streamerWallet) {
-                const openBtn = document.getElementById('open-vip-emojis');
-                const panel = document.getElementById('vip-emoji-panel');
-                const chatInput = document.getElementById('chat-input');
-                 if (!openBtn || !panel || !chatInput) return; // Check elements exist
-
-                openBtn.onclick = () => panel.classList.toggle('hidden');
-                
-                panel.addEventListener('click', async (e) => {
-                    const button = e.target.closest('.vip-emoji-btn');
-                    if (button) {
-                        if (!requireAuth()) return;
-                        panel.classList.add('hidden');
-                        const emoji = VIP_EMOJIS.find(em => em.id === button.dataset.emojiId);
-                        if (!emoji) return; // Safety check
-
-                        const text = chatInput.value.trim();
-                        if (!text) return showToast(translations[currentLang].superchat_no_text);
-                        if (currentUser.bitBalance < emoji.price) return showToast(translations[currentLang].insufficient_bits_emoji.replace('%p', emoji.price));
-                        
-                        if(loader) loader.classList.remove('hidden');
-                        try {
-                            await runTransaction(db, async (t) => {
-                                const myUserRef = doc(db, "users", currentUser.walletAddress);
-                                const streamerUserRef = doc(db, "users", streamerWallet);
-                                const myDoc = await t.get(myUserRef);
-                                if (!myDoc.exists() || myDoc.data().bitBalance < emoji.price) throw new Error("Insufficient balance during transaction.");
-                                t.update(myUserRef, { bitBalance: increment(-emoji.price) });
-                                t.update(streamerUserRef, { creatorRewardsBalance: increment(emoji.price) });
-                            });
-                            await addDoc(collection(db, 'streams', streamerWallet, 'chat'), { 
-                                text, 
-                                userName: currentUser.username, 
-                                userWallet: currentUser.walletAddress, 
-                                userColor: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'), 
-                                createdAt: serverTimestamp(), 
-                                vipEmoji: { url: emoji.url, price: emoji.price } 
-                            });
-                            chatInput.value = '';
-                        } catch(err) { 
-                             console.error("Super Chat transaction error:", err.message || err); 
-                             showToast(translations[currentLang].superchat_error + (err.message ? `: ${err.message}` : '')); 
-                        } finally { 
-                            if(loader) loader.classList.add('hidden'); 
-                        }
-                    }
-                });
-            }
-
-            // ... (Resto del código de streaming, anuncios, traducciones, etc.) ...
-             let adInterval = null;
-            function showAd() {
-                const adContainer = document.getElementById('ad-container'), adWarning = document.getElementById('ad-warning'), adSlot = document.getElementById('ad-slot');
-                if (!adContainer || !adWarning || !adSlot) return;
-                adSlot.innerHTML = ''; adContainer.style.display = 'flex'; let countdown = 5;
-                adWarning.textContent = translations[currentLang].ad_warning.replace('%s', countdown);
-                const countdownInterval = setInterval(() => {
-                    countdown--; adWarning.textContent = translations[currentLang].ad_warning.replace('%s', countdown);
-                    if (countdown <= 0) {
-                        clearInterval(countdownInterval); adWarning.textContent = translations[currentLang].ad_playing;
-                        const oldAdScript = document.getElementById('dynamic-ad-script'); if(oldAdScript) oldAdScript.remove();
-                        const scriptEl = document.createElement('script'); scriptEl.id = 'dynamic-ad-script'; document.body.appendChild(scriptEl);
-                        (function(s) { s.dataset.zone = '9912761'; s.src = 'https://groleegni.net/vignette.min.js'; })(scriptEl);
-                        setTimeout(() => { adContainer.style.display = 'none'; adSlot.innerHTML = ''; const adScriptToRemove = document.getElementById('dynamic-ad-script'); if (adScriptToRemove) adScriptToRemove.remove(); }, 20000); 
-                    }
-                }, 1000);
-            }
-
-            let localStream = null, peerConnections = {}, viewersUnsubscribe = null, streamTimerInterval = null, rewardInterval = null, unsubscribeStudioChat = null;
-            const iceServers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
-
-            async function attachStreamListeners() {
-                const selectCamBtn = document.getElementById('select-cam-btn');
-                const selectScreenBtn = document.getElementById('select-screen-btn');
-                const startStreamBtn = document.getElementById('start-stream-btn');
-                const stopStreamBtn = document.getElementById('stop-stream-btn');
-                const micSelect = document.getElementById('mic-select');
-
-                if (selectCamBtn) selectCamBtn.onclick = () => getMedia('camera');
-
-                if (selectScreenBtn) {
-                     if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
-                        selectScreenBtn.onclick = () => getMedia('screen');
-                    } else { 
-                        selectScreenBtn.disabled = true; 
-                        selectScreenBtn.onclick = () => showToast('Screen sharing is not available.'); 
-                    }
-                }
-               if(startStreamBtn) startStreamBtn.onclick = startStream;
-               if(stopStreamBtn) stopStreamBtn.onclick = stopStream;
-                
-                if (micSelect) {
-                    try {
-                        const devices = await navigator.mediaDevices.enumerateDevices();
-                        devices.filter(({ kind }) => kind === 'audioinput').forEach(({ deviceId, label }) => {
-                            const option = document.createElement('option'); option.value = deviceId;
-                            option.text = label || `${translations[currentLang].microphone} ${micSelect.options.length + 1}`;
-                            micSelect.appendChild(option);
-                        });
-                    } catch(e) { console.error("Error enumerating audio devices:", e); }
-                }
-            }
-
-            async function getMedia(type) {
-                 const localVideoPreview = document.getElementById('local-video-preview');
-                 const startStreamBtn = document.getElementById('start-stream-btn');
-                 const micSelect = document.getElementById('mic-select');
-                 if(!localVideoPreview || !startStreamBtn || !micSelect) return; // Check elements exist
-
-                try {
-                    if (localStream) localStream.getTracks().forEach(track => track.stop());
-                    const audioDeviceId = micSelect.value;
-                    const constraints = { video: true, audio: { deviceId: audioDeviceId ? {exact: audioDeviceId} : undefined } };
-                    
-                    if (type === 'camera') {
-                         localStream = await navigator.mediaDevices.getUserMedia(constraints);
-                    } else if (type === 'screen' && navigator.mediaDevices.getDisplayMedia) {
-                         localStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }); // Request audio for screen share too
-                    } else {
-                         throw new Error("Unsupported media type or browser capability");
-                    }
-                    
-                    localVideoPreview.srcObject = localStream;
-                    startStreamBtn.disabled = false;
-                } catch (error) { 
-                    console.error(`Error getting ${type}:`, error); 
-                    showToast(translations[currentLang].media_error + `: ${error.message}`); 
-                    startStreamBtn.disabled = true; // Disable start if media fails
-                    localStream = null; // Reset localStream
-                    localVideoPreview.srcObject = null;
-                }
-            }
-
-            // ... (Resto de las funciones startStream, stopStream, joinStream sin cambios mayores, pero añadiendo checks para elementos) ...
-             async function startStream() {
-                const streamTitleInput = document.getElementById('stream-title-input');
-                const streamCategorySelect = document.getElementById('stream-category-select');
-                const streamThumbnailInput = document.getElementById('stream-thumbnail-input');
-                const startStreamBtn = document.getElementById('start-stream-btn');
-                const stopStreamBtn = document.getElementById('stop-stream-btn');
-                const streamStatusText = document.getElementById('stream-status-text');
-                 const studioChatMessages = document.getElementById('studio-chat-messages');
-
-                if (!localStream || !currentUser || !streamTitleInput || !streamCategorySelect || !streamThumbnailInput || !startStreamBtn || !stopStreamBtn || !streamStatusText || !studioChatMessages) {
-                    showToast(translations[currentLang].no_video_source);
-                    console.error("Missing elements or stream/user data for startStream");
-                    return; 
-                }
-
-                const streamRef = doc(db, 'streams', currentUser.walletAddress);
-               if(loader) loader.classList.remove('hidden');
-                try {
-                    await setDoc(streamRef, {
-                        status: 'live', 
-                        title: streamTitleInput.value, 
-                        category: streamCategorySelect.value, 
-                        thumbnailUrl: streamThumbnailInput.value, 
-                        streamerWallet: currentUser.walletAddress, 
-                        streamerPic: currentUser.profilePicture, 
-                        streamerUsername: currentUser.username, 
-                        viewerCount: 0
-                    });
-
-                    // Start viewer listener
-                    viewersUnsubscribe = onSnapshot(collection(streamRef, 'viewers'), (snapshot) => {
-                         if (!currentUser) return; // Check user still exists
-                         updateDoc(doc(db, 'streams', currentUser.walletAddress), { viewerCount: snapshot.size }).catch(e => console.error("Error updating viewer count:", e)); // Add catch
-                        const studioViewerCount = document.getElementById('studio-viewer-count');
-                        if(studioViewerCount) { studioViewerCount.innerHTML = `<i data-lucide="users" class="w-4 h-4"></i> ${snapshot.size}`; lucide.createIcons(); }
-                        
-                        snapshot.docChanges().forEach(async (change) => {
-                            const viewerUid = change.doc.id, viewerData = change.doc.data();
-                            try { // Add try-catch for WebRTC setup
-                                if (change.type === 'added' && viewerData.offer) {
-                                    peerConnections[viewerUid] = new RTCPeerConnection(iceServers);
-                                    localStream.getTracks().forEach(track => peerConnections[viewerUid].addTrack(track, localStream));
-                                    peerConnections[viewerUid].onicecandidate = e => e.candidate && addDoc(collection(change.doc.ref, 'iceCandidates'), e.candidate.toJSON()).catch(e => console.error("Error adding streamer ICE candidate:", e));
-                                    
-                                    // Listen for viewer ICE candidates
-                                    onSnapshot(collection(change.doc.ref, 'iceCandidatesFromViewer'), snap => snap.docChanges().forEach(c => {
-                                        if (c.type === 'added') {
-                                             peerConnections[viewerUid]?.addIceCandidate(new RTCIceCandidate(c.doc.data())).catch(e => console.error("Error adding viewer ICE candidate:", e)); // Check if connection still exists
-                                        }
-                                    }), error => console.error("Error listening for viewer ICE candidates:", error));
-                                    
-                                    await peerConnections[viewerUid].setRemoteDescription(new RTCSessionDescription(viewerData.offer));
-                                    const answer = await peerConnections[viewerUid].createAnswer();
-                                    await peerConnections[viewerUid].setLocalDescription(answer);
-                                    await updateDoc(change.doc.ref, { answer });
-                                }
-                            } catch (rtcError) {
-                                 console.error(`WebRTC setup error for viewer ${viewerUid}:`, rtcError);
-                                 if (peerConnections[viewerUid]) { peerConnections[viewerUid].close(); delete peerConnections[viewerUid]; } // Cleanup failed connection
-                            }
-                            if (change.type === 'removed' && peerConnections[viewerUid]) { 
-                                peerConnections[viewerUid].close(); 
-                                delete peerConnections[viewerUid]; 
-                            }
-                        });
-                    }, error => console.error("Error listening to viewers collection:", error));
-
-                    // Start chat listener
-                    const chatRef = collection(streamRef, 'chat');
-                    unsubscribeStudioChat = onSnapshot(query(chatRef, orderBy("createdAt", "desc"), limit(50)), (snapshot) => {
-                        snapshot.docChanges().reverse().forEach(change => {
-                            if (change.type === "added") {
-                                const msg = change.doc.data(), msgEl = document.createElement('div');
-                                if (msg.vipEmoji) {
-                                    msgEl.className = 'super-chat text-xs'; msgEl.innerHTML = `<div class="flex items-center gap-1 mb-1"><img src="${msg.vipEmoji.url}" class="w-6 h-6"><div class="font-bold">${msg.userName} ${translations[currentLang].sent} ${msg.vipEmoji.price} BIT</div></div><p>${msg.text}</p>`;
-                                } else { msgEl.className = 'text-xs p-1'; msgEl.innerHTML = `<strong style="color: ${msg.userColor || '#FFF'}">${msg.userName}:</strong> ${msg.text}`; }
-                                studioChatMessages.appendChild(msgEl);
-                            }
-                        });
-                         studioChatMessages.scrollTop = studioChatMessages.scrollHeight; // Scroll after updates
-                    }, error => console.error("Error listening to studio chat:", error));
-
-                    streamStatusText.innerHTML = `<span class="text-red-500 font-bold flex items-center gap-2"><div class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>LIVE</span>`;
-                    startStreamBtn.disabled = true; 
-                    stopStreamBtn.disabled = false;
-                    
-                    // Start timer
-                    let startTime = Date.now();
-                    const timerEl = document.getElementById('stream-timer');
-                    if (timerEl) {
-                        streamTimerInterval = setInterval(() => { 
-                            const e=Date.now()-startTime,s=Math.floor(e/1e3%60).toString().padStart(2,'0'),m=Math.floor(e/6e4%60).toString().padStart(2,'0'),h=Math.floor(e/36e5).toString().padStart(2,'0'); 
-                            timerEl.textContent=`${h}:${m}:${s}`;
-                        }, 1000);
-                    }
-
-                    // Start rewards interval
-                    let lastRewardTimeInMinutes = 0;
-                    rewardInterval = setInterval(async () => {
-                         if (!currentUser) return; // Check user still exists
-                        const currentMinutes = Math.floor((Date.now() - startTime) / 60000);
-                        if (currentMinutes >= lastRewardTimeInMinutes + REWARD_INTERVAL_MINUTES) {
-                            lastRewardTimeInMinutes += REWARD_INTERVAL_MINUTES;
-                            try {
-                                await updateDoc(doc(db, "users", currentUser.walletAddress), { creatorRewardsBalance: increment(REWARD_AMOUNT) });
-                                showToast(translations[currentLang].reward_notification.replace('%a', REWARD_AMOUNT.toLocaleString()).replace('%m', lastRewardTimeInMinutes));
-                            } catch (rewardError) {
-                                 console.error("Error updating creator rewards:", rewardError);
-                            }
-                        }
-                    }, 15000);
-
-                    // Start ads interval
-                    if(adInterval) clearInterval(adInterval);
-                    adInterval = setInterval(showAd, 120000); 
-
-                    showToast(translations[currentLang].stream_started);
-                } catch (error) { 
-                    console.error("Error starting stream:", error); 
-                    showToast(translations[currentLang].stream_start_error + `: ${error.message}`); 
-                    stopStream(); // Attempt cleanup on error
-                } finally { 
-                   if(loader) loader.classList.add('hidden'); 
-                }
-            }
-
-             async function stopStream() {
-                console.log("Stopping stream...");
-                // Clear intervals
-                if (streamTimerInterval) clearInterval(streamTimerInterval); 
-                if (rewardInterval) clearInterval(rewardInterval); 
-                if (adInterval) clearInterval(adInterval); 
-                streamTimerInterval=null; rewardInterval=null; adInterval=null;
-
-                // Stop media tracks
-                if (localStream) {
-                    localStream.getTracks().forEach(track => track.stop());
-                    localStream = null;
-                }
-
-                // Unsubscribe Firestore listeners
-                if (viewersUnsubscribe) viewersUnsubscribe(); 
-                if (unsubscribeStudioChat) unsubscribeStudioChat(); 
-                viewersUnsubscribe=null; unsubscribeStudioChat=null;
-
-                // Close peer connections
-                Object.values(peerConnections).forEach(pc => pc.close());
-                peerConnections = {};
-
-                // Update UI elements safely
-                const studioUI = document.getElementById('studio-content');
-                if(studioUI) {
-                    const statusText = studioUI.querySelector('#stream-status-text'); 
-                    if (statusText) statusText.textContent = translations[currentLang].preview;
-                    
-                    const timerEl = studioUI.querySelector('#stream-timer'); 
-                    if (timerEl) timerEl.textContent = '';
-                    
-                    const viewerCountEl = studioUI.querySelector('#studio-viewer-count'); 
-                    if (viewerCountEl) viewerCountEl.innerHTML = '';
-                    
-                    const startBtn = studioUI.querySelector('#start-stream-btn');
-                    // Re-enable start button only if media stream might still be available (though we stopped it)
-                    if (startBtn) startBtn.disabled = true; // Keep disabled until new media selected
-
-                    const stopBtn = studioUI.querySelector('#stop-stream-btn');
-                    if (stopBtn) stopBtn.disabled = true;
-
-                    const videoPreview = studioUI.querySelector('#local-video-preview'); 
-                    if(videoPreview) videoPreview.srcObject = null;
-                }
-
-                // Delete stream data from Firestore
-                if (currentUser) {
-                    const streamRef = doc(db, 'streams', currentUser.walletAddress);
-                    try {
-                        // Delete subcollections first (viewers, chat, iceCandidates etc.)
-                        for(const collName of ['viewers', 'chat']) { // Add other subcollections if needed
-                            const collRef = collection(streamRef, collName);
-                            const snapshot = await getDocs(collRef); 
-                            if(!snapshot.empty) { 
-                                const batch = writeBatch(db); 
-                                snapshot.forEach(subDoc => batch.delete(subDoc.ref)); 
-                                await batch.commit(); 
-                                console.log(`Deleted subcollection: ${collName}`);
-                            }
-                        }
-                        // Delete the main stream document
-                        await deleteDoc(streamRef);
-                        console.log("Stream document deleted.");
-                    } catch(error) { 
-                        console.error("Error cleaning up stream Firestore data:", error); 
-                        // Attempt to delete main doc even if subcollection deletion fails
-                        await deleteDoc(streamRef).catch(e => console.error("Failed to delete main stream doc after error:", e)); 
-                    }
-                } else {
-                     console.warn("Stop stream called but no current user found.");
-                }
-
-                showToast(translations[currentLang].stream_stopped);
-            }
-
-            async function joinStream(streamerWallet) {
-                const remoteVideo = document.getElementById('remote-video');
-                const videoOverlay = document.getElementById('video-overlay');
-                 if (!remoteVideo || !videoOverlay) {
-                     console.error("Video elements not found for joinStream");
-                     return;
-                 }
-
-                viewerPeerConnection = new RTCPeerConnection(iceServers);
-                
-                const viewerId = auth.currentUser ? auth.currentUser.uid : `guest_${Date.now()}_${Math.random().toString(36).substring(2)}`;
-                const viewerRef = doc(db, 'streams', streamerWallet, 'viewers', viewerId);
-                const iceCandidateBuffer = []; // To store candidates received before remote description is set
-
-                viewerPeerConnection.oniceconnectionstatechange = () => {
-                    const state = viewerPeerConnection.iceConnectionState;
-                    console.log(`Viewer ICE State: ${state}`);
-                    videoOverlay.textContent = `Status: ${state}`;
-                     if(state === 'connected' || state === 'completed'){
-                        videoOverlay.style.display = 'none'; 
-                        remoteVideo.classList.remove('opacity-0'); // Show video
-                        remoteVideo.classList.add('opacity-100');
-                        // Start ads only when connected
-                        if(adInterval) clearInterval(adInterval); 
-                        adInterval = setInterval(showAd, 120000); 
-                    } else if (state === 'failed' || state === 'disconnected' || state === 'closed') {
-                         videoOverlay.style.display = 'flex'; // Show overlay again
-                         videoOverlay.textContent = `Stream disconnected: ${state}`;
-                         remoteVideo.classList.remove('opacity-100');
-                         remoteVideo.classList.add('opacity-0'); // Hide video
-                         if(adInterval) clearInterval(adInterval); // Stop ads
-                    }
-                };
-
-                viewerPeerConnection.ontrack = e => { 
-                    console.log("Track received:", e.track.kind);
-                    if (e.streams && e.streams[0]) {
-                        if (remoteVideo.srcObject !== e.streams[0]) {
-                             remoteVideo.srcObject = e.streams[0]; 
-                             console.log("Remote stream assigned to video element.");
-                        }
-                    } else {
-                         // Fallback for older browsers might be needed here using addTrack
-                         console.warn("Stream not found on track event, might need older browser handling");
-                    }
-                };
-
-                // Setup ICE candidate listeners *before* creating offer
-                viewerPeerConnection.onicecandidate = e => {
-                    if (e.candidate) {
-                         console.log("Viewer sending ICE candidate...");
-                         addDoc(collection(viewerRef, 'iceCandidatesFromViewer'), e.candidate.toJSON())
-                           .catch(e => console.error("Error sending viewer ICE candidate:", e));
-                    }
-                };
-                
-                // Listener for streamer's ICE candidates
-                const unsubscribeIce = onSnapshot(collection(viewerRef, 'iceCandidates'), 
-                    s => s.docChanges().forEach(change => {
-                        if (change.type === 'added') { 
-                            const candidate = new RTCIceCandidate(change.doc.data());
-                            console.log("Viewer received ICE candidate...");
-                            if (viewerPeerConnection.currentRemoteDescription) {
-                                viewerPeerConnection.addIceCandidate(candidate).catch(e => console.error("Error adding received ICE candidate:", e));
-                            } else {
-                                console.log("Buffering ICE candidate.");
-                                iceCandidateBuffer.push(candidate); // Buffer if remote description not set yet
-                            }
-                        }
-                    }),
-                    error => console.error("Error listening for streamer ICE candidates:", error)
+                // 10. Añadir la instrucción de transferencia
+                transaction.add(
+                    splToken.createTransferInstruction(
+                        fromAta,
+                        toAta,
+                        senderPubKey,
+                        amountInSmallestUnit 
+                        // NOTA: Si usas una versión antigua de spl-token, el 'amount' podría no aceptar BigInt.
+                        // En ese caso, usa 'Number(amountInSmallestUnit)' si el monto no es astronómico.
+                    )
                 );
 
-                try {
-                    console.log("Creating offer...");
-                    const offer = await viewerPeerConnection.createOffer({offerToReceiveVideo: true, offerToReceiveAudio: true});
-                    await viewerPeerConnection.setLocalDescription(offer);
-                    console.log("Offer created and set, sending to Firestore...");
-                    await setDoc(viewerRef, { offer: viewerPeerConnection.localDescription.toJSON() }); // Send full offer object
-                    
-                    // Listener for the answer from the streamer
-                    const unsubscribeAnswer = onSnapshot(viewerRef, async (docSnap) => {
-                        const data = docSnap.data();
-                        if (data && data.answer && !viewerPeerConnection.currentRemoteDescription) {
-                             console.log("Answer received, setting remote description...");
-                             try {
-                                await viewerPeerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-                                console.log("Remote description set. Adding buffered ICE candidates...");
-                                // Add any buffered ICE candidates
-                                while (iceCandidateBuffer.length > 0) {
-                                    const candidate = iceCandidateBuffer.shift();
-                                    console.log("Adding buffered ICE candidate...");
-                                    await viewerPeerConnection.addIceCandidate(candidate);
-                                }
-                             } catch (e) {
-                                 console.error("Error setting remote description or adding buffered candidates:", e);
-                                 videoOverlay.textContent = "Error connecting stream.";
-                                 cleanupConnection(); // Cleanup on error
-                             }
-                        } else if (!data) {
-                            console.warn("Viewer document deleted or doesn't exist.");
-                            videoOverlay.textContent = "Stream connection lost.";
-                            cleanupConnection();
-                        }
-                    }, error => {
-                         console.error("Error listening for answer:", error);
-                         videoOverlay.textContent = "Error listening for stream data.";
-                         cleanupConnection();
-                    });
+                // 11. Establecer el pagador de la tarifa y el blockhash
+                transaction.feePayer = senderPubKey;
+                transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
-                    // Cleanup function
-                    const cleanupConnection = () => {
-                         console.log("Cleaning up viewer connection...");
-                         if (unsubscribeIce) unsubscribeIce();
-                         if (unsubscribeAnswer) unsubscribeAnswer();
-                         if (viewerPeerConnection) { viewerPeerConnection.close(); viewerPeerConnection = null; }
-                         if(adInterval) clearInterval(adInterval);
-                         deleteDoc(viewerRef).catch(e => console.warn("Error deleting viewer doc on cleanup:", e));
-                    };
+                connectPayBtn.textContent = "Confirme en su Billetera...";
 
-                    // Add listeners to clean up when leaving page or component
-                    window.addEventListener('pagehide', cleanupConnection, { once: true });
-                    // If this were a component framework, you'd call cleanupConnection in the unmount/destroy lifecycle hook.
+                // 12. Firmar y enviar la transacción
+                const { signature } = await solana.signAndSendTransaction(transaction);
 
-                } catch (error) {
-                    console.error("Error joining stream:", error);
-                    videoOverlay.textContent = "Failed to join stream.";
-                    if (viewerPeerConnection) viewerPeerConnection.close(); // Close connection on initial error
-                     if(adInterval) clearInterval(adInterval);
-                     deleteDoc(viewerRef).catch(e => console.warn("Error deleting viewer doc on join error:", e));
+                // 13. Confirmar la transacción
+                connectPayBtn.textContent = "Confirmando en la red...";
+                await connection.confirmTransaction(signature, 'confirmed');
+
+                // 14. Éxito
+                connectMessage.textContent = "¡Pago exitoso!";
+                connectMessage.className = "text-green-400 text-center text-sm mt-4 min-h-[20px]";
+                
+                // Opcional: Mostrar la firma
+                console.log("Firma de la transacción:", signature);
+
+            } catch (error) {
+                // 15. Manejo de errores
+                console.error("Error en el pago:", error);
+                const userDidCancel = error.code === 4001; // Código de error si el usuario rechaza
+                
+                if (userDidCancel) {
+                    connectMessage.textContent = "Transacción cancelada por el usuario.";
+                } else {
+                    connectMessage.textContent = error.message || "Ocurrió un error desconocido.";
                 }
+                connectMessage.className = "text-red-400 text-center text-sm mt-4 min-h-[20px]";
+            } finally {
+                // 16. Reactivar el botón
+                connectPayBtn.disabled = false;
+                connectPayBtn.textContent = "Conectar Phantom y Pagar";
             }
+        });
 
-
-            window.onbeforeunload = () => { if (Object.keys(peerConnections).length > 0) stopStream(); }
-    
-            const translations = {
-                en: {
-                    explore: "Explore", categories: "Categories", creator: "Creator", creator_studio: "Creator Studio", recommended_channels: "Recommended Channels", followers: "followers", save: "Save", logout: "Log Out", processing: "Processing...", action_error: "Error processing action.", ad_warning: "An ad will appear in %s...", ad_playing: "Ad is playing...", welcome_to: "Welcome to", login_prompt: "Enter with your public Solana wallet address to start.", login_button: "Enter / Create Account", explore_title: "Explore Live Channels", categories_title: "Explore Categories", no_one_live: "No one is live in the '%s' category right now.", connecting_stream: "Connecting to stream...", live_chat: "Live Chat", chat_placeholder: "Send a message...", follow: "Follow", unfollow: "Unfollow", subscribe: "Subscribe", subscribed: "Subscribed", stream_ended: "The stream has ended.", sent: "sent", settings: "Settings", language: "Language", edit_profile: "Edit Profile", balance_withdrawal: "Balance & Withdrawal", current_balance: "Your Current Balance", withdrawal_minimum_bit: "You need a minimum of %a BIT to withdraw.", request_withdrawal: "Request Withdrawal", need_more_to_withdraw: "You need %a more BIT to withdraw.", withdrawal_ready: "You can request your withdrawal now.", withdrawal_requested: "Withdrawal request sent!", withdrawal_requested_toast: "Your withdrawal request has been sent.", withdrawal_error: "Error sending request.", profile_updated: "Profile updated successfully.", username: "Username", profile_pic_url: "Profile Picture URL", save_changes: "Save Changes", price_fetch_error: "Could not fetch price.", cannot_calculate_withdrawal: "Cannot calculate withdrawal requirements.", stream_dashboard: "Stream Dashboard", stream_title: "Stream Title", category: "Category", thumbnail_url: "Thumbnail URL (Optional)", thumbnail_placeholder: "https://example.com/image.png", microphone: "Microphone", use_camera: "Use Camera", share_screen: "Share Screen", preview: "Preview", chat: "Chat", start_stream: "Start", stop_stream: "Stop", analytics_rewards: "Analytics & Rewards", earnings_summary: "Earnings Summary", accumulated_rewards: "Accumulated Rewards", rewards_info: "You earn %a BIT for every %m minutes of streaming.", send_to_balance: "Send to Main Balance", followed_user: "You are now following %s.", unfollowed_user: "You have unfollowed %s.", insufficient_bits_subscribe: "You don't have enough BITs to subscribe.", subscribed_to_user: "You have subscribed to %s for 100 BIT", subscription_error: "Error processing subscription.", superchat_no_text: "Write a message to send with your VIP emoji.", insufficient_bits_emoji: "You need %p BIT to send this emoji.", superchat_error: "Error sending Super Chat.", media_error: "Could not access camera/screen.", no_video_source: "First select a video source.", stream_started: "Stream started!", stream_start_error: "Permission error. Could not start stream.", stream_stopped: "Stream stopped.", reward_notification: "+%a BIT for streaming %m minutes!", rewards_transferred: "%a BIT transferred to your balance.",
-                },
-                es: {
-                    explore: "Explorar", categories: "Categorías", creator: "Creador", creator_studio: "Estudio del Creador", recommended_channels: "Canales Recomendados", followers: "seguidores", save: "Guardar", logout: "Cerrar Sesión", processing: "Procesando...", action_error: "Error al procesar la acción.", ad_warning: "Un anuncio aparecerá en %s...", ad_playing: "Anuncio en curso...", welcome_to: "Bienvenido a", login_prompt: "Ingresa con tu dirección de wallet pública de Solana para empezar.", login_button: "Entrar / Crear Cuenta", explore_title: "Explorar Canales en Vivo", categories_title: "Explorar Categorías", no_one_live: "No hay nadie en vivo en la categoría '%s' en este momento.", connecting_stream: "Conectando al stream...", live_chat: "Chat en Vivo", chat_placeholder: "Escribe un mensaje...", follow: "Seguir", unfollow: "Dejar de Seguir", subscribe: "Suscribirse", subscribed: "Suscrito", stream_ended: "La transmisión ha finalizado.", sent: "envió", settings: "Configuración", language: "Idioma", edit_profile: "Editar Perfil", balance_withdrawal: "Balance y Retiros", current_balance: "Tu Saldo Actual", withdrawal_minimum_bit: "Necesitas un mínimo de %a BIT para retirar.", request_withdrawal: "Solicitar Retiro", need_more_to_withdraw: "Te faltan %a BIT para poder retirar.", withdrawal_ready: "Ya puedes solicitar tu retiro.", withdrawal_requested: "¡Solicitud de retiro enviada!", withdrawal_requested_toast: "Tu solicitud de retiro ha sido enviada.", withdrawal_error: "Error al enviar la solicitud.", profile_updated: "Perfil actualizado correctamente.", username: "Nombre de usuario", profile_pic_url: "URL de foto de perfil", save_changes: "Guardar Cambios", price_fetch_error: "No se pudo obtener el precio.", cannot_calculate_withdrawal: "No se pueden calcular los requisitos de retiro.", stream_dashboard: "Panel de Transmisión", stream_title: "Título del Stream", category: "Categoría", thumbnail_url: "URL de la Miniatura (Opcional)", thumbnail_placeholder: "https://ejemplo.com/imagen.png", microphone: "Micrófono", use_camera: "Usar Cámara", share_screen: "Compartir Pantalla", preview: "Vista Previa", chat: "Chat", start_stream: "Iniciar", stop_stream: "Detener", analytics_rewards: "Analíticas y Recompensas", earnings_summary: "Resumen de Ganancias", accumulated_rewards: "Recompensas Acumuladas", rewards_info: "Ganas %a BIT por cada %m minutos de transmisión.", send_to_balance: "Enviar a Balance Principal", followed_user: "Ahora sigues a %s.", unfollowed_user: "Has dejado de seguir a %s.", insufficient_bits_subscribe: "No tienes suficientes BITs para suscribirte.", subscribed_to_user: "Te has suscrito a %s por 100 BIT", subscription_error: "Error al procesar la suscripción.", superchat_no_text: "Escribe un mensaje para enviarlo con tu emoji VIP.", insufficient_bits_emoji: "Necesitas %p BIT para enviar este emoji.", superchat_error: "Error al enviar el Super Chat.", media_error: "No se pudo acceder a la cámara/pantalla.", no_video_source: "Primero selecciona una fuente de video.", stream_started: "¡Has iniciado la transmisión!", stream_start_error: "Error de permisos. No se pudo iniciar el stream.", stream_stopped: "Transmisión detenida.", reward_notification: "¡+%a BIT por transmitir %m minutos!", rewards_transferred: "%a BIT transferidos a tu balance.",
-                }
-            };
-    
-            function setLanguage(lang) {
-                currentLang = lang;
-                localStorage.setItem('lang', lang);
-                document.documentElement.lang = lang;
-                document.querySelectorAll('[data-key]').forEach(el => {
-                    const key = el.dataset.key; if(translations[lang][key]) el.textContent = translations[lang][key];
-                });
-                 document.querySelectorAll('[data-key-placeholder]').forEach(el => {
-                    const key = el.dataset.keyPlaceholder; if(translations[lang][key]) el.placeholder = translations[lang][key];
-                });
-            }
-            
-            // --- INICIALIZACIÓN ---
-            if (!withdrawalUpdateInterval) {
-                // Check price less frequently initially
-                updateWithdrawalStatus(); 
-                withdrawalUpdateInterval = setInterval(updateWithdrawalStatus, 120000); // Check every 2 minutes initially
-            }
-
-        }); // --- FIN DEL WRAPPER DOMContentLoaded ---
+    }); // --- Fin del 'load' listener ---
     </script>
+
 </body>
 </html>
-
-
 
