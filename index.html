@@ -85,6 +85,15 @@
             aspect-ratio: 3 / 4;
             object-fit: cover;
         }
+        
+        /* Estilos para el modal de moderación */
+        #mod-modal {
+            transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+        }
+        #mod-modal-content {
+            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        
     </style>
 </head>
 <body class="overflow-y-auto">
@@ -181,6 +190,22 @@
         <p id="ad-warning" class="mb-4 text-center font-bold"></p>
         <div id="ad-slot" class="w-full max-w-lg h-auto flex items-center justify-center"></div>
     </div>
+    
+    <!-- NUEVA FUNCIÓN: Modal de Moderación (inicialmente oculto) -->
+    <div id="mod-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[101] hidden opacity-0 scale-95" role="dialog" aria-modal="true" aria-labelledby="mod-modal-title">
+        <div id="mod-modal-content" class="bg-[var(--background-secondary)] p-6 rounded-2xl shadow-2xl w-full max-w-sm border border-[var(--border-color)] transform scale-100">
+            <h2 id="mod-modal-title" class="text-xl font-bold mb-2">Moderar Usuario</h2>
+            <p class="text-[var(--text-secondary)] mb-4" id="mod-modal-username">Vas a moderar a...</p>
+            <div class="grid grid-cols-2 gap-3">
+                <button class="mod-action-btn bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg" data-duration="1">Ban 1 Min</button>
+                <button class="mod-action-btn bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg" data-duration="10">Ban 10 Min</button>
+                <button class="mod-action-btn bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg" data-duration="60">Ban 1 Hora</button>
+                <button class="mod-action-btn bg-red-700 hover:bg-red-600 text-white p-2 rounded-lg" data-duration="perma">Ban Permanente</button>
+            </div>
+            <button id="mod-modal-cancel" class="mt-4 w-full bg-gray-500 hover:bg-gray-400 text-white p-2 rounded-lg">Cancelar</button>
+        </div>
+    </div>
+
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -207,7 +232,7 @@
         const REWARD_INTERVAL_MINUTES = 5;
         const REWARD_AMOUNT = 3000;
         const WITHDRAWAL_MINIMUM_BIT = 1000000;
-        const BIT_COIN_LOGO_URL = "https://images.pump.fun/coin-image/EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump?variant=600x600&ipfs=bafybeiekzpu4uxvcrbvzmzteiqmia3fe2ana2ttyueqgvxodlhcsbpibre&src=https%3A%2F%2Fipfs.io%2Fipfs%2Fbafybeiekzpu4uxvcrbvzmzteiqmia3fe2ana2ttyueqgvxodlhcsbpibre";
+        const BIT_COIN_LOGO_URL = "https://images.pump.fun/coin-image/EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump?variant=600x600&ipfs=bafybeiekzpu4uxvcrbvzmzteiqmia3fe2ana2ttyueqgvxodlhcsbpibre&src=https%3A%F%2Fipfs.io%2Fipfs%2Fbafybeiekzpu4uxvcrbvzmzteiqmia3fe2ana2ttyueqgvxodlhcsbpibre";
 
         let app, auth, db;
         let currentUser = null;
@@ -215,6 +240,10 @@
         let currentLang = 'en';
         let currentPageRender = () => renderExplorePage();
         let navigationHistory = [];
+        
+        // NUEVA FUNCIÓN: Variables para el modal de moderación
+        let modModalTargetUser = { wallet: null, name: null };
+
 
         app = initializeApp(firebaseConfig);
         auth = getAuth(app);
@@ -234,6 +263,13 @@
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const mobileMenuIcon = document.getElementById('mobile-menu-icon');
         const backButton = document.getElementById('back-button');
+        
+        // NUEVA FUNCIÓN: Referencias al modal de moderación
+        const modModal = document.getElementById('mod-modal');
+        const modModalContent = document.getElementById('mod-modal-content');
+        const modModalUsername = document.getElementById('mod-modal-username');
+        const modModalCancel = document.getElementById('mod-modal-cancel');
+
 
         function requireAuth() {
             if (!currentUser) {
@@ -336,6 +372,8 @@
             }
             if (!navigationHistory.length) { 
                  setupNavigation();
+                 // NUEVA FUNCIÓN: Configurar listeners del modal de moderación
+                 setupModModalListeners();
             }
         }
         
@@ -482,6 +520,45 @@
             lucide.createIcons();
         }
         
+        // NUEVA FUNCIÓN: (Helper) Renderizar un stream card individual
+        function renderStreamCard(streamDoc) {
+            const stream = streamDoc.data();
+            return `
+                <div class="stream-card group bg-[var(--background-secondary)] rounded-xl overflow-hidden border border-[var(--border-color)] hover:border-[var(--brand-color-purple)] transition-all transform hover:-translate-y-1 duration-300 cursor-pointer" data-streamer-wallet="${streamDoc.id}">
+                    <div class="relative"><img src="${stream.thumbnailUrl || 'https://placehold.co/400x225/141418/2a2a32?text=En+Vivo'}" class="w-full h-40 object-cover">
+                        <div class="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md">LIVE</div>
+                        <div class="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-md flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i> ${stream.viewerCount || 0}</div>
+                    </div>
+                    <div class="p-4 flex items-start gap-3"><img src="${stream.streamerPic}" class="w-10 h-10 rounded-full">
+                        <div><h3 class="font-bold text-md truncate">${stream.title}</h3>
+                            <p class="text-sm text-[var(--text-secondary)]">${stream.streamerUsername || stream.streamerWallet.substring(0, 6)}</h6>
+                            <span class="text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full">${stream.category}</span>
+                        </div>
+                    </div>
+                </div>`;
+        }
+        
+        // NUEVA FUNCIÓN: (Helper) Renderizar el stream destacado
+        function renderFeaturedStream(streamDoc) {
+            const stream = streamDoc.data();
+            return `
+                <div class="mb-8 stream-card group rounded-xl overflow-hidden border border-[var(--border-color)] hover:border-[var(--brand-color-purple)] transition-all duration-300 cursor-pointer" data-streamer-wallet="${streamDoc.id}">
+                    <div class="relative w-full aspect-video bg-black rounded-lg flex items-center justify-center flex-shrink-0">
+                        <img src="${stream.thumbnailUrl || 'https://placehold.co/800x450/141418/2a2a32?text=En+Vivo'}" class="w-full h-full object-cover">
+                        <div class="absolute top-3 left-3 bg-red-600 text-white text-sm font-bold px-3 py-1.5 rounded-md">LIVE</div>
+                        <div class="absolute bottom-3 right-3 bg-black/50 text-white text-sm px-3 py-1.5 rounded-md flex items-center gap-2"><i data-lucide="users" class="w-4 h-4"></i> ${stream.viewerCount || 0}</div>
+                    </div>
+                    <div class="p-4 flex items-start gap-4 bg-[var(--background-secondary)] rounded-b-xl">
+                        <img src="${stream.streamerPic}" class="w-12 h-12 rounded-full">
+                        <div>
+                            <h2 class="font-bold text-xl truncate">${stream.title}</h2>
+                            <p class="text-md text-[var(--text-secondary)]">${stream.streamerUsername || stream.streamerWallet.substring(0, 6)}</p>
+                            <span class="text-sm bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full mt-1 inline-block">${stream.category}</span>
+                        </div>
+                    </div>
+                </div>`;
+        }
+        
         async function renderExplorePage(category = null) {
             currentPageRender = () => renderExplorePage(category);
             let streamsQuery = query(collection(db, "streams"), where("status", "==", "live"));
@@ -491,29 +568,42 @@
             
             const querySnapshot = await getDocs(streamsQuery);
             let streamsHTML = '';
+            let featuredStreamHTML = '';
+            
             if (querySnapshot.empty) {
                 streamsHTML = `<p class="text-center text-[var(--text-secondary)] col-span-full">${translations[currentLang].no_one_live.replace('%s', category || 'any')}</p>`;
             } else {
-                querySnapshot.forEach(doc => {
-                    const stream = doc.data();
-                    streamsHTML += `
-                        <div class="stream-card group bg-[var(--background-secondary)] rounded-xl overflow-hidden border border-[var(--border-color)] hover:border-[var(--brand-color-purple)] transition-all transform hover:-translate-y-1 duration-300 cursor-pointer" data-streamer-wallet="${doc.id}">
-                            <div class="relative"><img src="${stream.thumbnailUrl || 'https://placehold.co/400x225/141418/2a2a32?text=En+Vivo'}" class="w-full h-40 object-cover">
-                                <div class="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md">LIVE</div>
-                                <div class="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-md flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i> ${stream.viewerCount || 0}</div>
-                            </div>
-                            <div class="p-4 flex items-start gap-3"><img src="${stream.streamerPic}" class="w-10 h-10 rounded-full">
-                                <div><h3 class="font-bold text-md truncate">${stream.title}</h3>
-                                    <p class="text-sm text-[var(--text-secondary)]">${stream.streamerUsername || stream.streamerWallet.substring(0, 6)}</h6>
-                                    <span class="text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full">${stream.category}</span>
-                                </div>
-                            </div>
-                        </div>`;
+                // NUEVA FUNCIÓN: Lógica para el stream destacado
+                let streamDocs = querySnapshot.docs;
+                
+                // Solo mostrar destacado si no estamos en una categoría
+                if (!category && streamDocs.length > 0) {
+                    // Ordenar por viewerCount (más vistas)
+                    streamDocs.sort((a, b) => (b.data().viewerCount || 0) - (a.data().viewerCount || 0));
+                    
+                    // Tomar el primero como destacado
+                    const featuredStreamDoc = streamDocs.shift(); // Quita el primer elemento y lo devuelve
+                    featuredStreamHTML = renderFeaturedStream(featuredStreamDoc);
+                }
+                
+                // Renderizar las tarjetas restantes
+                streamDocs.forEach(doc => {
+                    streamsHTML += renderStreamCard(doc);
                 });
+                
+                if (streamDocs.length === 0 && featuredStreamHTML !== '') {
+                     streamsHTML = `<p class="text-center text-[var(--text-secondary)] col-span-full">No hay otros streams en vivo en este momento.</p>`;
+                }
             }
+            
             const title = category ? `Canales en Vivo - ${category}` : translations[currentLang].explore_title;
-            renderPage(`<h1 class="text-3xl font-bold mb-6" data-key="explore_title">${title}</h1>
-                <div id="streams-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">${streamsHTML}</div>`, 'explore');
+            
+            renderPage(`
+                ${featuredStreamHTML}
+                <h1 class="text-3xl font-bold mb-6" data-key="explore_title">${title}</h1>
+                <div id="streams-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    ${streamsHTML}
+                </div>`, 'explore');
             
             document.querySelectorAll('.stream-card').forEach(card => {
                 card.addEventListener('click', () => {
@@ -523,6 +613,7 @@
                 });
             });
         }
+
         
         function renderCategoriesPage() {
             currentPageRender = renderCategoriesPage;
@@ -599,6 +690,16 @@
                             <button id="withdraw-button" class="mt-4 w-full purple-gradient-bg text-white font-bold py-3 rounded-lg transition-all disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed" disabled data-key="request_withdrawal">Request Withdrawal</button>
                             <div id="withdraw-message" class="text-center text-sm h-5 mt-2"></div>
                         </div>
+                        
+                        <!-- NUEVA FUNCIÓN: Historial de Transacciones -->
+                        <div class="bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)]">
+                            <h3 class="font-semibold text-lg mb-4" data-key="transaction_history">Historial de Transacciones</h3>
+                            <div id="transaction-history-container" class="space-y-3 max-h-96 overflow-y-auto pr-2">
+                                <!-- El historial se cargará aquí dinámicamente -->
+                                <p id="transaction-history-loading" class="text-[var(--text-secondary)] text-sm">Cargando historial...</p>
+                            </div>
+                        </div>
+                        
                     </div>
                 </div>
             </div>`;
@@ -610,6 +711,72 @@
             
             initBitsDepositLogic();
             updateWithdrawalStatus(); 
+            // NUEVA FUNCIÓN: Cargar historial
+            loadTransactionHistory();
+        }
+        
+        // NUEVA FUNCIÓN: Registrar una transacción
+        async function logTransaction(type, amount, details = {}) {
+            if (!currentUser) return;
+            try {
+                const txCollection = collection(db, "users", currentUser.walletAddress, "transactions");
+                await addDoc(txCollection, {
+                    type, // 'deposit', 'withdrawal', 'subscription_purchase', 'subscription_reward', 'vip_emoji_purchase', 'vip_emoji_reward', 'reward_transfer'
+                    amount, // puede ser positivo o negativo
+                    timestamp: serverTimestamp(),
+                    ...details // E.g., { toUser: '...', fromUser: '...', emojiId: '...' }
+                });
+            } catch (error) {
+                console.error("Error logging transaction:", error);
+            }
+        }
+        
+        // NUEVA FUNCIÓN: Cargar y mostrar el historial de transacciones
+        async function loadTransactionHistory() {
+            if (!currentUser) return;
+            const container = document.getElementById('transaction-history-container');
+            const loadingText = document.getElementById('transaction-history-loading');
+            
+            const txQuery = query(collection(db, "users", currentUser.walletAddress, "transactions"), orderBy("timestamp", "desc"), limit(20));
+            
+            onSnapshot(txQuery, (snapshot) => {
+                if (snapshot.empty) {
+                    loadingText.textContent = translations[currentLang].no_transactions;
+                    return;
+                }
+                
+                container.innerHTML = ''; // Limpiar
+                
+                snapshot.forEach(doc => {
+                    const tx = doc.data();
+                    const el = document.createElement('div');
+                    el.className = 'bg-[var(--background-tertiary)] p-3 rounded-lg flex justify-between items-center';
+                    
+                    const date = tx.timestamp ? tx.timestamp.toDate().toLocaleString(currentLang.startsWith('es') ? 'es-ES' : 'en-US') : '...';
+                    let amountColor = tx.amount > 0 ? 'text-green-400' : 'text-red-400';
+                    if (tx.type === 'reward_transfer') amountColor = 'text-purple-400';
+                    
+                    let description = translations[currentLang][`tx_${tx.type}`] || tx.type;
+                    if (tx.details?.username) {
+                        description += ` (${tx.details.username})`;
+                    } else if (tx.type === 'deposit') {
+                        description += ` (${tx.details?.method || 'QR'})`;
+                    }
+                    
+                    el.innerHTML = `
+                        <div>
+                            <p class="font-semibold text-sm">${description}</p>
+                            <p class="text-xs text-[var(--text-secondary)]">${date}</p>
+                        </div>
+                        <span class="font-bold ${amountColor}">${tx.amount.toLocaleString()} BIT</span>
+                    `;
+                    container.appendChild(el);
+                });
+                
+            }, (error) => {
+                console.error("Error loading transaction history:", error);
+                loadingText.textContent = "Error al cargar el historial.";
+            });
         }
 
  
@@ -741,7 +908,7 @@ function initBitsDepositLogic() {
                         });
 
                         if (transferredAmount >= amount) {
-                            await processSuccessfulPayment(signatureRef, foundSignature.signature, amount, transferredAmount, reference);
+                            await processSuccessfulPayment(signatureRef, foundSignature.signature, amount, transferredAmount, reference, 'qr'); // NUEVO: 'qr'
                         } else {
                             status.textContent = `⚠️ Pago detectado pero el monto es incorrecto. Se transfirieron ${transferredAmount} BITS, se esperaban ${amount} BITS.`;
                             console.warn("Monto de la transacción no coincide.", { 
@@ -755,7 +922,7 @@ function initBitsDepositLogic() {
                         
                         // Si hay timeout, verificar el estado directamente
                         if (confirmationError.message.includes('timeout') || confirmationError.message.includes('not confirmed')) {
-                            await handleUnconfirmedTransaction(connection, foundSignature.signature, signatureRef, amount, reference);
+                            await handleUnconfirmedTransaction(connection, foundSignature.signature, signatureRef, amount, reference, 'qr'); // NUEVO: 'qr'
                         } else {
                             throw confirmationError;
                         }
@@ -769,7 +936,7 @@ function initBitsDepositLogic() {
         }, 5000); // Verificar cada 5 segundos
     }
 
-    async function handleUnconfirmedTransaction(connection, signature, signatureRef, amount, reference) {
+    async function handleUnconfirmedTransaction(connection, signature, signatureRef, amount, reference, method) { // NUEVO: method
         status.textContent = "⏳ La transacción está tomando más tiempo de lo esperado. Verificando estado...";
         
         try {
@@ -786,7 +953,7 @@ function initBitsDepositLogic() {
                 
                 if (txDetailsFinalized && !txDetailsFinalized.meta?.err) {
                     // Transacción exitosa en finalized
-                    await processSuccessfulPayment(signatureRef, signature, amount, amount, reference, "finalized");
+                    await processSuccessfulPayment(signatureRef, signature, amount, amount, reference, "finalized", method); // NUEVO: method
                     return;
                 }
                 
@@ -794,24 +961,24 @@ function initBitsDepositLogic() {
                 status.innerHTML = `⏳ Transacción pendiente. <a href="https://solscan.io/tx/${signature}" target="_blank" class="text-purple-400 underline">Ver en explorador</a>. Se verificará automáticamente.`;
                 
                 // Continuar verificando en segundo plano
-                continueBackgroundVerification(signature, amount, reference);
+                continueBackgroundVerification(signature, amount, reference, method); // NUEVO: method
                 return;
             }
             
             // Si tenemos detalles y no hay error, procesar como exitosa
             if (!txDetails.meta?.err) {
-                await processSuccessfulPayment(signatureRef, signature, amount, amount, reference, "confirmed");
+                await processSuccessfulPayment(signatureRef, signature, amount, amount, reference, "confirmed", method); // NUEVO: method
             } else {
                 throw new Error("Transacción fallida: " + JSON.stringify(txDetails.meta.err));
             }
             
         } catch (verificationError) {
             console.error("Error en verificación de transacción:", verificationError);
-            status.innerHTML = `⚠️ No se pudo verificar el estado. <a href="https://solscan.io/tx/${signature}" target="_blank" class="text-purple-400 underline">Verifica manualmente</a> y contacta soporte si es necesario.`;
+            status.innerHTML = `⚠️ No se pudo verificar el estado. <a href="https://solscan.io/tx/${signature}" target="_blank" class="text-purple-400 underline">Verifica manually</a> y contacta soporte si es necesario.`;
         }
     }
 
-    async function continueBackgroundVerification(signature, amount, reference) {
+    async function continueBackgroundVerification(signature, amount, reference, method) { // NUEVO: method
         // Verificar periódicamente en segundo plano
         const backgroundInterval = setInterval(async () => {
             try {
@@ -826,7 +993,7 @@ function initBitsDepositLogic() {
                     clearInterval(backgroundInterval);
                     
                     const signatureRef = doc(db, "users", currentUser.walletAddress, "usedSignatures", signature);
-                    await processSuccessfulPayment(signatureRef, signature, amount, amount, reference, "finalized (background)");
+                    await processSuccessfulPayment(signatureRef, signature, amount, amount, reference, "finalized (background)", method); // NUEVO: method
                     
                     showToast(`¡Transacción confirmada! Se añadieron ${amount} BITS a tu cuenta.`);
                 }
@@ -836,7 +1003,7 @@ function initBitsDepositLogic() {
         }, 10000); // Verificar cada 10 segundos
     }
 
-    async function processSuccessfulPayment(signatureRef, signature, expectedAmount, actualAmount, reference, confirmationType = "confirmed") {
+    async function processSuccessfulPayment(signatureRef, signature, expectedAmount, actualAmount, reference, confirmationType = "confirmed", method = 'unknown') { // NUEVO: method
         status.textContent = `✅ ¡Transacción ${confirmationType}! Actualizando saldo...`;
         
         try {
@@ -855,6 +1022,9 @@ function initBitsDepositLogic() {
             await updateDoc(userRef, { 
                 bitBalance: increment(expectedAmount) 
             });
+            
+            // NUEVA FUNCIÓN: Registrar transacción de depósito
+            await logTransaction('deposit', expectedAmount, { method: method, signature: signature });
 
             showToast(`¡Se han añadido ${expectedAmount} BITS a tu cuenta!`);
             status.innerHTML = `✅ Depósito exitoso (${confirmationType}). <a href="https://solscan.io/tx/${signature}" target="_blank" class="text-purple-400 underline">Ver en explorador</a>`;
@@ -1061,14 +1231,15 @@ function initBitsDepositLogic() {
                     amount,
                     amount,
                     reference,
-                    'phantom'
+                    'phantom',
+                    'phantom' // NUEVO: method
                 );
 
             } catch (confirmationError) {
                 console.warn("Error en confirmación Phantom:", confirmationError);
                 await handleUnconfirmedTransaction(connection, signature, 
                     doc(db, "users", currentUser.walletAddress, "usedSignatures", signature),
-                    amount, reference
+                    amount, reference, 'phantom' // NUEVO: method
                 );
             }
 
@@ -1212,9 +1383,32 @@ function initBitsDepositLogic() {
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             });
             
-            if(chatForm) chatForm.addEventListener('submit', (e) => {
+            if(chatForm) chatForm.addEventListener('submit', async (e) => { // AÑADIDO 'async'
                 e.preventDefault();
                 if (!requireAuth()) return;
+                
+                // NUEVA FUNCIÓN: Comprobar si está baneado antes de enviar
+                try {
+                    const banRef = doc(db, 'streams', streamerWallet, 'bans', currentUser.walletAddress);
+                    const banSnap = await getDoc(banRef);
+                    
+                    if (banSnap.exists()) {
+                        const banData = banSnap.data();
+                        const expiresAt = banData.expiresAt ? banData.expiresAt.toDate() : null;
+                        
+                        if (expiresAt === null || expiresAt > new Date()) {
+                            // Sigue baneado
+                            showToast(translations[currentLang].you_are_banned, true);
+                            return;
+                        } else {
+                            // Ban expirado, borrarlo
+                            await deleteDoc(banRef);
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error checking ban status:", err);
+                }
+                
                 const text = chatInput.value.trim();
                 if (text) {
                     addDoc(chatRef, { text, userName: currentUser.username, userWallet: currentUser.walletAddress, userColor: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'), createdAt: serverTimestamp() });
@@ -1303,9 +1497,31 @@ function initBitsDepositLogic() {
                 loader.classList.remove("hidden");
                 const userRef = doc(db, "users", currentUser.walletAddress);
                 const amount = currentUser.creatorRewardsBalance;
-                await updateDoc(userRef, { bitBalance: increment(amount), creatorRewardsBalance: 0 });
-                showToast(translations[currentLang].rewards_transferred.replace('%a', amount.toLocaleString()));
-                loader.classList.add("hidden");
+                
+                // NUEVA FUNCIÓN: Usar transacción para transferir y registrar
+                try {
+                    await runTransaction(db, async (t) => {
+                        t.update(userRef, { 
+                            bitBalance: increment(amount), 
+                            creatorRewardsBalance: 0 
+                        });
+                        
+                        const txCol = collection(db, "users", currentUser.walletAddress, "transactions");
+                        t.set(doc(txCol), {
+                            type: 'reward_transfer',
+                            amount: amount,
+                            timestamp: serverTimestamp(),
+                            details: { from: 'creator_balance', to: 'main_balance' }
+                        });
+                    });
+                    
+                    showToast(translations[currentLang].rewards_transferred.replace('%a', amount.toLocaleString()));
+                } catch (error) {
+                    console.error("Error transferring rewards:", error);
+                    showToast("Error al transferir recompensas.", true);
+                } finally {
+                    loader.classList.add("hidden");
+                }
             });
         }
 
@@ -1373,10 +1589,31 @@ function initBitsDepositLogic() {
             loader.classList.remove("hidden");
             withdrawMessage.textContent = translations[currentLang].processing;
             try {
-                await addDoc(collection(db, "withdrawalRequests"), {
-                    userWallet: currentUser.walletAddress, username: currentUser.username, amount: currentUser.bitBalance, status: "pending", requestedAt: serverTimestamp()
+                const amountToWithdraw = currentUser.bitBalance;
+                
+                // NUEVA FUNCIÓN: Usar transacción para retirar y registrar
+                const userRef = doc(db, "users", currentUser.walletAddress);
+                await runTransaction(db, async (t) => {
+                    t.update(userRef, { bitBalance: 0 });
+                    
+                    const reqCol = collection(db, "withdrawalRequests");
+                    t.set(doc(reqCol), {
+                        userWallet: currentUser.walletAddress, 
+                        username: currentUser.username, 
+                        amount: amountToWithdraw, 
+                        status: "pending", 
+                        requestedAt: serverTimestamp()
+                    });
+                    
+                    const txCol = collection(db, "users", currentUser.walletAddress, "transactions");
+                    t.set(doc(txCol), {
+                        type: 'withdrawal_request',
+                        amount: -amountToWithdraw,
+                        timestamp: serverTimestamp(),
+                        details: { status: 'pending' }
+                    });
                 });
-                await updateDoc(doc(db, "users", currentUser.walletAddress), { bitBalance: 0 });
+
                 withdrawMessage.textContent = translations[currentLang].withdrawal_requested;
                 withdrawMessage.classList.add("text-green-500");
                 showToast(translations[currentLang].withdrawal_requested_toast);
@@ -1384,6 +1621,8 @@ function initBitsDepositLogic() {
                 console.error("Error creating withdrawal request:", error);
                 withdrawMessage.textContent = translations[currentLang].withdrawal_error;
                 withdrawMessage.classList.add("text-red-500");
+                // Revertir el balance si falla (aunque la transacción debería evitar esto)
+                await updateDoc(doc(db, "users", currentUser.walletAddress), { bitBalance: currentUser.bitBalance });
             } finally {
                 loader.classList.add("hidden");
             }
@@ -1435,19 +1674,44 @@ function initBitsDepositLogic() {
             }
             subBtn.onclick = async () => {
                 if (!requireAuth()) return;
-                if (currentUser.bitBalance < 100) return showToast(translations[currentLang].insufficient_bits_subscribe);
+                const subscriptionCost = 100; // Definido
+                if (currentUser.bitBalance < subscriptionCost) return showToast(translations[currentLang].insufficient_bits_subscribe);
                 loader.classList.remove('hidden');
                 try {
                     const streamerUserRef = doc(db, "users", streamerWallet);
                     const streamerUsername = ((await getDoc(streamerUserRef)).data() || {}).username || streamerWallet.substring(0,6);
+                    
                     await runTransaction(db, async (t) => {
                         const myUserRef = doc(db, "users", currentUser.walletAddress);
                         const myDoc = await t.get(myUserRef);
-                        if (!myDoc.exists() || myDoc.data().bitBalance < 100) throw "Insufficient balance.";
-                        t.update(myUserRef, { bitBalance: increment(-100) });
-                        t.update(streamerUserRef, { creatorRewardsBalance: increment(100) });
+                        if (!myDoc.exists() || myDoc.data().bitBalance < subscriptionCost) throw "Insufficient balance.";
+                        
+                        // 1. Descontar al comprador
+                        t.update(myUserRef, { bitBalance: increment(-subscriptionCost) });
+                        // 2. Acreditar al streamer
+                        t.update(streamerUserRef, { creatorRewardsBalance: increment(subscriptionCost) });
+                        // 3. Marcar como suscriptor
                         t.set(subRef, { subscribedAt: serverTimestamp(), expiresAt: 'never' });
+                        
+                        // 4. NUEVA FUNCIÓN: Registrar transacciones
+                        const txTime = serverTimestamp(); // Usar el mismo timestamp
+                        const txColBuyer = collection(db, "users", currentUser.walletAddress, "transactions");
+                        t.set(doc(txColBuyer), {
+                            type: 'subscription_purchase',
+                            amount: -subscriptionCost,
+                            timestamp: txTime,
+                            details: { toUser: streamerWallet, username: streamerUsername }
+                        });
+                        
+                        const txColStreamer = collection(db, "users", streamerWallet, "transactions");
+                        t.set(doc(txColStreamer), {
+                            type: 'subscription_reward',
+                            amount: subscriptionCost,
+                            timestamp: txTime,
+                            details: { fromUser: currentUser.walletAddress, username: currentUser.username }
+                        });
                     });
+                    
                     showToast(translations[currentLang].subscribed_to_user.replace('%s', streamerUsername));
                     subBtn.disabled = true;
                     subBtn.innerHTML = `<i data-lucide="check"></i> <span data-key="subscribed">${translations[currentLang].subscribed}</span>`;
@@ -1472,14 +1736,39 @@ function initBitsDepositLogic() {
                     if (currentUser.bitBalance < emoji.price) return showToast(translations[currentLang].insufficient_bits_emoji.replace('%p', emoji.price));
                     loader.classList.remove('hidden');
                     try {
+                        const streamerUserRef = doc(db, "users", streamerWallet);
+                        const streamerUsername = ((await getDoc(streamerUserRef)).data() || {}).username || streamerWallet.substring(0,6);
+
                         await runTransaction(db, async (t) => {
                             const myUserRef = doc(db, "users", currentUser.walletAddress);
-                            const streamerUserRef = doc(db, "users", streamerWallet);
                             const myDoc = await t.get(myUserRef);
                             if (!myDoc.exists() || myDoc.data().bitBalance < emoji.price) throw "Insufficient balance.";
+                            
+                            // 1. Descontar al comprador
                             t.update(myUserRef, { bitBalance: increment(-emoji.price) });
+                            // 2. Acreditar al streamer
                             t.update(streamerUserRef, { creatorRewardsBalance: increment(emoji.price) });
+                            
+                            // 3. NUEVA FUNCIÓN: Registrar transacciones
+                            const txTime = serverTimestamp();
+                            const txColBuyer = collection(db, "users", currentUser.walletAddress, "transactions");
+                            t.set(doc(txColBuyer), {
+                                type: 'vip_emoji_purchase',
+                                amount: -emoji.price,
+                                timestamp: txTime,
+                                details: { toUser: streamerWallet, username: streamerUsername, emojiId: emoji.id }
+                            });
+                            
+                            const txColStreamer = collection(db, "users", streamerWallet, "transactions");
+                            t.set(doc(txColStreamer), {
+                                type: 'vip_emoji_reward',
+                                amount: emoji.price,
+                                timestamp: txTime,
+                                details: { fromUser: currentUser.walletAddress, username: currentUser.username, emojiId: emoji.id }
+                            });
                         });
+                        
+                        // 4. Enviar el mensaje de chat
                         await addDoc(collection(db, 'streams', streamerWallet, 'chat'), { text, userName: currentUser.username, userWallet: currentUser.walletAddress, userColor: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'), createdAt: serverTimestamp(), vipEmoji: { url: emoji.url, price: emoji.price } });
                         chatInput.value = '';
                     } catch(err) { console.error("Super Chat transaction error:", err); showToast(translations[currentLang].superchat_error); } finally { loader.classList.add('hidden'); }
@@ -1525,6 +1814,22 @@ function initBitsDepositLogic() {
                     micSelect.appendChild(option);
                 });
             } catch(e) { console.error("Error enumerating devices:", e); }
+            
+            // NUEVA FUNCIÓN: Listener para clics en el chat del studio
+            const studioChatMessages = document.getElementById('studio-chat-messages');
+            if (studioChatMessages) {
+                studioChatMessages.addEventListener('click', (e) => {
+                    const modBtn = e.target.closest('.mod-user-btn');
+                    if (modBtn) {
+                        e.preventDefault();
+                        const wallet = modBtn.dataset.wallet;
+                        const name = modBtn.dataset.name;
+                        if (wallet && name) {
+                            showModModal(wallet, name);
+                        }
+                    }
+                });
+            }
         }
 
         async function getMedia(type) {
@@ -1571,9 +1876,16 @@ function initBitsDepositLogic() {
                     snapshot.docChanges().reverse().forEach(change => {
                         if (change.type === "added") {
                             const msg = change.doc.data(), msgEl = document.createElement('div');
+                            // NUEVA FUNCIÓN: Renderizado del chat del studio con botón de moderar
+                            const userNameBtn = `<button class="font-semibold mod-user-btn hover:underline" style="color: ${msg.userColor || '#FFF'}" data-wallet="${msg.userWallet}" data-name="${msg.userName}">${msg.userName}</button>`;
+                            
                             if (msg.vipEmoji) {
-                                msgEl.className = 'super-chat text-xs'; msgEl.innerHTML = `<div class="flex items-center gap-1 mb-1"><img src="${msg.vipEmoji.url}" class="w-6 h-6"><div class="font-bold">${msg.userName} ${translations[currentLang].sent} ${msg.vipEmoji.price} BIT</div></div><p>${msg.text}</p>`;
-                            } else { msgEl.className = 'text-xs p-1'; msgEl.innerHTML = `<strong style="color: ${msg.userColor || '#FFF'}">${msg.userName}:</strong> ${msg.text}`; }
+                                msgEl.className = 'super-chat text-xs'; 
+                                msgEl.innerHTML = `<div class="flex items-center gap-1 mb-1"><img src="${msg.vipEmoji.url}" class="w-6 h-6"><div class="font-bold">${userNameBtn} ${translations[currentLang].sent} ${msg.vipEmoji.price} BIT</div></div><p>${msg.text}</p>`;
+                            } else { 
+                                msgEl.className = 'text-xs p-1'; 
+                                msgEl.innerHTML = `${userNameBtn}: ${msg.text}`; 
+                            }
                             studioChatMessages.appendChild(msgEl);
                         }
                     });
@@ -1588,8 +1900,23 @@ function initBitsDepositLogic() {
                     const currentMinutes = Math.floor((Date.now() - startTime) / 60000);
                     if (currentMinutes >= lastRewardTimeInMinutes + REWARD_INTERVAL_MINUTES) {
                         lastRewardTimeInMinutes += REWARD_INTERVAL_MINUTES;
-                        await updateDoc(doc(db, "users", currentUser.walletAddress), { creatorRewardsBalance: increment(REWARD_AMOUNT) });
-                        showToast(translations[currentLang].reward_notification.replace('%a', REWARD_AMOUNT.toLocaleString()).replace('%m', lastRewardTimeInMinutes));
+                        const amount = REWARD_AMOUNT; // Renombrado
+                        
+                        // NUEVA FUNCIÓN: Registrar la ganancia de stream como transacción
+                        await runTransaction(db, async (t) => {
+                            const userRef = doc(db, "users", currentUser.walletAddress);
+                            t.update(userRef, { creatorRewardsBalance: increment(amount) });
+                            
+                            const txCol = collection(db, "users", currentUser.walletAddress, "transactions");
+                            t.set(doc(txCol), {
+                                type: 'stream_reward',
+                                amount: amount,
+                                timestamp: serverTimestamp(),
+                                details: { minutes: lastRewardTimeInMinutes }
+                            });
+                        });
+                        
+                        showToast(translations[currentLang].reward_notification.replace('%a', amount.toLocaleString()).replace('%m', lastRewardTimeInMinutes));
                     }
                 }, 15000);
                 if(adInterval) clearInterval(adInterval);
@@ -1607,8 +1934,15 @@ function initBitsDepositLogic() {
             if (!currentUser) return;
             const streamRef = doc(db, 'streams', currentUser.walletAddress);
             try {
-                for(const coll of [collection(streamRef, 'viewers'), collection(streamRef, 'chat')]) {
-                    const snapshot = await getDocs(coll); if(!snapshot.empty) { const batch = writeBatch(db); snapshot.forEach(doc => batch.delete(doc.ref)); await batch.commit(); }
+                // NUEVA FUNCIÓN: Borrar también la colección de bans al detener
+                for(const collPath of ['viewers', 'chat', 'bans']) {
+                    const collRef = collection(streamRef, collPath);
+                    const snapshot = await getDocs(collRef); 
+                    if(!snapshot.empty) { 
+                        const batch = writeBatch(db); 
+                        snapshot.forEach(doc => batch.delete(doc.ref)); 
+                        await batch.commit(); 
+                    }
                 }
                 await deleteDoc(streamRef);
             } catch(error) { console.error("Error cleaning up stream:", error); await deleteDoc(streamRef).catch(()=>{}); }
@@ -1657,13 +1991,143 @@ function initBitsDepositLogic() {
         }
         
         window.onbeforeunload = () => { if (Object.keys(peerConnections).length > 0) stopStream(); }
+        
+        // --- NUEVA FUNCIÓN: Lógica del Modal de Moderación ---
+        function setupModModalListeners() {
+            if (!modModal) return;
+
+            // Cerrar al hacer clic fuera
+            modModal.addEventListener('click', (e) => {
+                if (e.target === modModal) {
+                    hideModModal();
+                }
+            });
+            
+            // Cerrar con el botón de cancelar
+            modModalCancel.addEventListener('click', hideModModal);
+            
+            // Manejar acciones de ban
+            modModalContent.addEventListener('click', (e) => {
+                const actionBtn = e.target.closest('.mod-action-btn');
+                if (actionBtn) {
+                    const durationStr = actionBtn.dataset.duration;
+                    let durationMinutes = 0;
+                    
+                    if (durationStr === 'perma') {
+                        durationMinutes = null; // Permanente
+                    } else {
+                        durationMinutes = parseInt(durationStr, 10);
+                    }
+                    
+                    if (modModalTargetUser.wallet) {
+                        banUser(currentUser.walletAddress, modModalTargetUser.wallet, modModalTargetUser.name, durationMinutes);
+                    }
+                    hideModModal();
+                }
+            });
+        }
+        
+        function showModModal(userWallet, userName) {
+            if (!modModal || !modModalUsername) return;
+            
+            // No moderarse a sí mismo
+            if (userWallet === currentUser.walletAddress) return;
+            
+            modModalTargetUser = { wallet: userWallet, name: userName };
+            modModalUsername.textContent = `Baneando a: ${userName}`;
+            
+            modModal.classList.remove('hidden');
+            setTimeout(() => {
+                modModal.classList.remove('opacity-0', 'scale-95');
+                modModalContent.classList.remove('scale-100'); // Reset
+                modModalContent.classList.add('scale-100');
+            }, 10);
+        }
+
+        function hideModModal() {
+            if (!modModal) return;
+            modModal.classList.add('opacity-0', 'scale-95');
+            modModalContent.classList.add('scale-95');
+            setTimeout(() => {
+                modModal.classList.add('hidden');
+                modModalTargetUser = { wallet: null, name: null };
+            }, 200);
+        }
+        
+        async function banUser(streamerWallet, bannedUserWallet, bannedUserName, durationMinutes) {
+            if (!streamerWallet || !bannedUserWallet) return;
+            
+            const banRef = doc(db, 'streams', streamerWallet, 'bans', bannedUserWallet);
+            let expiresAt = null;
+            let banMessage = '';
+            
+            if (durationMinutes === null) {
+                // Ban permanente
+                expiresAt = null;
+                banMessage = `Usuario ${bannedUserName} ha sido baneado permanentemente.`;
+            } else {
+                // Ban temporal
+                const expiresDate = new Date(Date.now() + durationMinutes * 60 * 1000);
+                expiresAt = expiresDate; // Firestore maneja objetos Date
+                banMessage = `Usuario ${bannedUserName} ha sido baneado por ${durationMinutes} minuto(s).`;
+            }
+            
+            try {
+                await setDoc(banRef, {
+                    bannedAt: serverTimestamp(),
+                    expiresAt: expiresAt,
+                    bannedBy: streamerWallet,
+                    userName: bannedUserName
+                });
+                showToast(banMessage);
+                
+                // Opcional: Enviar un mensaje al chat del studio sobre el ban
+                const chatRef = collection(db, 'streams', streamerWallet, 'chat');
+                await addDoc(chatRef, {
+                    text: `[MOD] ${banMessage}`,
+                    userName: 'Sistema',
+                    userWallet: 'system',
+                    userColor: '#FFD700', // Color dorado para sistema
+                    createdAt: serverTimestamp()
+                });
+                
+            } catch (error) {
+                console.error("Error al banear usuario:", error);
+                showToast("Error al aplicar el ban.", true);
+            }
+        }
+
 
         const translations = {
             en: {
                 explore: "Explore", categories: "Categories", creator: "Creator", creator_studio: "Creator Studio", recommended_channels: "Recommended Channels", followers: "followers", save: "Save", logout: "Log Out", processing: "Processing...", action_error: "Error processing action.", ad_warning: "An ad will appear in %s...", ad_playing: "Ad is playing...", welcome_to: "Welcome to", login_prompt: "Enter with your public Solana wallet address to start.", login_button: "Enter / Create Account", explore_title: "Explore Live Channels", categories_title: "Explore Categories", no_one_live: "No one is live in the '%s' category right now.", connecting_stream: "Connecting to stream...", live_chat: "Live Chat", chat_placeholder: "Send a message...", follow: "Follow", unfollow: "Unfollow", subscribe: "Subscribe", subscribed: "Subscribed", stream_ended: "The stream has ended.", sent: "sent", settings: "Settings", language: "Language", edit_profile: "Edit Profile", balance_withdrawal: "Balance & Withdrawal", current_balance: "Your Current Balance", withdrawal_minimum_bit: "You need a minimum of %a BIT to withdraw.", request_withdrawal: "Request Withdrawal", need_more_to_withdraw: "You need %a more BIT to withdraw.", withdrawal_ready: "You can request your withdrawal now.", withdrawal_requested: "Withdrawal request sent!", withdrawal_requested_toast: "Your withdrawal request has been sent.", withdrawal_error: "Error sending request.", profile_updated: "Profile updated successfully.", username: "Username", profile_pic_url: "Profile Picture URL", save_changes: "Save Changes", price_fetch_error: "Could not fetch price.", cannot_calculate_withdrawal: "Cannot calculate withdrawal requirements.", stream_dashboard: "Stream Dashboard", stream_title: "Stream Title", category: "Category", thumbnail_url: "Thumbnail URL (Optional)", thumbnail_placeholder: "https://example.com/image.png", microphone: "Microphone", use_camera: "Use Camera", share_screen: "Share Screen", preview: "Preview", chat: "Chat", start_stream: "Start", stop_stream: "Stop", analytics_rewards: "Analytics & Rewards", earnings_summary: "Earnings Summary", accumulated_rewards: "Accumulated Rewards", rewards_info: "You earn %a BIT for every %m minutes of streaming.", send_to_balance: "Send to Main Balance", followed_user: "You are now following %s.", unfollowed_user: "You have unfollowed %s.", insufficient_bits_subscribe: "You don't have enough BITs to subscribe.", subscribed_to_user: "You have subscribed to %s for 100 BIT", subscription_error: "Error processing subscription.", superchat_no_text: "Write a message to send with your VIP emoji.", insufficient_bits_emoji: "You need %p BIT to send this emoji.", superchat_error: "Error sending Super Chat.", media_error: "Could not access camera/screen.", no_video_source: "First select a video source.", stream_started: "Stream started!", stream_start_error: "Permission error. Could not start stream.", stream_stopped: "Stream stopped.", reward_notification: "+%a BIT for streaming %m minutes!", rewards_transferred: "%a BIT transferred to your balance.",
+                // NUEVAS TRADUCCIONES
+                transaction_history: "Transaction History",
+                no_transactions: "No transactions yet.",
+                you_are_banned: "You are banned from this chat.",
+                tx_deposit: "Deposit",
+                tx_withdrawal_request: "Withdrawal Request",
+                tx_subscription_purchase: "Subscription",
+                tx_subscription_reward: "Subscription",
+                tx_vip_emoji_purchase: "VIP Emoji",
+                tx_vip_emoji_reward: "VIP Emoji",
+                tx_reward_transfer: "Rewards Transfer",
+                tx_stream_reward: "Stream Reward",
             },
             es: {
                 explore: "Explorar", categories: "Categorías", creator: "Creador", creator_studio: "Estudio del Creador", recommended_channels: "Canales Recomendados", followers: "seguidores", save: "Guardar", logout: "Cerrar Sesión", processing: "Procesando...", action_error: "Error al procesar la acción.", ad_warning: "Un anuncio aparecerá en %s...", ad_playing: "Anuncio en curso...", welcome_to: "Bienvenido a", login_prompt: "Ingresa con tu dirección de wallet pública de Solana para empezar.", login_button: "Entrar / Crear Cuenta", explore_title: "Explorar Canales en Vivo", categories_title: "Explorar Categorías", no_one_live: "No hay nadie en vivo en la categoría '%s' en este momento.", connecting_stream: "Conectando al stream...", live_chat: "Chat en Vivo", chat_placeholder: "Escribe un mensaje...", follow: "Seguir", unfollow: "Dejar de Seguir", subscribe: "Suscribirse", subscribed: "Suscrito", stream_ended: "La transmisión ha finalizado.", sent: "envió", settings: "Configuración", language: "Idioma", edit_profile: "Editar Perfil", balance_withdrawal: "Balance y Retiros", current_balance: "Tu Saldo Actual", withdrawal_minimum_bit: "Necesitas un mínimo de %a BIT para retirar.", request_withdrawal: "Solicitar Retiro", need_more_to_withdraw: "Te faltan %a BIT para poder retirar.", withdrawal_ready: "Ya puedes solicitar tu retiro.", withdrawal_requested: "¡Solicitud de retiro enviada!", withdrawal_requested_toast: "Tu solicitud de retiro ha sido enviada.", withdrawal_error: "Error al enviar la solicitud.", profile_updated: "Perfil actualizado correctamente.", username: "Nombre de usuario", profile_pic_url: "URL de foto de perfil", save_changes: "Guardar Cambios", price_fetch_error: "No se pudo obtener el precio.", cannot_calculate_withdrawal: "No se pueden calcular los requisitos de retiro.", stream_dashboard: "Panel de Transmisión", stream_title: "Título del Stream", category: "Categoría", thumbnail_url: "URL de la Miniatura (Opcional)", thumbnail_placeholder: "https://ejemplo.com/imagen.png", microphone: "Micrófono", use_camera: "Usar Cámara", share_screen: "Compartir Pantalla", preview: "Vista Previa", chat: "Chat", start_stream: "Iniciar", stop_stream: "Detener", analytics_rewards: "Analíticas y Recompensas", earnings_summary: "Resumen de Ganancias", accumulated_rewards: "Recompensas Acumuladas", rewards_info: "Ganas %a BIT por cada %m minutos de transmisión.", send_to_balance: "Enviar a Balance Principal", followed_user: "Ahora sigues a %s.", unfollowed_user: "Has dejado de seguir a %s.", insufficient_bits_subscribe: "No tienes suficientes BITs para suscribirte.", subscribed_to_user: "Te has suscrito a %s por 100 BIT", subscription_error: "Error al procesar la suscripción.", superchat_no_text: "Escribe un mensaje para enviarlo con tu emoji VIP.", insufficient_bits_emoji: "Necesitas %p BIT para enviar este emoji.", superchat_error: "Error al enviar el Super Chat.", media_error: "No se pudo acceder a la cámara/pantalla.", no_video_source: "Primero selecciona una fuente de video.", stream_started: "¡Has iniciado la transmisión!", stream_start_error: "Error de permisos. No se pudo iniciar el stream.", stream_stopped: "Transmisión detenida.", reward_notification: "¡+%a BIT por transmitir %m minutos!", rewards_transferred: "%a BIT transferidos a tu balance.",
+                // NUEVAS TRADUCCIONES
+                transaction_history: "Historial de Transacciones",
+                no_transactions: "Aún no hay transacciones.",
+                you_are_banned: "Estás baneado de este chat.",
+                tx_deposit: "Depósito",
+                tx_withdrawal_request: "Solicitud de Retiro",
+                tx_subscription_purchase: "Suscripción",
+                tx_subscription_reward: "Suscripción",
+                tx_vip_emoji_purchase: "Emoji VIP",
+                tx_vip_emoji_reward: "Emoji VIP",
+                tx_reward_transfer: "Transferencia de Recompensa",
+                tx_stream_reward: "Recompensa de Stream",
             }
         };
 
