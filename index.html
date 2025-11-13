@@ -93,6 +93,82 @@
         #mod-modal-content {
             transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
         }
+
+        /* --- NUEVOS ESTILOS PARA CARRUSEL --- */
+        .featured-carousel-container {
+            /* Contenedor principal del carrusel */
+            max-width: 64rem; /* max-w-5xl */
+            margin-left: auto;
+            margin-right: auto;
+            border-radius: 1rem; /* rounded-2xl */
+            overflow: hidden;
+            position: relative;
+        }
+        .featured-slider {
+            /* Contenedor que se mueve */
+            display: flex;
+            transition: transform 0.5s ease-in-out;
+        }
+        .featured-slide {
+            /* Cada slide */
+            min-width: 100%;
+            flex-shrink: 0;
+            aspect-ratio: 16 / 9; /* Proporción 16:9 */
+            position: relative;
+        }
+        .carousel-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            background-color: rgba(0, 0, 0, 0.4);
+            border-radius: 9999px;
+            padding: 0.5rem;
+            transition: background-color 0.2s;
+            color: white;
+        }
+        .carousel-btn:hover {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+        .carousel-btn:disabled {
+            display: none; /* Ocultar botones si no hay slides */
+        }
+        
+        /* --- NUEVOS ESTILOS PARA SIDEBAR COLAPSABLE --- */
+        #sidebar {
+            /* Añadir transición para el ancho */
+            transition: width 0.3s ease-in-out;
+        }
+        
+        @media (min-width: 768px) { /* md: */
+            /* Estilo del sidebar cuando está colapsado */
+            #app-container.sidebar-collapsed #sidebar {
+                width: 4.5rem; /* w-18, un poco más ancho que w-16 */
+            }
+            
+            /* Ocultar texto cuando está colapsado en desktop */
+            #app-container.sidebar-collapsed #sidebar .nav-link span,
+            #app-container.sidebar-collapsed #sidebar h3,
+            #app-container.sidebar-collapsed #sidebar #recommended-channels .flex-1,
+            #app-container.sidebar-collapsed #sidebar .p-4.border-b { /* Cabecera móvil en sidebar */
+                display: none;
+            }
+            
+            /* Centrar íconos cuando está colapsado en desktop */
+            #app-container.sidebar-collapsed #sidebar .nav-link,
+            #app-container.sidebar-collapsed #sidebar #creator-section a {
+                justify-content: center;
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+            }
+            #app-container.sidebar-collapsed #sidebar #recommended-channels .flex {
+                justify-content: center;
+            }
+            #app-container.sidebar-collapsed #sidebar #recommended-channels .flex img {
+                margin-left: auto;
+                margin-right: auto;
+            }
+        }
         
     </style>
 </head>
@@ -109,6 +185,10 @@
                 </button>
                 <button id="mobile-menu-btn" class="md:hidden p-2 -ml-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--background-tertiary)]">
                     <i data-lucide="menu" id="mobile-menu-icon"></i>
+                </button>
+                <!-- NUEVO BOTÓN PARA SIDEBAR DESKTOP -->
+                <button id="desktop-sidebar-toggle" class="hidden md:flex p-2 -ml-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--background-tertiary)]">
+                    <i data-lucide="sidebar-open"></i>
                 </button>
                 <a href="#" class="flex items-center nav-action" data-target="explore">
                     <img src="https://i.postimg.cc/50KvH8vD/log-peque.png" alt="Live Payout Logo" class="w-10 h-10 rounded-full">
@@ -191,13 +271,13 @@
         <div id="ad-slot" class="w-full max-w-lg h-auto flex items-center justify-center"></div>
     </div>
     
-    <!-- NUEVA FUNCIÓN: Modal de Moderación (inicialmente oculto) -->
+    <!-- Modal de Moderación (inicialmente oculto) -->
     <div id="mod-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[101] hidden opacity-0 scale-95" role="dialog" aria-modal="true" aria-labelledby="mod-modal-title">
         <div id="mod-modal-content" class="bg-[var(--background-secondary)] p-6 rounded-2xl shadow-2xl w-full max-w-sm border border-[var(--border-color)] transform scale-100">
             <h2 id="mod-modal-title" class="text-xl font-bold mb-2">Moderar Usuario</h2>
             <p class="text-[var(--text-secondary)] mb-4" id="mod-modal-username">Vas a moderar a...</p>
             <div class="grid grid-cols-2 gap-3">
-                <button class="mod-action-btn bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg" data-duration="1">Ban 1 Min</button>
+                <button class="mod-action-btn bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg" data-duration="5">Ban 5 Min</button>
                 <button class="mod-action-btn bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg" data-duration="10">Ban 10 Min</button>
                 <button class="mod-action-btn bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg" data-duration="60">Ban 1 Hora</button>
                 <button class="mod-action-btn bg-red-700 hover:bg-red-600 text-white p-2 rounded-lg" data-duration="perma">Ban Permanente</button>
@@ -232,7 +312,7 @@
         const REWARD_INTERVAL_MINUTES = 5;
         const REWARD_AMOUNT = 3000;
         const WITHDRAWAL_MINIMUM_BIT = 1000000;
-        const BIT_COIN_LOGO_URL = "https://images.pump.fun/coin-image/EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump?variant=600x600&ipfs=bafybeiekzpu4uxvcrbvzmzteiqmia3fe2ana2ttyueqgvxodlhcsbpibre&src=https%3A%F%2Fipfs.io%2Fipfs%2Fbafybeiekzpu4uxvcrbvzmzteiqmia3fe2ana2ttyueqgvxodlhcsbpibre";
+        const BIT_COIN_LOGO_URL = "https://images.pump.fun/coin-image/EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump?variant=600x600&ipfs=bafybeiekzpu4uxvcrbvzmzteiqmia3fe2ana2ttyueqgvxodlhcsbpibre&src=https%3A%2F%2Fipfs.io%2Fipfs%2Fbafybeiekzpu4uxvcrbvzmzteiqmia3fe2ana2ttyueqgvxodlhcsbpibre";
 
         let app, auth, db;
         let currentUser = null;
@@ -241,8 +321,9 @@
         let currentPageRender = () => renderExplorePage();
         let navigationHistory = [];
         
-        // NUEVA FUNCIÓN: Variables para el modal de moderación
         let modModalTargetUser = { wallet: null, name: null };
+        
+        let carouselInterval = null; // Para auto-play del carrusel
 
 
         app = initializeApp(firebaseConfig);
@@ -264,7 +345,9 @@
         const mobileMenuIcon = document.getElementById('mobile-menu-icon');
         const backButton = document.getElementById('back-button');
         
-        // NUEVA FUNCIÓN: Referencias al modal de moderación
+        // NUEVA CONSTANTE PARA EL BOTÓN DE SIDEBAR
+        const desktopSidebarToggle = document.getElementById('desktop-sidebar-toggle');
+        
         const modModal = document.getElementById('mod-modal');
         const modModalContent = document.getElementById('mod-modal-content');
         const modModalUsername = document.getElementById('mod-modal-username');
@@ -372,7 +455,6 @@
             }
             if (!navigationHistory.length) { 
                  setupNavigation();
-                 // NUEVA FUNCIÓN: Configurar listeners del modal de moderación
                  setupModModalListeners();
             }
         }
@@ -499,6 +581,18 @@
                     toggleSidebar();
                 }
             });
+            
+            // NUEVO LISTENER PARA EL BOTÓN DE SIDEBAR DESKTOP
+            desktopSidebarToggle.addEventListener('click', () => {
+                const icon = desktopSidebarToggle.querySelector('i');
+                const isCollapsed = appContainer.classList.toggle('sidebar-collapsed');
+                if (isCollapsed) {
+                    icon.setAttribute('data-lucide', 'sidebar-close');
+                } else {
+                    icon.setAttribute('data-lucide', 'sidebar-open');
+                }
+                lucide.createIcons();
+            });
         }
         
         function updateHeaderButtons(isSubPage) {
@@ -512,15 +606,15 @@
             });
         }
 
-        function renderPage(content, activeTargetKey, isSubPage = false) {
-            mainContent.innerHTML = `<div class="animate-slide-in">${content}</div>`;
+        function renderPage(pageHTML, activeTargetKey, isSubPage = false) {
+            mainContent.innerHTML = `<div class="animate-slide-in">${pageHTML}</div>`;
             setActiveLink(activeTargetKey);
             updateHeaderButtons(isSubPage);
             setLanguage(currentLang);
             lucide.createIcons();
         }
         
-        // NUEVA FUNCIÓN: (Helper) Renderizar un stream card individual
+        // (Helper) Renderizar un stream card individual (para la cuadrícula)
         function renderStreamCard(streamDoc) {
             const stream = streamDoc.data();
             return `
@@ -538,22 +632,23 @@
                 </div>`;
         }
         
-        // NUEVA FUNCIÓN: (Helper) Renderizar el stream destacado
-        function renderFeaturedStream(streamDoc) {
+        // --- NUEVA FUNCIÓN ---
+        // (Helper) Renderizar un slide para el carrusel destacado
+        function renderFeaturedStreamSlide(streamDoc) {
             const stream = streamDoc.data();
             return `
-                <div class="mb-8 stream-card group rounded-xl overflow-hidden border border-[var(--border-color)] hover:border-[var(--brand-color-purple)] transition-all duration-300 cursor-pointer" data-streamer-wallet="${streamDoc.id}">
-                    <div class="relative w-full aspect-video bg-black rounded-lg flex items-center justify-center flex-shrink-0">
-                        <img src="${stream.thumbnailUrl || 'https://placehold.co/800x450/141418/2a2a32?text=En+Vivo'}" class="w-full h-full object-cover">
-                        <div class="absolute top-3 left-3 bg-red-600 text-white text-sm font-bold px-3 py-1.5 rounded-md">LIVE</div>
-                        <div class="absolute bottom-3 right-3 bg-black/50 text-white text-sm px-3 py-1.5 rounded-md flex items-center gap-2"><i data-lucide="users" class="w-4 h-4"></i> ${stream.viewerCount || 0}</div>
-                    </div>
-                    <div class="p-4 flex items-start gap-4 bg-[var(--background-secondary)] rounded-b-xl">
-                        <img src="${stream.streamerPic}" class="w-12 h-12 rounded-full">
-                        <div>
-                            <h2 class="font-bold text-xl truncate">${stream.title}</h2>
+                <div class="featured-slide stream-card cursor-pointer" data-streamer-wallet="${streamDoc.id}">
+                    <img src="${stream.thumbnailUrl || 'https://placehold.co/800x450/141418/2a2a32?text=En+Vivo'}" class="w-full h-full object-cover opacity-70">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                    <div class="absolute top-4 left-4 bg-red-600 text-white text-sm font-bold px-3 py-1.5 rounded-md">LIVE</div>
+                    <div class="absolute bottom-4 left-4 right-4 flex items-center gap-4">
+                        <img src="${stream.streamerPic}" class="w-12 h-12 rounded-full border-2 border-purple-500">
+                        <div class="flex-1 overflow-hidden">
+                            <h2 class="font-bold text-xl truncate text-white">${stream.title}</h2>
                             <p class="text-md text-[var(--text-secondary)]">${stream.streamerUsername || stream.streamerWallet.substring(0, 6)}</p>
-                            <span class="text-sm bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full mt-1 inline-block">${stream.category}</span>
+                        </div>
+                        <div class="hidden sm:flex items-center gap-2 text-white bg-black/50 px-3 py-1.5 rounded-md">
+                            <i data-lucide="users" class="w-4 h-4"></i> ${stream.viewerCount || 0}
                         </div>
                     </div>
                 </div>`;
@@ -561,6 +656,11 @@
         
         async function renderExplorePage(category = null) {
             currentPageRender = () => renderExplorePage(category);
+            
+            // 1. Detener el carrusel anterior si existe
+            if (carouselInterval) clearInterval(carouselInterval);
+            
+            // 2. Obtener todos los streams
             let streamsQuery = query(collection(db, "streams"), where("status", "==", "live"));
             if (category) {
                 streamsQuery = query(collection(db, "streams"), where("status", "==", "live"), where("category", "==", category));
@@ -573,38 +673,62 @@
             if (querySnapshot.empty) {
                 streamsHTML = `<p class="text-center text-[var(--text-secondary)] col-span-full">${translations[currentLang].no_one_live.replace('%s', category || 'any')}</p>`;
             } else {
-                // NUEVA FUNCIÓN: Lógica para el stream destacado
                 let streamDocs = querySnapshot.docs;
-                
-                // Solo mostrar destacado si no estamos en una categoría
-                if (!category && streamDocs.length > 0) {
-                    // Ordenar por viewerCount (más vistas)
-                    streamDocs.sort((a, b) => (b.data().viewerCount || 0) - (a.data().viewerCount || 0));
+                let featuredDocs = [];
+                let regularDocs = [];
+
+                if (!category) {
+                    // 3. Si es la página principal (sin categoría), barajar y separar
+                    // Simple shuffle (Fisher-Yates)
+                    for (let i = streamDocs.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [streamDocs[i], streamDocs[j]] = [streamDocs[j], streamDocs[i]];
+                    }
                     
-                    // Tomar el primero como destacado
-                    const featuredStreamDoc = streamDocs.shift(); // Quita el primer elemento y lo devuelve
-                    featuredStreamHTML = renderFeaturedStream(featuredStreamDoc);
+                    featuredDocs = streamDocs.slice(0, 3); // Tomar hasta 3 streams al azar
+                    regularDocs = streamDocs.slice(3); // El resto
+                } else {
+                    // 4. Si es una categoría, no mostrar destacados, solo la cuadrícula
+                    regularDocs = streamDocs;
+                }
+
+                // 5. Construir el HTML del carrusel (si hay streams destacados)
+                if (featuredDocs.length > 0) {
+                    featuredStreamHTML = `
+                        <div id="featured-carousel-container" class="featured-carousel-container">
+                            <div id="featured-slider" class="featured-slider flex">
+                                ${featuredDocs.map(doc => renderFeaturedStreamSlide(doc)).join('')}
+                            </div>
+                            <button id="carousel-prev" class="carousel-btn left-2 sm:left-4"><i data-lucide="chevron-left" class="w-6 h-6 sm:w-8 sm:h-8"></i></button>
+                            <button id="carousel-next" class="carousel-btn right-2 sm:right-4"><i data-lucide="chevron-right" class="w-6 h-6 sm:w-8 sm:h-8"></i></button>
+                        </div>`;
                 }
                 
-                // Renderizar las tarjetas restantes
-                streamDocs.forEach(doc => {
-                    streamsHTML += renderStreamCard(doc);
-                });
-                
-                if (streamDocs.length === 0 && featuredStreamHTML !== '') {
-                     streamsHTML = `<p class="text-center text-[var(--text-secondary)] col-span-full">No hay otros streams en vivo en este momento.</p>`;
+                // 6. Construir la cuadrícula de streams regulares
+                if (regularDocs.length > 0) {
+                    streamsHTML = regularDocs.map(doc => renderStreamCard(doc)).join('');
+                } else if (featuredDocs.length > 0) {
+                    // Hay destacados pero no hay más streams
+                    streamsHTML = `<p class="text-center text-[var(--text-secondary)] col-span-full" data-key="no_other_streams">No other streams are live right now.</p>`;
+                } else if (category && regularDocs.length === 0) {
+                    // No hay streams en esta categoría (ya cubierto por querySnapshot.empty)
+                    streamsHTML = `<p class="text-center text-[var(--text-secondary)] col-span-full">${translations[currentLang].no_one_live.replace('%s', category)}</p>`;
                 }
             }
             
-            const title = category ? `Canales en Vivo - ${category}` : translations[currentLang].explore_title;
+            const title = category ? `${translations[currentLang].categories}: ${category}` : translations[currentLang].explore_title;
             
-            renderPage(`
+            // 7. Renderizar toda la página
+            const pageHTML = `
                 ${featuredStreamHTML}
-                <h1 class="text-3xl font-bold mb-6" data-key="explore_title">${title}</h1>
+                <h1 class="text-3xl font-bold mb-6" data-key="${category ? '' : 'explore_title'}">${title}</h1>
                 <div id="streams-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     ${streamsHTML}
-                </div>`, 'explore');
+                </div>`;
             
+            renderPage(pageHTML, category ? 'categories' : 'explore');
+            
+            // 8. Añadir listeners para los streams (ambos, carrusel y cuadrícula)
             document.querySelectorAll('.stream-card').forEach(card => {
                 card.addEventListener('click', () => {
                     navigationHistory.push(currentPageRender);
@@ -612,9 +736,48 @@
                     renderWatchStreamPage(streamerWallet);
                 });
             });
+
+            // 9. Añadir listeners para el carrusel (si existe)
+            const slider = document.getElementById('featured-slider');
+            if (slider) {
+                const prevBtn = document.getElementById('carousel-prev');
+                const nextBtn = document.getElementById('carousel-next');
+                const slides = slider.querySelectorAll('.featured-slide');
+                let currentIndex = 0;
+                const maxIndex = slides.length - 1;
+                
+                if (slides.length <= 1) {
+                    prevBtn.disabled = true;
+                    nextBtn.disabled = true;
+                }
+
+                function updateSlider() {
+                    slider.style.transform = `translateX(-${currentIndex * 100}%)`;
+                }
+                
+                const goToNext = () => {
+                    currentIndex = currentIndex >= maxIndex ? 0 : currentIndex + 1;
+                    updateSlider();
+                };
+
+                nextBtn.addEventListener('click', () => {
+                    goToNext();
+                    if (carouselInterval) clearInterval(carouselInterval); // Detener auto-play si se usa manualmente
+                });
+
+                prevBtn.addEventListener('click', () => {
+                    currentIndex = currentIndex <= 0 ? maxIndex : currentIndex - 1;
+                    updateSlider();
+                    if (carouselInterval) clearInterval(carouselInterval); // Detener auto-play
+                });
+                
+                // Auto-play
+                if (slides.length > 1) {
+                    carouselInterval = setInterval(goToNext, 5000); // Cambia de slide cada 5 segundos
+                }
+            }
         }
 
-        
         function renderCategoriesPage() {
             currentPageRender = renderCategoriesPage;
             const categoriesHTML = CATEGORIES.map(cat => `
@@ -691,11 +854,9 @@
                             <div id="withdraw-message" class="text-center text-sm h-5 mt-2"></div>
                         </div>
                         
-                        <!-- NUEVA FUNCIÓN: Historial de Transacciones -->
                         <div class="bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)]">
                             <h3 class="font-semibold text-lg mb-4" data-key="transaction_history">Historial de Transacciones</h3>
                             <div id="transaction-history-container" class="space-y-3 max-h-96 overflow-y-auto pr-2">
-                                <!-- El historial se cargará aquí dinámicamente -->
                                 <p id="transaction-history-loading" class="text-[var(--text-secondary)] text-sm">Cargando historial...</p>
                             </div>
                         </div>
@@ -711,11 +872,9 @@
             
             initBitsDepositLogic();
             updateWithdrawalStatus(); 
-            // NUEVA FUNCIÓN: Cargar historial
             loadTransactionHistory();
         }
         
-        // NUEVA FUNCIÓN: Registrar una transacción
         async function logTransaction(type, amount, details = {}) {
             if (!currentUser) return;
             try {
@@ -731,7 +890,6 @@
             }
         }
         
-        // NUEVA FUNCIÓN: Cargar y mostrar el historial de transacciones
         async function loadTransactionHistory() {
             if (!currentUser) return;
             const container = document.getElementById('transaction-history-container');
@@ -796,7 +954,6 @@ function initBitsDepositLogic() {
     const TATUM_API_KEY = "t-68f69f0447bf5156a36067b3-b0b00e1660324a54ad70ef28";
     const TOKEN_DECIMALS = 6;
     
-    // Limpiar intervalos anteriores
     if (window.depositPollingInterval) {
         clearInterval(window.depositPollingInterval);
     }
@@ -807,7 +964,7 @@ function initBitsDepositLogic() {
         status.innerHTML = `Escanea el QR para pagar ${amount} BITS. Esperando pago... <div class="w-4 h-4 border-2 border-dashed rounded-full animate-spin inline-block ml-2"></div>`;
         
         let pollCount = 0;
-        const maxPolls = 90; // 7.5 minutos (90 polls * 5 segundos) - más tiempo
+        const maxPolls = 90; 
 
         window.depositPollingInterval = setInterval(async () => {
             pollCount++;
@@ -830,7 +987,7 @@ function initBitsDepositLogic() {
                         jsonrpc: '2.0',
                         id: 1,
                         method: 'getSignaturesForAddress',
-                        params: [RECIPIENT_WALLET, { limit: 50 }] // Más transacciones
+                        params: [RECIPIENT_WALLET, { limit: 50 }] 
                     })
                 });
 
@@ -845,7 +1002,6 @@ function initBitsDepositLogic() {
                 if (foundSignature) {
                     console.log("✅ Pago detectado con firma:", foundSignature.signature);
                     
-                    // Verificar si ya procesamos esta transacción
                     const signatureRef = doc(db, "users", currentUser.walletAddress, "usedSignatures", foundSignature.signature);
                     const signatureDoc = await getDoc(signatureRef);
                     
@@ -863,11 +1019,10 @@ function initBitsDepositLogic() {
                     const connection = new solanaWeb3.Connection(SOLANA_RPC_URL, {
                         commitment: 'confirmed',
                         httpHeaders: { 'x-api-key': TATUM_API_KEY },
-                        confirmTransactionInitialTimeout: 60000 // 60 segundos timeout
+                        confirmTransactionInitialTimeout: 60000 
                     });
 
                     try {
-                        // Intentar confirmación con timeout más largo
                         status.textContent = `✅ Confirmando transacción (Esperando blockchains)...`;
                         
                         const confirmation = await connection.confirmTransaction(
@@ -877,18 +1032,15 @@ function initBitsDepositLogic() {
                         
                         console.log("✅ Transacción confirmada:", confirmation);
 
-                        // Obtener detalles completos de la transacción
                         const txDetails = await connection.getParsedTransaction(foundSignature.signature, 'confirmed');
                         if (!txDetails || !txDetails.meta) {
                             throw new Error("No se pudieron obtener los detalles de la transacción.");
                         }
                         
-                        // Verificar que la transacción fue exitosa
                         if (txDetails.meta.err) {
                             throw new Error("La transacción fallió: " + JSON.stringify(txDetails.meta.err));
                         }
 
-                        // Analizar los balances de tokens
                         const postBalances = txDetails.meta.postTokenBalances?.find(tb => 
                             tb.mint === TOKEN_MINT_ADDRESS && tb.owner === RECIPIENT_WALLET
                         );
@@ -908,7 +1060,7 @@ function initBitsDepositLogic() {
                         });
 
                         if (transferredAmount >= amount) {
-                            await processSuccessfulPayment(signatureRef, foundSignature.signature, amount, transferredAmount, reference, 'qr'); // NUEVO: 'qr'
+                            await processSuccessfulPayment(signatureRef, foundSignature.signature, amount, transferredAmount, reference, 'qr'); 
                         } else {
                             status.textContent = `⚠️ Pago detectado pero el monto es incorrecto. Se transfirieron ${transferredAmount} BITS, se esperaban ${amount} BITS.`;
                             console.warn("Monto de la transacción no coincide.", { 
@@ -920,9 +1072,8 @@ function initBitsDepositLogic() {
                     } catch (confirmationError) {
                         console.warn("Error en confirmación, verificando estado de la transacción:", confirmationError);
                         
-                        // Si hay timeout, verificar el estado directamente
                         if (confirmationError.message.includes('timeout') || confirmationError.message.includes('not confirmed')) {
-                            await handleUnconfirmedTransaction(connection, foundSignature.signature, signatureRef, amount, reference, 'qr'); // NUEVO: 'qr'
+                            await handleUnconfirmedTransaction(connection, foundSignature.signature, signatureRef, amount, reference, 'qr'); 
                         } else {
                             throw confirmationError;
                         }
@@ -933,41 +1084,35 @@ function initBitsDepositLogic() {
                 console.error("Error durante el sondeo de QR:", err);
                 status.textContent = `❌ Error: ${err.message}`;
             }
-        }, 5000); // Verificar cada 5 segundos
+        }, 5000); 
     }
 
-    async function handleUnconfirmedTransaction(connection, signature, signatureRef, amount, reference, method) { // NUEVO: method
+    async function handleUnconfirmedTransaction(connection, signature, signatureRef, amount, reference, method) { 
         status.textContent = "⏳ La transacción está tomando más tiempo de lo esperado. Verificando estado...";
         
         try {
-            // Obtener el estado de la transacción directamente
             const txDetails = await connection.getTransaction(signature, {
                 commitment: 'confirmed'
             });
             
             if (!txDetails) {
-                // Si no existe, intentar con 'finalized'
                 const txDetailsFinalized = await connection.getTransaction(signature, {
                     commitment: 'finalized'
                 });
                 
                 if (txDetailsFinalized && !txDetailsFinalized.meta?.err) {
-                    // Transacción exitosa en finalized
-                    await processSuccessfulPayment(signatureRef, signature, amount, amount, reference, "finalized", method); // NUEVO: method
+                    await processSuccessfulPayment(signatureRef, signature, amount, amount, reference, "finalized", method); 
                     return;
                 }
                 
-                // Si aún no existe, la transacción puede no haberse procesado
                 status.innerHTML = `⏳ Transacción pendiente. <a href="https://solscan.io/tx/${signature}" target="_blank" class="text-purple-400 underline">Ver en explorador</a>. Se verificará automáticamente.`;
                 
-                // Continuar verificando en segundo plano
-                continueBackgroundVerification(signature, amount, reference, method); // NUEVO: method
+                continueBackgroundVerification(signature, amount, reference, method); 
                 return;
             }
             
-            // Si tenemos detalles y no hay error, procesar como exitosa
             if (!txDetails.meta?.err) {
-                await processSuccessfulPayment(signatureRef, signature, amount, amount, reference, "confirmed", method); // NUEVO: method
+                await processSuccessfulPayment(signatureRef, signature, amount, amount, reference, "confirmed", method); 
             } else {
                 throw new Error("Transacción fallida: " + JSON.stringify(txDetails.meta.err));
             }
@@ -978,8 +1123,7 @@ function initBitsDepositLogic() {
         }
     }
 
-    async function continueBackgroundVerification(signature, amount, reference, method) { // NUEVO: method
-        // Verificar periódicamente en segundo plano
+    async function continueBackgroundVerification(signature, amount, reference, method) { 
         const backgroundInterval = setInterval(async () => {
             try {
                 const connection = new solanaWeb3.Connection(SOLANA_RPC_URL, {
@@ -993,21 +1137,20 @@ function initBitsDepositLogic() {
                     clearInterval(backgroundInterval);
                     
                     const signatureRef = doc(db, "users", currentUser.walletAddress, "usedSignatures", signature);
-                    await processSuccessfulPayment(signatureRef, signature, amount, amount, reference, "finalized (background)", method); // NUEVO: method
+                    await processSuccessfulPayment(signatureRef, signature, amount, amount, reference, "finalized (background)", method); 
                     
                     showToast(`¡Transacción confirmada! Se añadieron ${amount} BITS a tu cuenta.`);
                 }
             } catch (error) {
                 console.log("Verificación en segundo plano:", error.message);
             }
-        }, 10000); // Verificar cada 10 segundos
+        }, 10000); 
     }
 
-    async function processSuccessfulPayment(signatureRef, signature, expectedAmount, actualAmount, reference, confirmationType = "confirmed", method = 'unknown') { // NUEVO: method
+    async function processSuccessfulPayment(signatureRef, signature, expectedAmount, actualAmount, reference, confirmationType = "confirmed", method = 'unknown') { 
         status.textContent = `✅ ¡Transacción ${confirmationType}! Actualizando saldo...`;
         
         try {
-            // Marcar la transacción como procesada
             await setDoc(signatureRef, {
                 processedAt: serverTimestamp(),
                 amount: actualAmount,
@@ -1017,13 +1160,11 @@ function initBitsDepositLogic() {
                 signature: signature
             });
 
-            // Actualizar el balance del usuario usando increment
             const userRef = doc(db, "users", currentUser.walletAddress);
             await updateDoc(userRef, { 
                 bitBalance: increment(expectedAmount) 
             });
             
-            // NUEVA FUNCIÓN: Registrar transacción de depósito
             await logTransaction('deposit', expectedAmount, { method: method, signature: signature });
 
             showToast(`¡Se han añadido ${expectedAmount} BITS a tu cuenta!`);
@@ -1031,7 +1172,6 @@ function initBitsDepositLogic() {
             document.getElementById("bits-amount").value = '';
             document.getElementById("solana-qr-img").classList.add("hidden", "opacity-0");
             
-            // Ocultar el botón de pago cuando se complete la transacción
             const payButton = document.getElementById("solana-pay-button");
             if (payButton) {
                 payButton.classList.add("hidden");
@@ -1047,58 +1187,47 @@ function initBitsDepositLogic() {
     }
 
     function createSolanaPayButton(solanaPayUrl, amount, reference) {
-        // Remover botón anterior si existe
         const existingButton = document.getElementById("solana-pay-button");
         if (existingButton) {
             existingButton.remove();
         }
 
-        // Crear nuevo botón
         const payButton = document.createElement("button");
         payButton.id = "solana-pay-button";
-        payButton.type = "button"; // Importante: evitar que sea submit
-        payButton.className = "w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-2 mb-4"; // Cambiado mt-3 por mb-4
+        payButton.type = "button"; 
+        payButton.className = "w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-2 mb-4"; 
         payButton.innerHTML = `
             <i data-lucide="wallet" class="w-5 h-5"></i>
             <span>Pagar ${amount} BITS </span>
         `;
 
-        // Agregar evento click
         payButton.addEventListener("click", function() {
             if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) {
-                // Dispositivo móvil - abrir directamente
                 window.location.href = solanaPayUrl;
             } else {
-                // Escritorio - abrir en nueva pestaña
                 window.open(solanaPayUrl, '_blank');
             }
         });
 
-        // Insertar después del contenedor del grid (que contiene el input y botón Generar QR)
         const gridContainer = document.querySelector('.grid.grid-cols-1.sm\\:grid-cols-2.gap-3.mb-3');
         if (gridContainer) {
             gridContainer.parentNode.insertBefore(payButton, gridContainer.nextSibling);
         } else {
-            // Fallback: insertar después del botón Generar QR
             const qrButtonContainer = btnQR.parentElement;
             qrButtonContainer.parentNode.insertBefore(payButton, qrButtonContainer.nextSibling);
         }
 
-        // Actualizar iconos
         lucide.createIcons();
     }
 
     function makeQRClickeable(qrElement, solanaPayUrl) {
-        // Hacer el QR clickeable
         qrElement.style.cursor = 'pointer';
         qrElement.title = 'Haz clic para abrir Solana Pay';
         
         qrElement.addEventListener('click', function() {
             if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) {
-                // Dispositivo móvil - abrir directamente
                 window.location.href = solanaPayUrl;
             } else {
-                // Escritorio - mostrar mensaje o abrir en nueva pestaña
                 window.open(solanaPayUrl, '_blank');
             }
         });
@@ -1118,24 +1247,19 @@ function initBitsDepositLogic() {
             return;
         }
         
-        // Generar referencia única para este pago
         const reference = `LP${Date.now()}${Math.random().toString(36).substring(2, 8)}`;
         const solanaPayUrl = `solana:${RECIPIENT_WALLET}?amount=${amount}&spl-token=${TOKEN_MINT_ADDRESS}&memo=${encodeURIComponent(reference)}&label=LivePayout&message=Depósito%20de%20${amount}%20BITS`;
         
         QRCode.toDataURL(solanaPayUrl, { width: 300, colorDark: "#14F195", colorLight: "#00000000" }, (err, dataUrl) => {
             if (!err) {
-                // Mostrar QR
                 img.src = dataUrl;
                 img.classList.remove("hidden");
                 requestAnimationFrame(() => img.classList.add("opacity-100"));
                 
-                // Hacer el QR clickeable
                 makeQRClickeable(img, solanaPayUrl);
                 
-                // Crear botón de pago directo (debajo del botón Generar QR)
                 createSolanaPayButton(solanaPayUrl, amount, reference);
                 
-                // Iniciar polling
                 startQrPolling(reference, amount, solanaPayUrl);
             } else {
                 status.textContent = "❌ Error al generar QR.";
@@ -1173,7 +1297,7 @@ function initBitsDepositLogic() {
             const connection = new solanaWeb3.Connection(SOLANA_RPC_URL, {
                 commitment: 'confirmed',
                 httpHeaders: { 'x-api-key': TATUM_API_KEY },
-                confirmTransactionInitialTimeout: 60000 // 60 segundos timeout
+                confirmTransactionInitialTimeout: 60000 
             });
             const fromWallet = new solanaWeb3.PublicKey(currentUser.walletAddress);
             const toWallet = new solanaWeb3.PublicKey(RECIPIENT_WALLET);
@@ -1191,7 +1315,6 @@ function initBitsDepositLogic() {
             status.textContent = "Creando transacción...";
             const toAta = await splToken.getAssociatedTokenAddress(mint, toWallet);
 
-            // Generar referencia única para Phantom también
             const reference = `LP${Date.now()}${Math.random().toString(36).substring(2, 8)}`;
             
             const transaction = new solanaWeb3.Transaction().add(
@@ -1201,7 +1324,6 @@ function initBitsDepositLogic() {
                     fromWallet,
                     amount * Math.pow(10, TOKEN_DECIMALS)
                 ),
-                // Agregar memo con referencia
                 new solanaWeb3.TransactionInstruction({
                     keys: [],
                     programId: new solanaWeb3.PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr'),
@@ -1232,14 +1354,14 @@ function initBitsDepositLogic() {
                     amount,
                     reference,
                     'phantom',
-                    'phantom' // NUEVO: method
+                    'phantom' 
                 );
 
             } catch (confirmationError) {
                 console.warn("Error en confirmación Phantom:", confirmationError);
                 await handleUnconfirmedTransaction(connection, signature, 
                     doc(db, "users", currentUser.walletAddress, "usedSignatures", signature),
-                    amount, reference, 'phantom' // NUEVO: method
+                    amount, reference, 'phantom' 
                 );
             }
 
@@ -1383,11 +1505,10 @@ function initBitsDepositLogic() {
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             });
             
-            if(chatForm) chatForm.addEventListener('submit', async (e) => { // AÑADIDO 'async'
+            if(chatForm) chatForm.addEventListener('submit', async (e) => { 
                 e.preventDefault();
                 if (!requireAuth()) return;
                 
-                // NUEVA FUNCIÓN: Comprobar si está baneado antes de enviar
                 try {
                     const banRef = doc(db, 'streams', streamerWallet, 'bans', currentUser.walletAddress);
                     const banSnap = await getDoc(banRef);
@@ -1397,11 +1518,9 @@ function initBitsDepositLogic() {
                         const expiresAt = banData.expiresAt ? banData.expiresAt.toDate() : null;
                         
                         if (expiresAt === null || expiresAt > new Date()) {
-                            // Sigue baneado
                             showToast(translations[currentLang].you_are_banned, true);
                             return;
                         } else {
-                            // Ban expirado, borrarlo
                             await deleteDoc(banRef);
                         }
                     }
@@ -1428,6 +1547,7 @@ function initBitsDepositLogic() {
             }
             if(adInterval) clearInterval(adInterval);
             if(window.depositPollingInterval) clearInterval(window.depositPollingInterval);
+            if (carouselInterval) clearInterval(carouselInterval); // AÑADIDO
             adInterval = null;
             unsubscribeChat = null;
             unsubscribeStream = null;
@@ -1498,7 +1618,6 @@ function initBitsDepositLogic() {
                 const userRef = doc(db, "users", currentUser.walletAddress);
                 const amount = currentUser.creatorRewardsBalance;
                 
-                // NUEVA FUNCIÓN: Usar transacción para transferir y registrar
                 try {
                     await runTransaction(db, async (t) => {
                         t.update(userRef, { 
@@ -1591,7 +1710,6 @@ function initBitsDepositLogic() {
             try {
                 const amountToWithdraw = currentUser.bitBalance;
                 
-                // NUEVA FUNCIÓN: Usar transacción para retirar y registrar
                 const userRef = doc(db, "users", currentUser.walletAddress);
                 await runTransaction(db, async (t) => {
                     t.update(userRef, { bitBalance: 0 });
@@ -1621,7 +1739,6 @@ function initBitsDepositLogic() {
                 console.error("Error creating withdrawal request:", error);
                 withdrawMessage.textContent = translations[currentLang].withdrawal_error;
                 withdrawMessage.classList.add("text-red-500");
-                // Revertir el balance si falla (aunque la transacción debería evitar esto)
                 await updateDoc(doc(db, "users", currentUser.walletAddress), { bitBalance: currentUser.bitBalance });
             } finally {
                 loader.classList.add("hidden");
@@ -1674,7 +1791,7 @@ function initBitsDepositLogic() {
             }
             subBtn.onclick = async () => {
                 if (!requireAuth()) return;
-                const subscriptionCost = 100; // Definido
+                const subscriptionCost = 100; 
                 if (currentUser.bitBalance < subscriptionCost) return showToast(translations[currentLang].insufficient_bits_subscribe);
                 loader.classList.remove('hidden');
                 try {
@@ -1686,15 +1803,11 @@ function initBitsDepositLogic() {
                         const myDoc = await t.get(myUserRef);
                         if (!myDoc.exists() || myDoc.data().bitBalance < subscriptionCost) throw "Insufficient balance.";
                         
-                        // 1. Descontar al comprador
                         t.update(myUserRef, { bitBalance: increment(-subscriptionCost) });
-                        // 2. Acreditar al streamer
                         t.update(streamerUserRef, { creatorRewardsBalance: increment(subscriptionCost) });
-                        // 3. Marcar como suscriptor
                         t.set(subRef, { subscribedAt: serverTimestamp(), expiresAt: 'never' });
                         
-                        // 4. NUEVA FUNCIÓN: Registrar transacciones
-                        const txTime = serverTimestamp(); // Usar el mismo timestamp
+                        const txTime = serverTimestamp(); 
                         const txColBuyer = collection(db, "users", currentUser.walletAddress, "transactions");
                         t.set(doc(txColBuyer), {
                             type: 'subscription_purchase',
@@ -1744,12 +1857,9 @@ function initBitsDepositLogic() {
                             const myDoc = await t.get(myUserRef);
                             if (!myDoc.exists() || myDoc.data().bitBalance < emoji.price) throw "Insufficient balance.";
                             
-                            // 1. Descontar al comprador
                             t.update(myUserRef, { bitBalance: increment(-emoji.price) });
-                            // 2. Acreditar al streamer
                             t.update(streamerUserRef, { creatorRewardsBalance: increment(emoji.price) });
                             
-                            // 3. NUEVA FUNCIÓN: Registrar transacciones
                             const txTime = serverTimestamp();
                             const txColBuyer = collection(db, "users", currentUser.walletAddress, "transactions");
                             t.set(doc(txColBuyer), {
@@ -1768,7 +1878,6 @@ function initBitsDepositLogic() {
                             });
                         });
                         
-                        // 4. Enviar el mensaje de chat
                         await addDoc(collection(db, 'streams', streamerWallet, 'chat'), { text, userName: currentUser.username, userWallet: currentUser.walletAddress, userColor: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'), createdAt: serverTimestamp(), vipEmoji: { url: emoji.url, price: emoji.price } });
                         chatInput.value = '';
                     } catch(err) { console.error("Super Chat transaction error:", err); showToast(translations[currentLang].superchat_error); } finally { loader.classList.add('hidden'); }
@@ -1815,7 +1924,6 @@ function initBitsDepositLogic() {
                 });
             } catch(e) { console.error("Error enumerating devices:", e); }
             
-            // NUEVA FUNCIÓN: Listener para clics en el chat del studio
             const studioChatMessages = document.getElementById('studio-chat-messages');
             if (studioChatMessages) {
                 studioChatMessages.addEventListener('click', (e) => {
@@ -1876,7 +1984,6 @@ function initBitsDepositLogic() {
                     snapshot.docChanges().reverse().forEach(change => {
                         if (change.type === "added") {
                             const msg = change.doc.data(), msgEl = document.createElement('div');
-                            // NUEVA FUNCIÓN: Renderizado del chat del studio con botón de moderar
                             const userNameBtn = `<button class="font-semibold mod-user-btn hover:underline" style="color: ${msg.userColor || '#FFF'}" data-wallet="${msg.userWallet}" data-name="${msg.userName}">${msg.userName}</button>`;
                             
                             if (msg.vipEmoji) {
@@ -1900,9 +2007,8 @@ function initBitsDepositLogic() {
                     const currentMinutes = Math.floor((Date.now() - startTime) / 60000);
                     if (currentMinutes >= lastRewardTimeInMinutes + REWARD_INTERVAL_MINUTES) {
                         lastRewardTimeInMinutes += REWARD_INTERVAL_MINUTES;
-                        const amount = REWARD_AMOUNT; // Renombrado
+                        const amount = REWARD_AMOUNT; 
                         
-                        // NUEVA FUNCIÓN: Registrar la ganancia de stream como transacción
                         await runTransaction(db, async (t) => {
                             const userRef = doc(db, "users", currentUser.walletAddress);
                             t.update(userRef, { creatorRewardsBalance: increment(amount) });
@@ -1934,7 +2040,6 @@ function initBitsDepositLogic() {
             if (!currentUser) return;
             const streamRef = doc(db, 'streams', currentUser.walletAddress);
             try {
-                // NUEVA FUNCIÓN: Borrar también la colección de bans al detener
                 for(const collPath of ['viewers', 'chat', 'bans']) {
                     const collRef = collection(streamRef, collPath);
                     const snapshot = await getDocs(collRef); 
@@ -1992,21 +2097,17 @@ function initBitsDepositLogic() {
         
         window.onbeforeunload = () => { if (Object.keys(peerConnections).length > 0) stopStream(); }
         
-        // --- NUEVA FUNCIÓN: Lógica del Modal de Moderación ---
         function setupModModalListeners() {
             if (!modModal) return;
 
-            // Cerrar al hacer clic fuera
             modModal.addEventListener('click', (e) => {
                 if (e.target === modModal) {
                     hideModModal();
                 }
             });
             
-            // Cerrar con el botón de cancelar
             modModalCancel.addEventListener('click', hideModModal);
             
-            // Manejar acciones de ban
             modModalContent.addEventListener('click', (e) => {
                 const actionBtn = e.target.closest('.mod-action-btn');
                 if (actionBtn) {
@@ -2014,7 +2115,7 @@ function initBitsDepositLogic() {
                     let durationMinutes = 0;
                     
                     if (durationStr === 'perma') {
-                        durationMinutes = null; // Permanente
+                        durationMinutes = null; 
                     } else {
                         durationMinutes = parseInt(durationStr, 10);
                     }
@@ -2030,7 +2131,6 @@ function initBitsDepositLogic() {
         function showModModal(userWallet, userName) {
             if (!modModal || !modModalUsername) return;
             
-            // No moderarse a sí mismo
             if (userWallet === currentUser.walletAddress) return;
             
             modModalTargetUser = { wallet: userWallet, name: userName };
@@ -2039,7 +2139,7 @@ function initBitsDepositLogic() {
             modModal.classList.remove('hidden');
             setTimeout(() => {
                 modModal.classList.remove('opacity-0', 'scale-95');
-                modModalContent.classList.remove('scale-100'); // Reset
+                modModalContent.classList.remove('scale-100'); 
                 modModalContent.classList.add('scale-100');
             }, 10);
         }
@@ -2062,13 +2162,11 @@ function initBitsDepositLogic() {
             let banMessage = '';
             
             if (durationMinutes === null) {
-                // Ban permanente
                 expiresAt = null;
                 banMessage = `Usuario ${bannedUserName} ha sido baneado permanentemente.`;
             } else {
-                // Ban temporal
                 const expiresDate = new Date(Date.now() + durationMinutes * 60 * 1000);
-                expiresAt = expiresDate; // Firestore maneja objetos Date
+                expiresAt = expiresDate; 
                 banMessage = `Usuario ${bannedUserName} ha sido baneado por ${durationMinutes} minuto(s).`;
             }
             
@@ -2081,13 +2179,12 @@ function initBitsDepositLogic() {
                 });
                 showToast(banMessage);
                 
-                // Opcional: Enviar un mensaje al chat del studio sobre el ban
                 const chatRef = collection(db, 'streams', streamerWallet, 'chat');
                 await addDoc(chatRef, {
                     text: `[MOD] ${banMessage}`,
                     userName: 'Sistema',
                     userWallet: 'system',
-                    userColor: '#FFD700', // Color dorado para sistema
+                    userColor: '#FFD700', 
                     createdAt: serverTimestamp()
                 });
                 
@@ -2101,7 +2198,6 @@ function initBitsDepositLogic() {
         const translations = {
             en: {
                 explore: "Explore", categories: "Categories", creator: "Creator", creator_studio: "Creator Studio", recommended_channels: "Recommended Channels", followers: "followers", save: "Save", logout: "Log Out", processing: "Processing...", action_error: "Error processing action.", ad_warning: "An ad will appear in %s...", ad_playing: "Ad is playing...", welcome_to: "Welcome to", login_prompt: "Enter with your public Solana wallet address to start.", login_button: "Enter / Create Account", explore_title: "Explore Live Channels", categories_title: "Explore Categories", no_one_live: "No one is live in the '%s' category right now.", connecting_stream: "Connecting to stream...", live_chat: "Live Chat", chat_placeholder: "Send a message...", follow: "Follow", unfollow: "Unfollow", subscribe: "Subscribe", subscribed: "Subscribed", stream_ended: "The stream has ended.", sent: "sent", settings: "Settings", language: "Language", edit_profile: "Edit Profile", balance_withdrawal: "Balance & Withdrawal", current_balance: "Your Current Balance", withdrawal_minimum_bit: "You need a minimum of %a BIT to withdraw.", request_withdrawal: "Request Withdrawal", need_more_to_withdraw: "You need %a more BIT to withdraw.", withdrawal_ready: "You can request your withdrawal now.", withdrawal_requested: "Withdrawal request sent!", withdrawal_requested_toast: "Your withdrawal request has been sent.", withdrawal_error: "Error sending request.", profile_updated: "Profile updated successfully.", username: "Username", profile_pic_url: "Profile Picture URL", save_changes: "Save Changes", price_fetch_error: "Could not fetch price.", cannot_calculate_withdrawal: "Cannot calculate withdrawal requirements.", stream_dashboard: "Stream Dashboard", stream_title: "Stream Title", category: "Category", thumbnail_url: "Thumbnail URL (Optional)", thumbnail_placeholder: "https://example.com/image.png", microphone: "Microphone", use_camera: "Use Camera", share_screen: "Share Screen", preview: "Preview", chat: "Chat", start_stream: "Start", stop_stream: "Stop", analytics_rewards: "Analytics & Rewards", earnings_summary: "Earnings Summary", accumulated_rewards: "Accumulated Rewards", rewards_info: "You earn %a BIT for every %m minutes of streaming.", send_to_balance: "Send to Main Balance", followed_user: "You are now following %s.", unfollowed_user: "You have unfollowed %s.", insufficient_bits_subscribe: "You don't have enough BITs to subscribe.", subscribed_to_user: "You have subscribed to %s for 100 BIT", subscription_error: "Error processing subscription.", superchat_no_text: "Write a message to send with your VIP emoji.", insufficient_bits_emoji: "You need %p BIT to send this emoji.", superchat_error: "Error sending Super Chat.", media_error: "Could not access camera/screen.", no_video_source: "First select a video source.", stream_started: "Stream started!", stream_start_error: "Permission error. Could not start stream.", stream_stopped: "Stream stopped.", reward_notification: "+%a BIT for streaming %m minutes!", rewards_transferred: "%a BIT transferred to your balance.",
-                // NUEVAS TRADUCCIONES
                 transaction_history: "Transaction History",
                 no_transactions: "No transactions yet.",
                 you_are_banned: "You are banned from this chat.",
@@ -2113,10 +2209,10 @@ function initBitsDepositLogic() {
                 tx_vip_emoji_reward: "VIP Emoji",
                 tx_reward_transfer: "Rewards Transfer",
                 tx_stream_reward: "Stream Reward",
+                no_other_streams: "No other streams are live right now.",
             },
             es: {
                 explore: "Explorar", categories: "Categorías", creator: "Creador", creator_studio: "Estudio del Creador", recommended_channels: "Canales Recomendados", followers: "seguidores", save: "Guardar", logout: "Cerrar Sesión", processing: "Procesando...", action_error: "Error al procesar la acción.", ad_warning: "Un anuncio aparecerá en %s...", ad_playing: "Anuncio en curso...", welcome_to: "Bienvenido a", login_prompt: "Ingresa con tu dirección de wallet pública de Solana para empezar.", login_button: "Entrar / Crear Cuenta", explore_title: "Explorar Canales en Vivo", categories_title: "Explorar Categorías", no_one_live: "No hay nadie en vivo en la categoría '%s' en este momento.", connecting_stream: "Conectando al stream...", live_chat: "Chat en Vivo", chat_placeholder: "Escribe un mensaje...", follow: "Seguir", unfollow: "Dejar de Seguir", subscribe: "Suscribirse", subscribed: "Suscrito", stream_ended: "La transmisión ha finalizado.", sent: "envió", settings: "Configuración", language: "Idioma", edit_profile: "Editar Perfil", balance_withdrawal: "Balance y Retiros", current_balance: "Tu Saldo Actual", withdrawal_minimum_bit: "Necesitas un mínimo de %a BIT para retirar.", request_withdrawal: "Solicitar Retiro", need_more_to_withdraw: "Te faltan %a BIT para poder retirar.", withdrawal_ready: "Ya puedes solicitar tu retiro.", withdrawal_requested: "¡Solicitud de retiro enviada!", withdrawal_requested_toast: "Tu solicitud de retiro ha sido enviada.", withdrawal_error: "Error al enviar la solicitud.", profile_updated: "Perfil actualizado correctamente.", username: "Nombre de usuario", profile_pic_url: "URL de foto de perfil", save_changes: "Guardar Cambios", price_fetch_error: "No se pudo obtener el precio.", cannot_calculate_withdrawal: "No se pueden calcular los requisitos de retiro.", stream_dashboard: "Panel de Transmisión", stream_title: "Título del Stream", category: "Categoría", thumbnail_url: "URL de la Miniatura (Opcional)", thumbnail_placeholder: "https://ejemplo.com/imagen.png", microphone: "Micrófono", use_camera: "Usar Cámara", share_screen: "Compartir Pantalla", preview: "Vista Previa", chat: "Chat", start_stream: "Iniciar", stop_stream: "Detener", analytics_rewards: "Analíticas y Recompensas", earnings_summary: "Resumen de Ganancias", accumulated_rewards: "Recompensas Acumuladas", rewards_info: "Ganas %a BIT por cada %m minutos de transmisión.", send_to_balance: "Enviar a Balance Principal", followed_user: "Ahora sigues a %s.", unfollowed_user: "Has dejado de seguir a %s.", insufficient_bits_subscribe: "No tienes suficientes BITs para suscribirte.", subscribed_to_user: "Te has suscrito a %s por 100 BIT", subscription_error: "Error al procesar la suscripción.", superchat_no_text: "Escribe un mensaje para enviarlo con tu emoji VIP.", insufficient_bits_emoji: "Necesitas %p BIT para enviar este emoji.", superchat_error: "Error al enviar el Super Chat.", media_error: "No se pudo acceder a la cámara/pantalla.", no_video_source: "Primero selecciona una fuente de video.", stream_started: "¡Has iniciado la transmisión!", stream_start_error: "Error de permisos. No se pudo iniciar el stream.", stream_stopped: "Transmisión detenida.", reward_notification: "¡+%a BIT por transmitir %m minutos!", rewards_transferred: "%a BIT transferidos a tu balance.",
-                // NUEVAS TRADUCCIONES
                 transaction_history: "Historial de Transacciones",
                 no_transactions: "Aún no hay transacciones.",
                 you_are_banned: "Estás baneado de este chat.",
@@ -2128,6 +2224,7 @@ function initBitsDepositLogic() {
                 tx_vip_emoji_reward: "Emoji VIP",
                 tx_reward_transfer: "Transferencia de Recompensa",
                 tx_stream_reward: "Recompensa de Stream",
+                no_other_streams: "No hay otros streams en vivo en este momento.",
             }
         };
 
