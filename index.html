@@ -28,6 +28,9 @@
             --text-primary: #EAEAEA;
             --text-secondary: #A0A0B0;
         }
+        html {
+             scroll-behavior: smooth;
+        }
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--background-primary);
@@ -93,82 +96,117 @@
         #mod-modal-content {
             transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
         }
-
-        /* --- NUEVOS ESTILOS PARA CARRUSEL --- */
-        .featured-carousel-container {
-            /* Contenedor principal del carrusel */
-            max-width: 64rem; /* max-w-5xl */
-            margin-left: auto;
-            margin-right: auto;
-            border-radius: 1rem; /* rounded-2xl */
-            overflow: hidden;
+        
+        /* --- ESTILOS PARA CARRUSEL "COVER FLOW" --- */
+        #featured-carousel-container {
             position: relative;
         }
-        .featured-slider {
-            /* Contenedor que se mueve */
+        #featured-carousel {
             display: flex;
-            transition: transform 0.5s ease-in-out;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            gap: 1rem;
+            padding-bottom: 1rem; /* Espacio para scrollbar si aparece */
+            margin-bottom: 2rem;
+            scrollbar-width: none; /* Firefox */
         }
-        .featured-slide {
-            /* Cada slide */
-            min-width: 100%;
-            flex-shrink: 0;
-            aspect-ratio: 16 / 9; /* Proporción 16:9 */
-            position: relative;
+        #featured-carousel::-webkit-scrollbar {
+            display: none; /* Chrome, Safari */
         }
-        .carousel-btn {
+        .carousel-slide {
+            flex: 0 0 80%; /* En móvil, 80% del ancho */
+            scroll-snap-align: center;
+            opacity: 0.7;
+            transform: scale(0.9);
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        
+        /* Estilo para el slide centrado (manejado por JS) */
+        .carousel-slide.is-center {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        @media (min-width: 768px) {
+            .carousel-slide {
+                flex-basis: 60%; /* En PC, 60% del ancho */
+            }
+        }
+        
+        /* Degradado para los lados */
+        #featured-carousel-container::before,
+        #featured-carousel-container::after {
+            content: '';
             position: absolute;
-            top: 50%;
+            top: 0;
+            bottom: 0;
+            width: 50px; /* Ancho del degradado */
+            z-index: 2;
+            pointer-events: none;
+        }
+        #featured-carousel-container::before {
+            left: 0;
+            background: linear-gradient(to right, var(--background-primary), transparent);
+        }
+        #featured-carousel-container::after {
+            right: 0;
+            background: linear-gradient(to left, var(--background-primary), transparent);
+        }
+        
+        .carousel-nav-btn {
+            position: absolute;
+            top: 40%;
             transform: translateY(-50%);
-            z-index: 10;
-            background-color: rgba(0, 0, 0, 0.4);
-            border-radius: 9999px;
+            z-index: 3;
+            background-color: rgba(0,0,0,0.5);
+            border-radius: 99px;
             padding: 0.5rem;
-            transition: background-color 0.2s;
-            color: white;
+            display: none; /* Oculto en móvil */
         }
-        .carousel-btn:hover {
-            background-color: rgba(0, 0, 0, 0.7);
+        .carousel-nav-btn:hover {
+            background-color: rgba(0,0,0,0.8);
         }
-        .carousel-btn:disabled {
-            display: none; /* Ocultar botones si no hay slides */
+        @media (min-width: 768px) {
+            .carousel-nav-btn {
+                display: block; /* Visible en PC */
+            }
         }
+        /* --- FIN ESTILOS CARRUSEL --- */
         
         /* --- NUEVOS ESTILOS PARA SIDEBAR COLAPSABLE --- */
         #sidebar {
-            /* Añadir transición para el ancho */
-            transition: width 0.3s ease-in-out;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
-        @media (min-width: 768px) { /* md: */
-            /* Estilo del sidebar cuando está colapsado */
-            #app-container.sidebar-collapsed #sidebar {
-                width: 4.5rem; /* w-18, un poco más ancho que w-16 */
-            }
-            
-            /* Ocultar texto cuando está colapsado en desktop */
-            #app-container.sidebar-collapsed #sidebar .nav-link span,
-            #app-container.sidebar-collapsed #sidebar h3,
-            #app-container.sidebar-collapsed #sidebar #recommended-channels .flex-1,
-            #app-container.sidebar-collapsed #sidebar .p-4.border-b { /* Cabecera móvil en sidebar */
-                display: none;
-            }
-            
-            /* Centrar íconos cuando está colapsado en desktop */
-            #app-container.sidebar-collapsed #sidebar .nav-link,
-            #app-container.sidebar-collapsed #sidebar #creator-section a {
-                justify-content: center;
-                padding-left: 0.5rem;
-                padding-right: 0.5rem;
-            }
-            #app-container.sidebar-collapsed #sidebar #recommended-channels .flex {
-                justify-content: center;
-            }
-            #app-container.sidebar-collapsed #sidebar #recommended-channels .flex img {
-                margin-left: auto;
-                margin-right: auto;
-            }
+        #sidebar.is-collapsed {
+            width: 80px; /* Ancho colapsado */
         }
+        #sidebar.is-collapsed .sidebar-text,
+        #sidebar.is-collapsed .sidebar-header-text,
+        #sidebar.is-collapsed #recommended-channels {
+            display: none;
+        }
+        #sidebar.is-collapsed .nav-link,
+        #sidebar.is-collapsed .sidebar-header-logo,
+        #sidebar.is-collapsed .sidebar-toggle-btn {
+            justify-content: center;
+        }
+        #sidebar.is-collapsed .nav-link i,
+        #sidebar.is-collapsed .sidebar-header-logo i,
+        #sidebar.is-collapsed .sidebar-toggle-btn i {
+            margin-right: 0;
+        }
+        #sidebar.is-collapsed .sidebar-header {
+             padding-left: 0.5rem;
+             padding-right: 0.5rem;
+        }
+         #sidebar.is-collapsed .nav-link-creator {
+             justify-content: center;
+             padding-left: 0;
+             padding-right: 0;
+         }
+         #sidebar.is-collapsed .nav-link-creator .sidebar-text {
+             display: none;
+         }
         
     </style>
 </head>
@@ -186,16 +224,18 @@
                 <button id="mobile-menu-btn" class="md:hidden p-2 -ml-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--background-tertiary)]">
                     <i data-lucide="menu" id="mobile-menu-icon"></i>
                 </button>
-                <!-- NUEVO BOTÓN PARA SIDEBAR DESKTOP -->
-                <button id="desktop-sidebar-toggle" class="hidden md:flex p-2 -ml-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--background-tertiary)]">
-                    <i data-lucide="sidebar-open"></i>
+                
+                <!-- Botón de colapsar (solo desktop) -->
+                <button id="sidebar-toggle-btn" class="hidden md:flex p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--background-tertiary)] items-center">
+                    <i data-lucide="layout-sidebar-left-collapse"></i>
                 </button>
+                
                 <a href="#" class="flex items-center nav-action" data-target="explore">
                     <img src="https://i.postimg.cc/50KvH8vD/log-peque.png" alt="Live Payout Logo" class="w-10 h-10 rounded-full">
                 </a>
                 <div class="hidden md:flex items-center gap-2 text-[var(--text-secondary)]">
-                    <a href="#" class="nav-link nav-action px-3 py-2 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-all flex items-center gap-2" data-target="explore" data-key="explore"><i data-lucide="compass"></i>Explore</a>
-                    <a href="#" class="nav-link nav-action px-3 py-2 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-all flex items-center gap-2" data-target="categories" data-key="categories"><i data-lucide="layout-grid"></i>Categories</a>
+                    <a href="#" class="nav-link nav-action px-3 py-2 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-all flex items-center gap-2" data-target="explore" data-key="explore"><i data-lucide="compass"></i><span class="sidebar-text">Explore</span></a>
+                    <a href="#" class="nav-link nav-action px-3 py-2 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-all flex items-center gap-2" data-target="categories" data-key="categories"><i data-lucide="layout-grid"></i><span class="sidebar-text">Categories</span></a>
                 </div>
             </div>
             <div id="user-profile-area" class="flex items-center gap-2 md:gap-4">
@@ -205,30 +245,30 @@
 
         <div class="flex flex-1 overflow-hidden">
             <aside id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-[var(--background-secondary)] flex flex-col z-40 transform -translate-x-full transition-transform duration-300 md:relative md:translate-x-0 md:border-r md:border-[var(--border-color)] md:flex-shrink-0">
-                <div class="p-4 border-b border-[var(--border-color)] md:hidden">
-                    <a href="#" class="flex items-center gap-2 nav-action" data-target="explore">
+                <div class="p-4 border-b border-[var(--border-color)] md:hidden sidebar-header">
+                    <a href="#" class="flex items-center gap-2 nav-action sidebar-header-logo" data-target="explore">
                         <img src="https://i.postimg.cc/50KvH8vD/log-peque.png" alt="Live Payout Logo" class="w-8 h-8 rounded-full">
-                        <span class="font-bold text-lg">Live Payout</span>
+                        <span class="font-bold text-lg sidebar-header-text">Live Payout</span>
                     </a>
                 </div>
-                <nav class="flex flex-col space-y-2 p-4 md:p-0 md:mt-4">
+                <nav class="flex flex-col space-y-2 p-4 md:p-2 md:mt-4">
                     <div class="md:hidden">
-                        <a href="#" class="nav-link nav-action flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-colors" data-target="explore" data-key="explore"><i data-lucide="compass" class="w-5 h-5"></i>Explore</a>
-                        <a href="#" class="nav-link nav-action flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-colors" data-target="categories" data-key="categories"><i data-lucide="layout-grid" class="w-5 h-5"></i>Categories</a>
+                        <a href="#" class="nav-link nav-action flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-colors" data-target="explore" data-key="explore"><i data-lucide="compass" class="w-5 h-5"></i><span class="sidebar-text">Explore</span></a>
+                        <a href="#" class="nav-link nav-action flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-colors" data-target="categories" data-key="categories"><i data-lucide="layout-grid" class="w-5 h-5"></i><span class="sidebar-text">Categories</span></a>
                         <div class="my-2 border-t border-[var(--border-color)]"></div>
                     </div>
-                    <div id="creator-section">
-                        <h3 class="px-3 text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider" data-key="creator">Creator</h3>
-                        <a href="#" class="nav-link nav-action flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 bg-[var(--background-tertiary)] border border-[var(--border-color)] hover:border-[var(--brand-color-purple)] hover:shadow-[0_0_15px_rgba(167,139,250,0.4)]" data-target="studio">
+                    <div id="creator-section" class="px-2">
+                        <h3 class="px-3 text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider sidebar-text" data-key="creator">Creator</h3>
+                        <a href="#" class="nav-link nav-action nav-link-creator flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 bg-[var(--background-tertiary)] border border-[var(--border-color)] hover:border-[var(--brand-color-purple)] hover:shadow-[0_0_15px_rgba(167,139,250,0.4)]" data-target="studio">
                             <img src='https://i.postimg.cc/PxTt1gVn/7219b8450aa254b2d47645e0660295c1-icono-o-logotipo-de-camara-de-video.png' class='w-5 h-5 flex-shrink-0' alt='Creator Studio Icon'>
-                            <span data-key="creator_studio">Creator Studio</span>
+                            <span class="sidebar-text" data-key="creator_studio">Creator Studio</span>
                         </a>
                     </div>
                 </nav>
                 <div class="my-4 border-t border-[var(--border-color)]"></div>
-                <div class="px-4 md:px-0 flex-1 overflow-y-auto">
-                  <h3 class="px-3 text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-2" data-key="recommended_channels">Recommended Channels</h3>
-                  <div id="recommended-channels" class="space-y-3">
+                <div class="px-2 flex-1 overflow-y-auto">
+                  <h3 class="px-3 text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-2 sidebar-text" data-key="recommended_channels">Recommended Channels</h3>
+                  <div id="recommended-channels" class="space-y-3 px-2">
                       <!-- Canales recomendados se cargan aquí -->
                   </div>
                 </div>
@@ -277,6 +317,7 @@
             <h2 id="mod-modal-title" class="text-xl font-bold mb-2">Moderar Usuario</h2>
             <p class="text-[var(--text-secondary)] mb-4" id="mod-modal-username">Vas a moderar a...</p>
             <div class="grid grid-cols-2 gap-3">
+                <!-- Opciones de tiempo actualizadas -->
                 <button class="mod-action-btn bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg" data-duration="5">Ban 5 Min</button>
                 <button class="mod-action-btn bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg" data-duration="10">Ban 10 Min</button>
                 <button class="mod-action-btn bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg" data-duration="60">Ban 1 Hora</button>
@@ -322,8 +363,7 @@
         let navigationHistory = [];
         
         let modModalTargetUser = { wallet: null, name: null };
-        
-        let carouselInterval = null; // Para auto-play del carrusel
+        let carouselInterval = null;
 
 
         app = initializeApp(firebaseConfig);
@@ -344,9 +384,7 @@
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const mobileMenuIcon = document.getElementById('mobile-menu-icon');
         const backButton = document.getElementById('back-button');
-        
-        // NUEVA CONSTANTE PARA EL BOTÓN DE SIDEBAR
-        const desktopSidebarToggle = document.getElementById('desktop-sidebar-toggle');
+        const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
         
         const modModal = document.getElementById('mod-modal');
         const modModalContent = document.getElementById('mod-modal-content');
@@ -505,7 +543,7 @@
                 channelEl.className = 'flex items-center gap-3 p-1 rounded-lg hover:bg-[var(--background-tertiary)] cursor-pointer';
                 channelEl.innerHTML = `
                     <img src="${user.profilePicture}" class="w-8 h-8 rounded-full">
-                    <div class="flex-1 overflow-hidden">
+                    <div class="flex-1 overflow-hidden sidebar-text">
                         <p class="text-sm font-semibold truncate">${user.username || user.walletAddress.substring(0,6)}</p>
                         <p class="text-xs text-[var(--text-secondary)]">${user.followersCount || 0} ${translations[currentLang].followers}</p>
                     </div>`;
@@ -573,25 +611,26 @@
                 mobileMenuIcon.setAttribute('data-lucide', sidebar.classList.contains('-translate-x-full') ? 'menu' : 'x');
                 lucide.createIcons();
             }
+            
+            function toggleDesktopSidebar() {
+                sidebar.classList.toggle('is-collapsed');
+                const isCollapsed = sidebar.classList.contains('is-collapsed');
+                sidebarToggleBtn.querySelector('i').setAttribute('data-lucide', isCollapsed ? 'layout-sidebar-right-collapse' : 'layout-sidebar-left-collapse');
+                lucide.createIcons();
+                localStorage.setItem('sidebarCollapsed', isCollapsed);
+            }
+            
+            sidebarToggleBtn.addEventListener('click', toggleDesktopSidebar);
+            if (localStorage.getItem('sidebarCollapsed') === 'true') {
+                toggleDesktopSidebar();
+            }
 
             mobileMenuBtn.addEventListener('click', toggleSidebar);
             sidebarBackdrop.addEventListener('click', toggleSidebar);
             sidebar.addEventListener('click', (e) => {
-                if (e.target.closest('a.nav-action')) {
+                if (e.target.closest('a.nav-action') && !sidebar.classList.contains('is-collapsed')) {
                     toggleSidebar();
                 }
-            });
-            
-            // NUEVO LISTENER PARA EL BOTÓN DE SIDEBAR DESKTOP
-            desktopSidebarToggle.addEventListener('click', () => {
-                const icon = desktopSidebarToggle.querySelector('i');
-                const isCollapsed = appContainer.classList.toggle('sidebar-collapsed');
-                if (isCollapsed) {
-                    icon.setAttribute('data-lucide', 'sidebar-close');
-                } else {
-                    icon.setAttribute('data-lucide', 'sidebar-open');
-                }
-                lucide.createIcons();
             });
         }
         
@@ -606,8 +645,8 @@
             });
         }
 
-        function renderPage(pageHTML, activeTargetKey, isSubPage = false) {
-            mainContent.innerHTML = `<div class="animate-slide-in">${pageHTML}</div>`;
+        function renderPage(content, activeTargetKey, isSubPage = false) {
+            mainContent.innerHTML = `<div class="animate-slide-in p-4 md:p-8">${content}</div>`;
             setActiveLink(activeTargetKey);
             updateHeaderButtons(isSubPage);
             setLanguage(currentLang);
@@ -632,23 +671,22 @@
                 </div>`;
         }
         
-        // --- NUEVA FUNCIÓN ---
-        // (Helper) Renderizar un slide para el carrusel destacado
-        function renderFeaturedStreamSlide(streamDoc) {
+        // (Helper) Renderizar el stream destacado (diseño de tarjeta grande como en la imagen)
+        function renderFeaturedStreamCard(streamDoc) {
             const stream = streamDoc.data();
             return `
-                <div class="featured-slide stream-card cursor-pointer" data-streamer-wallet="${streamDoc.id}">
-                    <img src="${stream.thumbnailUrl || 'https://placehold.co/800x450/141418/2a2a32?text=En+Vivo'}" class="w-full h-full object-cover opacity-70">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-                    <div class="absolute top-4 left-4 bg-red-600 text-white text-sm font-bold px-3 py-1.5 rounded-md">LIVE</div>
-                    <div class="absolute bottom-4 left-4 right-4 flex items-center gap-4">
-                        <img src="${stream.streamerPic}" class="w-12 h-12 rounded-full border-2 border-purple-500">
-                        <div class="flex-1 overflow-hidden">
+                <div class="carousel-slide stream-card group rounded-xl overflow-hidden border border-[var(--border-color)] hover:border-[var(--brand-color-purple)] transition-all duration-300 cursor-pointer bg-[var(--background-secondary)]" data-streamer-wallet="${streamDoc.id}">
+                    <div class="relative w-full aspect-video bg-black rounded-t-lg flex items-center justify-center flex-shrink-0">
+                        <img src="${stream.thumbnailUrl || 'https://placehold.co/800x450/141418/2a2a32?text=En+Vivo'}" class="w-full h-full object-cover rounded-t-lg">
+                        <div class="absolute top-3 left-3 bg-red-600 text-white text-sm font-bold px-3 py-1.5 rounded-md">LIVE</div>
+                        <div class="absolute bottom-3 right-3 bg-black/50 text-white text-sm px-3 py-1.5 rounded-md flex items-center gap-2"><i data-lucide="users" class="w-4 h-4"></i> ${stream.viewerCount || 0}</div>
+                    </div>
+                    <div class="p-4 flex items-start gap-4">
+                        <img src="${stream.streamerPic}" class="w-12 h-12 rounded-full">
+                        <div>
                             <h2 class="font-bold text-xl truncate text-white">${stream.title}</h2>
                             <p class="text-md text-[var(--text-secondary)]">${stream.streamerUsername || stream.streamerWallet.substring(0, 6)}</p>
-                        </div>
-                        <div class="hidden sm:flex items-center gap-2 text-white bg-black/50 px-3 py-1.5 rounded-md">
-                            <i data-lucide="users" class="w-4 h-4"></i> ${stream.viewerCount || 0}
+                            <span class="text-sm bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full mt-1 inline-block">${stream.category}</span>
                         </div>
                     </div>
                 </div>`;
@@ -657,10 +695,7 @@
         async function renderExplorePage(category = null) {
             currentPageRender = () => renderExplorePage(category);
             
-            // 1. Detener el carrusel anterior si existe
-            if (carouselInterval) clearInterval(carouselInterval);
-            
-            // 2. Obtener todos los streams
+            // 1. Obtener todos los streams
             let streamsQuery = query(collection(db, "streams"), where("status", "==", "live"));
             if (category) {
                 streamsQuery = query(collection(db, "streams"), where("status", "==", "live"), where("category", "==", category));
@@ -668,39 +703,36 @@
             
             const querySnapshot = await getDocs(streamsQuery);
             let streamsHTML = '';
-            let featuredStreamHTML = '';
+            let featuredStreamsHTML = '';
+            let featuredDocs = [];
+            let regularDocs = [];
             
             if (querySnapshot.empty) {
                 streamsHTML = `<p class="text-center text-[var(--text-secondary)] col-span-full">${translations[currentLang].no_one_live.replace('%s', category || 'any')}</p>`;
             } else {
                 let streamDocs = querySnapshot.docs;
-                let featuredDocs = [];
-                let regularDocs = [];
 
                 if (!category) {
-                    // 3. Si es la página principal (sin categoría), barajar y separar
-                    // Simple shuffle (Fisher-Yates)
-                    for (let i = streamDocs.length - 1; i > 0; i--) {
-                        const j = Math.floor(Math.random() * (i + 1));
-                        [streamDocs[i], streamDocs[j]] = [streamDocs[j], streamDocs[i]];
-                    }
+                    // Si es la página principal, ordenar por vistas y separar
+                    streamDocs.sort((a, b) => (b.data().viewerCount || 0) - (a.data().viewerCount || 0));
                     
-                    featuredDocs = streamDocs.slice(0, 3); // Tomar hasta 3 streams al azar
-                    regularDocs = streamDocs.slice(3); // El resto
+                    // Tomar hasta 5 para el carrusel
+                    featuredDocs = streamDocs.slice(0, 5);
+                    regularDocs = streamDocs.slice(5); // El resto
                 } else {
-                    // 4. Si es una categoría, no mostrar destacados, solo la cuadrícula
+                    // Si es una categoría, no mostrar carrusel, solo la cuadrícula
                     regularDocs = streamDocs;
                 }
 
-                // 5. Construir el HTML del carrusel (si hay streams destacados)
+                // 5. Construir el HTML del carrusel (si hay streams)
                 if (featuredDocs.length > 0) {
-                    featuredStreamHTML = `
-                        <div id="featured-carousel-container" class="featured-carousel-container">
-                            <div id="featured-slider" class="featured-slider flex">
-                                ${featuredDocs.map(doc => renderFeaturedStreamSlide(doc)).join('')}
+                    featuredStreamsHTML = `
+                        <div id="featured-carousel-container" class="mb-8 relative">
+                            <button id="carousel-prev" class="carousel-nav-btn left-2"><i data-lucide="chevron-left"></i></button>
+                            <div id="featured-carousel">
+                                ${featuredDocs.map(doc => renderFeaturedStreamCard(doc)).join('')}
                             </div>
-                            <button id="carousel-prev" class="carousel-btn left-2 sm:left-4"><i data-lucide="chevron-left" class="w-6 h-6 sm:w-8 sm:h-8"></i></button>
-                            <button id="carousel-next" class="carousel-btn right-2 sm:right-4"><i data-lucide="chevron-right" class="w-6 h-6 sm:w-8 sm:h-8"></i></button>
+                            <button id="carousel-next" class="carousel-nav-btn right-2"><i data-lucide="chevron-right"></i></button>
                         </div>`;
                 }
                 
@@ -708,7 +740,7 @@
                 if (regularDocs.length > 0) {
                     streamsHTML = regularDocs.map(doc => renderStreamCard(doc)).join('');
                 } else if (featuredDocs.length > 0) {
-                    // Hay destacados pero no hay más streams
+                    // Hay carrusel pero no hay más streams
                     streamsHTML = `<p class="text-center text-[var(--text-secondary)] col-span-full" data-key="no_other_streams">No other streams are live right now.</p>`;
                 } else if (category && regularDocs.length === 0) {
                     // No hay streams en esta categoría (ya cubierto por querySnapshot.empty)
@@ -720,15 +752,20 @@
             
             // 7. Renderizar toda la página
             const pageHTML = `
-                ${featuredStreamHTML}
+                ${featuredStreamsHTML}
                 <h1 class="text-3xl font-bold mb-6" data-key="${category ? '' : 'explore_title'}">${title}</h1>
                 <div id="streams-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     ${streamsHTML}
                 </div>`;
             
-            renderPage(pageHTML, category ? 'categories' : 'explore');
+            // Usar renderPage pero quitando los paddings que añade por defecto
+            mainContent.innerHTML = `<div class="animate-slide-in p-4 md:p-8">${pageHTML}</div>`;
+            setActiveLink(category ? 'categories' : 'explore');
+            updateHeaderButtons(false); // Explorar nunca es subpágina
+            setLanguage(currentLang);
+            lucide.createIcons();
             
-            // 8. Añadir listeners para los streams (ambos, carrusel y cuadrícula)
+            // 8. Añadir listeners para los streams (ambos, destacado y cuadrícula)
             document.querySelectorAll('.stream-card').forEach(card => {
                 card.addEventListener('click', () => {
                     navigationHistory.push(currentPageRender);
@@ -737,47 +774,86 @@
                 });
             });
 
-            // 9. Añadir listeners para el carrusel (si existe)
-            const slider = document.getElementById('featured-slider');
-            if (slider) {
-                const prevBtn = document.getElementById('carousel-prev');
-                const nextBtn = document.getElementById('carousel-next');
-                const slides = slider.querySelectorAll('.featured-slide');
-                let currentIndex = 0;
-                const maxIndex = slides.length - 1;
-                
-                if (slides.length <= 1) {
-                    prevBtn.disabled = true;
-                    nextBtn.disabled = true;
-                }
-
-                function updateSlider() {
-                    slider.style.transform = `translateX(-${currentIndex * 100}%)`;
-                }
-                
-                const goToNext = () => {
-                    currentIndex = currentIndex >= maxIndex ? 0 : currentIndex + 1;
-                    updateSlider();
-                };
-
-                nextBtn.addEventListener('click', () => {
-                    goToNext();
-                    if (carouselInterval) clearInterval(carouselInterval); // Detener auto-play si se usa manualmente
-                });
-
-                prevBtn.addEventListener('click', () => {
-                    currentIndex = currentIndex <= 0 ? maxIndex : currentIndex - 1;
-                    updateSlider();
-                    if (carouselInterval) clearInterval(carouselInterval); // Detener auto-play
-                });
-                
-                // Auto-play
-                if (slides.length > 1) {
-                    carouselInterval = setInterval(goToNext, 5000); // Cambia de slide cada 5 segundos
-                }
-            }
+            // 9. Lógica del carrusel
+            setupCarousel();
         }
 
+        function setupCarousel() {
+            const carousel = document.getElementById('featured-carousel');
+            if (!carousel) return;
+            
+            const prevBtn = document.getElementById('carousel-prev');
+            const nextBtn = document.getElementById('carousel-next');
+            const slides = carousel.querySelectorAll('.carousel-slide');
+            if (slides.length === 0) return;
+
+            let currentIndex = 0;
+
+            function updateCarousel() {
+                const scrollLeft = slides[currentIndex].offsetLeft - (carousel.offsetWidth - slides[currentIndex].offsetWidth) / 2;
+                carousel.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+                
+                slides.forEach((slide, index) => {
+                    slide.classList.toggle('is-center', index === currentIndex);
+                });
+            }
+
+            function next() {
+                currentIndex = (currentIndex + 1) % slides.length;
+                updateCarousel();
+            }
+
+            function prev() {
+                currentIndex = (currentIndex - 1 + slides.length) % slides.length;
+                updateCarousel();
+            }
+            
+            prevBtn.addEventListener('click', () => {
+                prev();
+                resetInterval();
+            });
+            nextBtn.addEventListener('click', () => {
+                next();
+                resetInterval();
+            });
+            
+            // Auto-scroll
+            if (carouselInterval) clearInterval(carouselInterval);
+            carouselInterval = setInterval(next, 5000);
+            
+            function resetInterval() {
+                clearInterval(carouselInterval);
+                carouselInterval = setInterval(next, 5000);
+            }
+            
+            // Snap scrolling behavior
+            carousel.addEventListener('scroll', () => {
+                 let minDistance = Infinity;
+                 let centerIndex = 0;
+                 const carouselCenter = carousel.scrollLeft + carousel.offsetWidth / 2;
+                 
+                 slides.forEach((slide, index) => {
+                     const slideCenter = slide.offsetLeft + slide.offsetWidth / 2;
+                     const distance = Math.abs(carouselCenter - slideCenter);
+                     if (distance < minDistance) {
+                         minDistance = distance;
+                         centerIndex = index;
+                     }
+                 });
+                 
+                 if (currentIndex !== centerIndex) {
+                     currentIndex = centerIndex;
+                     slides.forEach((slide, index) => {
+                         slide.classList.toggle('is-center', index === currentIndex);
+                     });
+                 }
+            }, { passive: true });
+            
+            // Set initial state
+            setTimeout(() => updateCarousel(), 100);
+        }
+
+        
         function renderCategoriesPage() {
             currentPageRender = renderCategoriesPage;
             const categoriesHTML = CATEGORIES.map(cat => `
@@ -854,9 +930,11 @@
                             <div id="withdraw-message" class="text-center text-sm h-5 mt-2"></div>
                         </div>
                         
+                        <!-- Historial de Transacciones -->
                         <div class="bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)]">
                             <h3 class="font-semibold text-lg mb-4" data-key="transaction_history">Historial de Transacciones</h3>
                             <div id="transaction-history-container" class="space-y-3 max-h-96 overflow-y-auto pr-2">
+                                <!-- El historial se cargará aquí dinámicamente -->
                                 <p id="transaction-history-loading" class="text-[var(--text-secondary)] text-sm">Cargando historial...</p>
                             </div>
                         </div>
@@ -954,6 +1032,7 @@ function initBitsDepositLogic() {
     const TATUM_API_KEY = "t-68f69f0447bf5156a36067b3-b0b00e1660324a54ad70ef28";
     const TOKEN_DECIMALS = 6;
     
+    // Limpiar intervalos anteriores
     if (window.depositPollingInterval) {
         clearInterval(window.depositPollingInterval);
     }
@@ -964,7 +1043,7 @@ function initBitsDepositLogic() {
         status.innerHTML = `Escanea el QR para pagar ${amount} BITS. Esperando pago... <div class="w-4 h-4 border-2 border-dashed rounded-full animate-spin inline-block ml-2"></div>`;
         
         let pollCount = 0;
-        const maxPolls = 90; 
+        const maxPolls = 90; // 7.5 minutos (90 polls * 5 segundos) - más tiempo
 
         window.depositPollingInterval = setInterval(async () => {
             pollCount++;
@@ -987,7 +1066,7 @@ function initBitsDepositLogic() {
                         jsonrpc: '2.0',
                         id: 1,
                         method: 'getSignaturesForAddress',
-                        params: [RECIPIENT_WALLET, { limit: 50 }] 
+                        params: [RECIPIENT_WALLET, { limit: 50 }] // Más transacciones
                     })
                 });
 
@@ -1002,16 +1081,25 @@ function initBitsDepositLogic() {
                 if (foundSignature) {
                     console.log("✅ Pago detectado con firma:", foundSignature.signature);
                     
+                    // Verificar si ya procesamos esta transacción
                     const signatureRef = doc(db, "users", currentUser.walletAddress, "usedSignatures", foundSignature.signature);
-                    const signatureDoc = await getDoc(signatureRef);
                     
+                    // IMPORTANTE: Bloqueo para evitar duplicados
+                    if (window['processing_' + foundSignature.signature]) {
+                        console.log("⚠️ Transacción ya está siendo procesada.");
+                        clearInterval(window.depositPollingInterval);
+                        return;
+                    }
+                    
+                    const signatureDoc = await getDoc(signatureRef);
                     if (signatureDoc.exists()) {
                         console.log("⚠️ Transacción ya procesada anteriormente");
                         status.textContent = "⚠️ Esta transacción ya fue procesada.";
                         clearInterval(window.depositPollingInterval);
                         return;
                     }
-
+                    // Fin del bloqueo
+                    
                     clearInterval(window.depositPollingInterval);
                     
                     status.textContent = `✅ ¡Pago detectado! Verificando transacción...`;
@@ -1019,7 +1107,7 @@ function initBitsDepositLogic() {
                     const connection = new solanaWeb3.Connection(SOLANA_RPC_URL, {
                         commitment: 'confirmed',
                         httpHeaders: { 'x-api-key': TATUM_API_KEY },
-                        confirmTransactionInitialTimeout: 60000 
+                        confirmTransactionInitialTimeout: 60000 // 60 segundos timeout
                     });
 
                     try {
@@ -1060,20 +1148,15 @@ function initBitsDepositLogic() {
                         });
 
                         if (transferredAmount >= amount) {
-                            await processSuccessfulPayment(signatureRef, foundSignature.signature, amount, transferredAmount, reference, 'qr'); 
+                            await processSuccessfulPayment(signatureRef, foundSignature.signature, amount, transferredAmount, reference, 'qr');
                         } else {
                             status.textContent = `⚠️ Pago detectado pero el monto es incorrecto. Se transfirieron ${transferredAmount} BITS, se esperaban ${amount} BITS.`;
-                            console.warn("Monto de la transacción no coincide.", { 
-                                expected: amount, 
-                                actual: transferredAmount 
-                            });
                         }
 
                     } catch (confirmationError) {
                         console.warn("Error en confirmación, verificando estado de la transacción:", confirmationError);
-                        
                         if (confirmationError.message.includes('timeout') || confirmationError.message.includes('not confirmed')) {
-                            await handleUnconfirmedTransaction(connection, foundSignature.signature, signatureRef, amount, reference, 'qr'); 
+                            await handleUnconfirmedTransaction(connection, foundSignature.signature, signatureRef, amount, reference, 'qr');
                         } else {
                             throw confirmationError;
                         }
@@ -1084,10 +1167,10 @@ function initBitsDepositLogic() {
                 console.error("Error durante el sondeo de QR:", err);
                 status.textContent = `❌ Error: ${err.message}`;
             }
-        }, 5000); 
+        }, 5000); // Verificar cada 5 segundos
     }
 
-    async function handleUnconfirmedTransaction(connection, signature, signatureRef, amount, reference, method) { 
+    async function handleUnconfirmedTransaction(connection, signature, signatureRef, amount, reference, method) {
         status.textContent = "⏳ La transacción está tomando más tiempo de lo esperado. Verificando estado...";
         
         try {
@@ -1101,18 +1184,17 @@ function initBitsDepositLogic() {
                 });
                 
                 if (txDetailsFinalized && !txDetailsFinalized.meta?.err) {
-                    await processSuccessfulPayment(signatureRef, signature, amount, amount, reference, "finalized", method); 
+                    await processSuccessfulPayment(signatureRef, signature, amount, amount, reference, "finalized", method);
                     return;
                 }
                 
                 status.innerHTML = `⏳ Transacción pendiente. <a href="https://solscan.io/tx/${signature}" target="_blank" class="text-purple-400 underline">Ver en explorador</a>. Se verificará automáticamente.`;
-                
-                continueBackgroundVerification(signature, amount, reference, method); 
+                continueBackgroundVerification(signature, amount, reference, method);
                 return;
             }
             
             if (!txDetails.meta?.err) {
-                await processSuccessfulPayment(signatureRef, signature, amount, amount, reference, "confirmed", method); 
+                await processSuccessfulPayment(signatureRef, signature, amount, amount, reference, "confirmed", method);
             } else {
                 throw new Error("Transacción fallida: " + JSON.stringify(txDetails.meta.err));
             }
@@ -1123,7 +1205,7 @@ function initBitsDepositLogic() {
         }
     }
 
-    async function continueBackgroundVerification(signature, amount, reference, method) { 
+    async function continueBackgroundVerification(signature, amount, reference, method) {
         const backgroundInterval = setInterval(async () => {
             try {
                 const connection = new solanaWeb3.Connection(SOLANA_RPC_URL, {
@@ -1137,20 +1219,45 @@ function initBitsDepositLogic() {
                     clearInterval(backgroundInterval);
                     
                     const signatureRef = doc(db, "users", currentUser.walletAddress, "usedSignatures", signature);
-                    await processSuccessfulPayment(signatureRef, signature, amount, amount, reference, "finalized (background)", method); 
+                    await processSuccessfulPayment(signatureRef, signature, amount, amount, reference, "finalized (background)", method);
                     
                     showToast(`¡Transacción confirmada! Se añadieron ${amount} BITS a tu cuenta.`);
                 }
             } catch (error) {
                 console.log("Verificación en segundo plano:", error.message);
             }
-        }, 10000); 
+        }, 10000); // Verificar cada 10 segundos
     }
 
-    async function processSuccessfulPayment(signatureRef, signature, expectedAmount, actualAmount, reference, confirmationType = "confirmed", method = 'unknown') { 
+    async function processSuccessfulPayment(signatureRef, signature, expectedAmount, actualAmount, reference, confirmationType = "confirmed", method = 'unknown') {
+        
+        // --- ¡FIX AÑADIDO! ---
+        // 1. Poner un 'flag' global de que estamos procesando esta firma
+        if (window['processing_' + signature]) {
+            console.log("Prevención de duplicado: 'processSuccessfulPayment' ya se está ejecutando para esta firma.");
+            return;
+        }
+        window['processing_' + signature] = true;
+
+        // 2. Comprobar en la BD *justo antes* de escribir
+        try {
+            const docSnap = await getDoc(signatureRef);
+            if (docSnap.exists()) {
+                console.log("Prevención de duplicado: La firma ya existe en Firestore.");
+                window['processing_' + signature] = false; // Limpiar flag
+                return;
+            }
+        } catch (e) {
+            console.error("Error comprobando firma antes de procesar:", e);
+            window['processing_' + signature] = false; // Limpiar flag
+            return; // No continuar si no podemos verificar
+        }
+        // --- FIN DEL FIX ---
+        
         status.textContent = `✅ ¡Transacción ${confirmationType}! Actualizando saldo...`;
         
         try {
+            // Marcar la transacción como procesada
             await setDoc(signatureRef, {
                 processedAt: serverTimestamp(),
                 amount: actualAmount,
@@ -1160,6 +1267,7 @@ function initBitsDepositLogic() {
                 signature: signature
             });
 
+            // Actualizar el balance del usuario usando increment
             const userRef = doc(db, "users", currentUser.walletAddress);
             await updateDoc(userRef, { 
                 bitBalance: increment(expectedAmount) 
@@ -1183,6 +1291,8 @@ function initBitsDepositLogic() {
             console.error("Error actualizando Firebase:", firebaseError);
             status.textContent = "❌ Error al actualizar el balance. Contacta con soporte.";
             showToast("Error al actualizar el balance. Contacta con soporte.", true);
+        } finally {
+            window['processing_' + signature] = false; // Limpiar flag al finalizar
         }
     }
 
@@ -1195,7 +1305,7 @@ function initBitsDepositLogic() {
         const payButton = document.createElement("button");
         payButton.id = "solana-pay-button";
         payButton.type = "button"; 
-        payButton.className = "w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-2 mb-4"; 
+        payButton.className = "w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-2 mb-4";
         payButton.innerHTML = `
             <i data-lucide="wallet" class="w-5 h-5"></i>
             <span>Pagar ${amount} BITS </span>
@@ -1255,11 +1365,8 @@ function initBitsDepositLogic() {
                 img.src = dataUrl;
                 img.classList.remove("hidden");
                 requestAnimationFrame(() => img.classList.add("opacity-100"));
-                
                 makeQRClickeable(img, solanaPayUrl);
-                
                 createSolanaPayButton(solanaPayUrl, amount, reference);
-                
                 startQrPolling(reference, amount, solanaPayUrl);
             } else {
                 status.textContent = "❌ Error al generar QR.";
@@ -1297,7 +1404,7 @@ function initBitsDepositLogic() {
             const connection = new solanaWeb3.Connection(SOLANA_RPC_URL, {
                 commitment: 'confirmed',
                 httpHeaders: { 'x-api-key': TATUM_API_KEY },
-                confirmTransactionInitialTimeout: 60000 
+                confirmTransactionInitialTimeout: 60000 // 60 segundos timeout
             });
             const fromWallet = new solanaWeb3.PublicKey(currentUser.walletAddress);
             const toWallet = new solanaWeb3.PublicKey(RECIPIENT_WALLET);
@@ -1314,7 +1421,6 @@ function initBitsDepositLogic() {
             
             status.textContent = "Creando transacción...";
             const toAta = await splToken.getAssociatedTokenAddress(mint, toWallet);
-
             const reference = `LP${Date.now()}${Math.random().toString(36).substring(2, 8)}`;
             
             const transaction = new solanaWeb3.Transaction().add(
@@ -1354,14 +1460,14 @@ function initBitsDepositLogic() {
                     amount,
                     reference,
                     'phantom',
-                    'phantom' 
+                    'phantom'
                 );
 
             } catch (confirmationError) {
                 console.warn("Error en confirmación Phantom:", confirmationError);
                 await handleUnconfirmedTransaction(connection, signature, 
                     doc(db, "users", currentUser.walletAddress, "usedSignatures", signature),
-                    amount, reference, 'phantom' 
+                    amount, reference, 'phantom'
                 );
             }
 
@@ -1409,6 +1515,9 @@ function initBitsDepositLogic() {
         async function renderWatchStreamPage(streamerWallet) {
             currentPageRender = () => renderWatchStreamPage(streamerWallet);
             mainContent.classList.add('!p-0', 'md:!p-0', '!overflow-hidden');
+            // Quitar el padding que añade renderPage
+            mainContent.innerHTML = `<div class="animate-slide-in"></div>`;
+            mainContent.firstChild.innerHTML = ''; 
 
             const streamerDoc = await getDoc(doc(db, "users", streamerWallet));
             const streamerData = streamerDoc.exists() ? streamerDoc.data() : { profilePicture: '', followersCount: 0, username: 'Streamer' };
@@ -1455,7 +1564,7 @@ function initBitsDepositLogic() {
                     </div>
                 </div>
             </div>`;
-            mainContent.innerHTML = watchHTML;
+            mainContent.firstChild.innerHTML = watchHTML;
             setLanguage(currentLang);
             lucide.createIcons();
             updateHeaderButtons(true);
@@ -1497,7 +1606,13 @@ function initBitsDepositLogic() {
                         } else {
                             const isSub = currentUser && (await getDoc(doc(db, "users", streamerWallet, "subscribers", msg.userWallet))).exists();
                             msgEl.className = 'text-sm';
-                            msgEl.innerHTML = `<p>${isSub ? '<svg class="member-badge" viewBox="0 0 24 24" fill="gold"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path></svg>' : ''}<strong class="font-semibold" style="color: ${msg.userColor || '#FFFFFF'}">${msg.userName}:</strong> ${msg.text}</p>`;
+                            
+                            // Comprobar si es mensaje de sistema (MOD)
+                            if (msg.userWallet === 'system') {
+                                msgEl.innerHTML = `<p><strong class="font-semibold" style="color: ${msg.userColor || '#FF0000'}">${msg.userName}:</strong> ${msg.text}</p>`;
+                            } else {
+                                msgEl.innerHTML = `<p>${isSub ? '<svg class="member-badge" viewBox="0 0 24 24" fill="gold"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path></svg>' : ''}<strong class="font-semibold" style="color: ${msg.userColor || '#FFFFFF'}">${msg.userName}:</strong> ${msg.text}</p>`;
+                            }
                         }
                         chatMessages.appendChild(msgEl);
                     }
@@ -1505,7 +1620,7 @@ function initBitsDepositLogic() {
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             });
             
-            if(chatForm) chatForm.addEventListener('submit', async (e) => { 
+            if(chatForm) chatForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 if (!requireAuth()) return;
                 
@@ -1538,7 +1653,6 @@ function initBitsDepositLogic() {
         
         function cleanupWatchPage() {
             mainContent.classList.remove('!p-0', 'md:!p-0', '!overflow-hidden');
-            mainContent.classList.add('p-4', 'md:p-8');
             if (unsubscribeChat) unsubscribeChat();
             if (unsubscribeStream) unsubscribeStream();
             if (viewerPeerConnection) {
@@ -1547,7 +1661,8 @@ function initBitsDepositLogic() {
             }
             if(adInterval) clearInterval(adInterval);
             if(window.depositPollingInterval) clearInterval(window.depositPollingInterval);
-            if (carouselInterval) clearInterval(carouselInterval); // AÑADIDO
+            if (carouselInterval) clearInterval(carouselInterval);
+            carouselInterval = null;
             adInterval = null;
             unsubscribeChat = null;
             unsubscribeStream = null;
@@ -1791,7 +1906,7 @@ function initBitsDepositLogic() {
             }
             subBtn.onclick = async () => {
                 if (!requireAuth()) return;
-                const subscriptionCost = 100; 
+                const subscriptionCost = 100; // Definido
                 if (currentUser.bitBalance < subscriptionCost) return showToast(translations[currentLang].insufficient_bits_subscribe);
                 loader.classList.remove('hidden');
                 try {
@@ -1807,7 +1922,7 @@ function initBitsDepositLogic() {
                         t.update(streamerUserRef, { creatorRewardsBalance: increment(subscriptionCost) });
                         t.set(subRef, { subscribedAt: serverTimestamp(), expiresAt: 'never' });
                         
-                        const txTime = serverTimestamp(); 
+                        const txTime = serverTimestamp();
                         const txColBuyer = collection(db, "users", currentUser.walletAddress, "transactions");
                         t.set(doc(txColBuyer), {
                             type: 'subscription_purchase',
@@ -1990,8 +2105,13 @@ function initBitsDepositLogic() {
                                 msgEl.className = 'super-chat text-xs'; 
                                 msgEl.innerHTML = `<div class="flex items-center gap-1 mb-1"><img src="${msg.vipEmoji.url}" class="w-6 h-6"><div class="font-bold">${userNameBtn} ${translations[currentLang].sent} ${msg.vipEmoji.price} BIT</div></div><p>${msg.text}</p>`;
                             } else { 
-                                msgEl.className = 'text-xs p-1'; 
-                                msgEl.innerHTML = `${userNameBtn}: ${msg.text}`; 
+                                msgEl.className = 'text-xs p-1';
+                                // Mensaje de sistema (MOD)
+                                if (msg.userWallet === 'system') {
+                                     msgEl.innerHTML = `<p><strong class="font-semibold" style="color: ${msg.userColor || '#FF0000'}">${msg.userName}:</strong> ${msg.text}</p>`;
+                                } else {
+                                     msgEl.innerHTML = `${userNameBtn}: ${msg.text}`; 
+                                }
                             }
                             studioChatMessages.appendChild(msgEl);
                         }
@@ -2007,7 +2127,7 @@ function initBitsDepositLogic() {
                     const currentMinutes = Math.floor((Date.now() - startTime) / 60000);
                     if (currentMinutes >= lastRewardTimeInMinutes + REWARD_INTERVAL_MINUTES) {
                         lastRewardTimeInMinutes += REWARD_INTERVAL_MINUTES;
-                        const amount = REWARD_AMOUNT; 
+                        const amount = REWARD_AMOUNT;
                         
                         await runTransaction(db, async (t) => {
                             const userRef = doc(db, "users", currentUser.walletAddress);
@@ -2099,30 +2219,16 @@ function initBitsDepositLogic() {
         
         function setupModModalListeners() {
             if (!modModal) return;
-
-            modModal.addEventListener('click', (e) => {
-                if (e.target === modModal) {
-                    hideModModal();
-                }
-            });
-            
+            modModal.addEventListener('click', (e) => { if (e.target === modModal) hideModModal(); });
             modModalCancel.addEventListener('click', hideModModal);
-            
             modModalContent.addEventListener('click', (e) => {
                 const actionBtn = e.target.closest('.mod-action-btn');
                 if (actionBtn) {
                     const durationStr = actionBtn.dataset.duration;
                     let durationMinutes = 0;
-                    
-                    if (durationStr === 'perma') {
-                        durationMinutes = null; 
-                    } else {
-                        durationMinutes = parseInt(durationStr, 10);
-                    }
-                    
-                    if (modModalTargetUser.wallet) {
-                        banUser(currentUser.walletAddress, modModalTargetUser.wallet, modModalTargetUser.name, durationMinutes);
-                    }
+                    if (durationStr === 'perma') durationMinutes = null;
+                    else durationMinutes = parseInt(durationStr, 10);
+                    if (modModalTargetUser.wallet) banUser(currentUser.walletAddress, modModalTargetUser.wallet, modModalTargetUser.name, durationMinutes);
                     hideModModal();
                 }
             });
@@ -2130,16 +2236,13 @@ function initBitsDepositLogic() {
         
         function showModModal(userWallet, userName) {
             if (!modModal || !modModalUsername) return;
-            
             if (userWallet === currentUser.walletAddress) return;
-            
             modModalTargetUser = { wallet: userWallet, name: userName };
             modModalUsername.textContent = `Baneando a: ${userName}`;
-            
             modModal.classList.remove('hidden');
             setTimeout(() => {
                 modModal.classList.remove('opacity-0', 'scale-95');
-                modModalContent.classList.remove('scale-100'); 
+                modModalContent.classList.remove('scale-100');
                 modModalContent.classList.add('scale-100');
             }, 10);
         }
@@ -2158,15 +2261,14 @@ function initBitsDepositLogic() {
             if (!streamerWallet || !bannedUserWallet) return;
             
             const banRef = doc(db, 'streams', streamerWallet, 'bans', bannedUserWallet);
-            let expiresAt = null;
-            let banMessage = '';
+            let expiresAt = null, banMessage = '';
             
             if (durationMinutes === null) {
                 expiresAt = null;
                 banMessage = `Usuario ${bannedUserName} ha sido baneado permanentemente.`;
             } else {
                 const expiresDate = new Date(Date.now() + durationMinutes * 60 * 1000);
-                expiresAt = expiresDate; 
+                expiresAt = expiresDate;
                 banMessage = `Usuario ${bannedUserName} ha sido baneado por ${durationMinutes} minuto(s).`;
             }
             
@@ -2184,7 +2286,7 @@ function initBitsDepositLogic() {
                     text: `[MOD] ${banMessage}`,
                     userName: 'Sistema',
                     userWallet: 'system',
-                    userColor: '#FFD700', 
+                    userColor: '#FF0000', // Color Rojo
                     createdAt: serverTimestamp()
                 });
                 
