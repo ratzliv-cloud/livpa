@@ -28,8 +28,8 @@
             --text-primary: #EAEAEA;
             --text-secondary: #A0A0B0;
         }
-        html.dark {
-            color-scheme: dark;
+        html {
+             scroll-behavior: smooth;
         }
         body {
             font-family: 'Inter', sans-serif;
@@ -84,6 +84,10 @@
             border-radius: 0.5rem;
             margin: 0.5rem 0;
         }
+        .category-card img {
+            aspect-ratio: 3 / 4;
+            object-fit: cover;
+        }
         
         /* Estilos para el modal de moderación */
         #mod-modal {
@@ -93,140 +97,83 @@
             transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
-        /* --- ESTILOS NUEVOS: Carrusel Cover Flow --- */
-        .cover-carousel-container {
+        /* --- NUEVO: Estilos del Carrusel --- */
+        .carousel-container {
             position: relative;
-            width: 100%;
-            margin-bottom: 2rem;
         }
-        .cover-carousel {
-            display: flex;
-            overflow-x: auto;
-            scroll-snap-type: x mandatory;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none;  /* IE */
-        }
-        .cover-carousel::-webkit-scrollbar { display: none; }
-        
-        .cover-carousel-item {
-            flex: 0 0 90%; /* En móvil, 90% del ancho */
-            scroll-snap-align: center;
-            margin: 0 0.5rem;
-            opacity: 0.5;
-            transform: scale(0.9);
-            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-        }
-
-        .cover-carousel-item-inner {
-            background-color: var(--background-secondary);
-            border-radius: 0.75rem;
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-            transition: border-color 0.3s;
-        }
-
-        /* Centrado y grande */
-        .cover-carousel-item.is-snapped {
-            opacity: 1;
-            transform: scale(1);
-        }
-        .cover-carousel-item.is-snapped .cover-carousel-item-inner {
-             border-color: var(--brand-color-purple);
-        }
-        
-        @media (min-width: 768px) {
-            .cover-carousel-item {
-                flex-basis: 60%; /* En PC, 60% del ancho */
-                margin: 0 1rem;
-            }
-        }
-
-        .carousel-fade {
+        .carousel-mask {
             position: absolute;
             top: 0;
             bottom: 0;
-            width: 40px;
-            pointer-events: none;
-            z-index: 2;
+            width: 100px;
+            z-index: 10;
+            pointer-events: none; /* Permite hacer clic a través del degradado */
         }
-        .carousel-fade-left {
+        .carousel-mask.left {
             left: 0;
             background: linear-gradient(to right, var(--background-primary), transparent);
         }
-        .carousel-fade-right {
+        .carousel-mask.right {
             right: 0;
             background: linear-gradient(to left, var(--background-primary), transparent);
         }
-        .carousel-nav-btn {
+        
+        .carousel-track {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            gap: 1.5rem; /* 24px */
+            padding: 0 24px; /* Asegura espacio para ver los elementos laterales */
+            scrollbar-width: none; /* Firefox */
+        }
+        .carousel-track::-webkit-scrollbar {
+            display: none; /* Chrome, Safari */
+        }
+        
+        .carousel-item {
+            scroll-snap-align: center;
+            flex-shrink: 0;
+            width: 90%; /* Más grande en móvil */
+            opacity: 0.5;
+            transform: scale(0.9);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .carousel-item.is-active {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        @media (min-width: 768px) { /* md */
+            .carousel-item {
+                width: 60%; /* Más pequeño en PC para ver más de los lados */
+            }
+        }
+        
+        .carousel-btn {
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            z-index: 3;
-            background-color: rgba(0,0,0,0.5);
-            border-radius: 50%;
-            padding: 0.5rem;
-            color: white;
-            display: none; /* Oculto por defecto, se muestra en PC */
+            z-index: 20;
+            background-color: rgba(20, 20, 24, 0.7);
+            backdrop-filter: blur(4px);
+            border-radius: 9999px;
+            padding: 0.5rem; /* 8px */
+            transition: all 0.2s ease;
         }
-        @media (min-width: 768px) {
-            .carousel-nav-btn { display: block; }
+        .carousel-btn:hover {
+            background-color: var(--background-tertiary);
+            color: var(--brand-color-purple);
         }
-        .carousel-nav-btn:hover { background-color: rgba(0,0,0,0.8); }
-        .carousel-nav-btn.prev { left: 0.5rem; }
-        .carousel-nav-btn.next { right: 0.5rem; }
-        
-        /* --- ESTILOS NUEVOS: Cuadrícula de 2 columnas en móvil --- */
-        .streams-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr); /* 2 columnas en móvil */
-            gap: 1rem; /* Espacio reducido para móvil */
-        }
-        @media (min-width: 640px) {
-            .streams-grid {
-                grid-template-columns: repeat(2, 1fr); /* 2 columnas en sm */
-            }
-        }
-        @media (min-width: 768px) {
-            .streams-grid {
-                grid-template-columns: repeat(3, 1fr); /* 3 columnas en md */
-                gap: 1.5rem;
-            }
-        }
-        @media (min-width: 1024px) {
-            .streams-grid {
-                grid-template-columns: repeat(4, 1fr); /* 4 columnas en lg */
-            }
-        }
-        @media (min-width: 1280px) {
-            .streams-grid {
-                grid-template-columns: repeat(5, 1fr); /* 5 columnas en xl */
-            }
-        }
+        .carousel-btn.left { left: 1.5rem; /* 24px */ }
+        .carousel-btn.right { right: 1.5rem; /* 24px */ }
+        /* --- Fin Estilos del Carrusel --- */
 
-        /* Tarjeta de stream más pequeña para la cuadrícula */
-        .stream-card-small .thumbnail {
-            width: 100%;
-            aspect-ratio: 16 / 9; /* Imagen más pequeña */
+        /* --- NUEVO: Estilos Grid Explorar --- */
+        .explore-grid-card img {
+            aspect-ratio: 16 / 9;
             object-fit: cover;
         }
-         .stream-card-small .card-content {
-            padding: 0.75rem; /* Menos padding */
-         }
-         .stream-card-small .streamer-pic {
-             width: 2rem; /* Avatar más pequeño */
-             height: 2rem;
-         }
-         .stream-card-small .card-title {
-             font-size: 0.875rem; /* Texto más pequeño */
-         }
-         .stream-card-small .card-info {
-             font-size: 0.75rem; /* Texto más pequeño */
-         }
-         .stream-card-small .card-category {
-             font-size: 0.65rem; /* Texto más pequeño */
-             padding: 0.125rem 0.375rem;
-         }
         
     </style>
 </head>
@@ -238,21 +185,27 @@
 
         <header class="bg-gradient-to-b from-[#18181c] to-[var(--background-secondary)] h-16 flex items-center justify-between px-4 md:px-6 border-b border-[var(--border-color)] z-20 flex-shrink-0">
             <div class="flex items-center gap-4">
+                <!-- Botón de retroceso (Móvil) -->
                 <button id="back-button" class="hidden p-2 -ml-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--background-tertiary)] md:hidden">
                     <i data-lucide="arrow-left"></i>
                 </button>
+                <!-- Botón de menú (Móvil) -->
                 <button id="mobile-menu-btn" class="md:hidden p-2 -ml-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--background-tertiary)]">
                     <i data-lucide="menu" id="mobile-menu-icon"></i>
                 </button>
+                
+                <!-- Botón colapsar (Desktop) -->
+                <button id="desktop-toggle-btn" class="hidden md:block p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--background-tertiary)]">
+                    <i data-lucide="panel-left" class="w-5 h-5"></i>
+                </button>
+                
                 <a href="#" class="flex items-center nav-action" data-target="explore">
                     <img src="https://i.postimg.cc/50KvH8vD/log-peque.png" alt="Live Payout Logo" class="w-10 h-10 rounded-full">
                 </a>
-                <button id="desktop-toggle-sidebar" class="hidden md:block p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--background-tertiary)]">
-                    <i data-lucide="sidebar-open" id="desktop-toggle-icon"></i>
-                </button>
+                
                 <div class="hidden md:flex items-center gap-2 text-[var(--text-secondary)]">
-                    <a href="#" class="nav-link nav-action px-3 py-2 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-all flex items-center gap-2" data-target="explore" data-key="explore"><i data-lucide="compass"></i><span>Explore</span></a>
-                    <a href="#" class="nav-link nav-action px-3 py-2 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-all flex items-center gap-2" data-target="categories" data-key="categories"><i data-lucide="layout-grid"></i><span>Categories</span></a>
+                    <a href="#" class="nav-link nav-action px-3 py-2 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-all flex items-center gap-2" data-target="explore" data-key="explore"><i data-lucide="compass" class="w-5 h-5"></i><span class="sidebar-text">Explore</span></a>
+                    <a href="#" class="nav-link nav-action px-3 py-2 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-all flex items-center gap-2" data-target="categories" data-key="categories"><i data-lucide="layout-grid" class="w-5 h-5"></i><span class="sidebar-text">Categories</span></a>
                 </div>
             </div>
             <div id="user-profile-area" class="flex items-center gap-2 md:gap-4">
@@ -265,10 +218,10 @@
                 <div class="p-4 border-b border-[var(--border-color)] md:hidden">
                     <a href="#" class="flex items-center gap-2 nav-action" data-target="explore">
                         <img src="https://i.postimg.cc/50KvH8vD/log-peque.png" alt="Live Payout Logo" class="w-8 h-8 rounded-full">
-                        <span class="font-bold text-lg sidebar-text">Live Payout</span>
+                        <span class="font-bold text-lg">Live Payout</span>
                     </a>
                 </div>
-                <nav class="flex flex-col space-y-2 p-4 md:p-4"> <!-- Ajustado padding de md:p-0 a md:p-4 -->
+                <nav class="flex flex-col space-y-2 p-4 md:p-4 md:mt-4">
                     <div class="md:hidden">
                         <a href="#" class="nav-link nav-action flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-colors" data-target="explore" data-key="explore"><i data-lucide="compass" class="w-5 h-5"></i><span class="sidebar-text">Explore</span></a>
                         <a href="#" class="nav-link nav-action flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-colors" data-target="categories" data-key="categories"><i data-lucide="layout-grid" class="w-5 h-5"></i><span class="sidebar-text">Categories</span></a>
@@ -276,7 +229,7 @@
                     </div>
                     <div id="creator-section">
                         <h3 class="px-3 text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider sidebar-text" data-key="creator">Creator</h3>
-                        <a href="#" class="nav-link nav-action flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 bg-[var(--background-tertiary)] border border-[var(--border-color)] hover:border-[var(--brand-color-purple)] hover:shadow-[0_0_15px_rgba(167,139,250,0.4)]" data-target="studio">
+                        <a href="#" class="nav-link nav-action flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 bg-[var(--background-tertiary)] border border-[var(--border-color)] hover:border-[var(--brand-color-purple)] hover:shadow-[0_0_15px_rgba(167,139,250,0.4)] mt-2" data-target="studio">
                             <img src='https://i.postimg.cc/PxTt1gVn/7219b8450aa254b2d47645e0660295c1-icono-o-logotipo-de-camara-de-video.png' class='w-5 h-5 flex-shrink-0' alt='Creator Studio Icon'>
                             <span class="sidebar-text" data-key="creator_studio">Creator Studio</span>
                         </a>
@@ -328,12 +281,12 @@
         <div id="ad-slot" class="w-full max-w-lg h-auto flex items-center justify-center"></div>
     </div>
     
-    <!-- Modal de Moderación (inicialmente oculto) -->
     <div id="mod-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[101] hidden opacity-0 scale-95" role="dialog" aria-modal="true" aria-labelledby="mod-modal-title">
         <div id="mod-modal-content" class="bg-[var(--background-secondary)] p-6 rounded-2xl shadow-2xl w-full max-w-sm border border-[var(--border-color)] transform scale-100">
             <h2 id="mod-modal-title" class="text-xl font-bold mb-2">Moderar Usuario</h2>
             <p class="text-[var(--text-secondary)] mb-4" id="mod-modal-username">Vas a moderar a...</p>
             <div class="grid grid-cols-2 gap-3">
+                <!-- Opciones de ban actualizadas -->
                 <button class="mod-action-btn bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg" data-duration="5">Ban 5 Min</button>
                 <button class="mod-action-btn bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg" data-duration="10">Ban 10 Min</button>
                 <button class="mod-action-btn bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg" data-duration="60">Ban 1 Hora</button>
@@ -369,7 +322,7 @@
         const REWARD_INTERVAL_MINUTES = 5;
         const REWARD_AMOUNT = 3000;
         const WITHDRAWAL_MINIMUM_BIT = 1000000;
-        const BIT_COIN_LOGO_URL = "https://images.pump.fun/coin-image/EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump?variant=600x600&ipfs=bafybeiekzpu4uxvcrbvzmzteiqmia3fe2ana2ttyueqgvxodlhcsbpibre&src=https%3A%F%2Fipfs.io%2Fipfs%2Fbafybeiekzpu4uxvcrbvzmzteiqmia3fe2ana2ttyueqgvxodlhcsbpibre";
+        const BIT_COIN_LOGO_URL = "https://images.pump.fun/coin-image/EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump?variant=600x600&ipfs=bafybeiekzpu4uxvcrbvzmzteiqmia3fe2ana2ttyueqgvxodlhcsbpibre&src=https%3A%2F%2Fipfs.io%2Fipfs%2Fbafybeiekzpu4uxvcrbvzmzteiqmia3fe2ana2ttyueqgvxodlhcsbpibre";
 
         let app, auth, db;
         let currentUser = null;
@@ -379,6 +332,8 @@
         let navigationHistory = [];
         
         let modModalTargetUser = { wallet: null, name: null };
+        
+        // NUEVO: Variable para el carrusel
         let carouselInterval = null;
 
 
@@ -400,7 +355,7 @@
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const mobileMenuIcon = document.getElementById('mobile-menu-icon');
         const backButton = document.getElementById('back-button');
-        const desktopToggleBtn = document.getElementById('desktop-toggle-sidebar');
+        const desktopToggleBtn = document.getElementById('desktop-toggle-btn');
         
         const modModal = document.getElementById('mod-modal');
         const modModalContent = document.getElementById('mod-modal-content');
@@ -636,28 +591,34 @@
                 }
             });
             
+            // Lógica para colapsar/expandir en desktop
             desktopToggleBtn.addEventListener('click', () => {
                 sidebar.classList.toggle('md:w-64');
-                sidebar.classList.toggle('md:w-20');
-                
-                const icon = document.getElementById('desktop-toggle-icon');
-                const isCollapsed = sidebar.classList.contains('md:w-20');
-                
-                icon.setAttribute('data-lucide', isCollapsed ? 'sidebar-close' : 'sidebar-open');
-                lucide.createIcons();
-                
+                sidebar.classList.toggle('md:w-20'); // Ancho colapsado
                 document.querySelectorAll('.sidebar-text').forEach(el => {
-                    el.classList.toggle('md:hidden', isCollapsed);
+                    el.classList.toggle('md:hidden');
                 });
-                document.querySelectorAll('.nav-link[data-target] span').forEach(el => {
-                     el.classList.toggle('md:hidden', isCollapsed);
-                });
+                const icon = sidebar.classList.contains('md:w-20') ? 'panel-right' : 'panel-left';
+                desktopToggleBtn.innerHTML = `<i data-lucide="${icon}" class="w-5 h-5"></i>`;
+                lucide.createIcons();
             });
         }
         
         function updateHeaderButtons(isSubPage) {
             backButton.classList.toggle('hidden', !isSubPage);
             mobileMenuBtn.classList.toggle('hidden', isSubPage);
+            // Ocultar botón de colapsar en sub-páginas
+            desktopToggleBtn.classList.toggle('hidden', isSubPage);
+            if(isSubPage) {
+                // Forzar expansión si estaba colapsada
+                sidebar.classList.add('md:w-64');
+                sidebar.classList.remove('md:w-20');
+                document.querySelectorAll('.sidebar-text').forEach(el => {
+                    el.classList.remove('md:hidden');
+                });
+                desktopToggleBtn.innerHTML = `<i data-lucide="panel-left" class="w-5 h-5"></i>`;
+                lucide.createIcons();
+            }
         }
 
         function setActiveLink(activeTarget) {
@@ -672,49 +633,50 @@
             updateHeaderButtons(isSubPage);
             setLanguage(currentLang);
             lucide.createIcons();
-            if (carouselInterval) clearInterval(carouselInterval);
-            carouselInterval = null;
+            // Limpiar intervalo del carrusel si salimos de la página de explorar
+            if (activeTargetKey !== 'explore' && carouselInterval) {
+                clearInterval(carouselInterval);
+                carouselInterval = null;
+            }
         }
         
-        // Renderizar un stream card para el carrusel grande
-        function renderFeaturedStreamCard(streamDoc, streamIndex) {
+        // Renderizar tarjeta del carrusel (streams destacados)
+        function renderCarouselStreamCard(streamDoc) {
             const stream = streamDoc.data();
             return `
-                <div class="cover-carousel-item" data-index="${streamIndex}">
-                    <div class="cover-carousel-item-inner stream-card" data-streamer-wallet="${streamDoc.id}">
-                        <div class="relative">
-                            <img src="${stream.thumbnailUrl || 'https://placehold.co/800x450/141418/2a2a32?text=En+Vivo'}" class="w-full aspect-video object-cover">
-                            <div class="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md">LIVE</div>
-                            <div class="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-md flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i> ${stream.viewerCount || 0}</div>
-                        </div>
-                        <div class="p-4 flex items-start gap-3">
-                            <img src="${stream.streamerPic}" class="w-10 h-10 rounded-full">
-                            <div>
-                                <h3 class="font-bold text-md truncate">${stream.title}</h3>
-                                <p class="text-sm text-[var(--text-secondary)]">${stream.streamerUsername || stream.streamerWallet.substring(0, 6)}</p>
-                                <span class="text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full mt-1 inline-block">${stream.category}</span>
-                            </div>
+                <div class="carousel-item stream-card group bg-[var(--background-secondary)] rounded-xl overflow-hidden border border-[var(--border-color)] hover:border-[var(--brand-color-purple)] transition-all duration-300 cursor-pointer" data-streamer-wallet="${streamDoc.id}">
+                    <div class="relative">
+                        <img src="${stream.thumbnailUrl || 'https://placehold.co/400x225/141418/2a2a32?text=En+Vivo'}" class="w-full h-auto object-cover aspect-video">
+                        <div class="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md">LIVE</div>
+                        <div class="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-md flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i> ${stream.viewerCount || 0}</div>
+                    </div>
+                    <div class="p-4 flex items-start gap-3">
+                        <img src="${stream.streamerPic}" class="w-10 h-10 rounded-full">
+                        <div>
+                            <h3 class="font-bold text-md truncate">${stream.title}</h3>
+                            <p class="text-sm text-[var(--text-secondary)]">${stream.streamerUsername || stream.streamerWallet.substring(0, 6)}</p>
+                            <span class="text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full mt-1 inline-block">${stream.category}</span>
                         </div>
                     </div>
                 </div>`;
         }
-        
-        // Renderizar un stream card para la cuadrícula pequeña
-        function renderStreamCard(streamDoc) {
+
+        // Renderizar tarjeta de la cuadrícula (streams normales)
+        function renderExploreStreamCard(streamDoc) {
             const stream = streamDoc.data();
             return `
-                <div class="stream-card-small group bg-[var(--background-secondary)] rounded-xl overflow-hidden border border-[var(--border-color)] hover:border-[var(--brand-color-purple)] transition-all transform hover:-translate-y-1 duration-300 cursor-pointer stream-card" data-streamer-wallet="${streamDoc.id}">
+                <div class="stream-card explore-grid-card group bg-[var(--background-secondary)] rounded-xl overflow-hidden border border-[var(--border-color)] hover:border-[var(--brand-color-purple)] transition-all transform hover:-translate-y-1 duration-300 cursor-pointer" data-streamer-wallet="${streamDoc.id}">
                     <div class="relative">
-                        <img src="${stream.thumbnailUrl || 'https://placehold.co/400x225/141418/2a2a32?text=En+Vivo'}" class="thumbnail">
+                        <img src="${stream.thumbnailUrl || 'https://placehold.co/400x225/141418/2a2a32?text=En+Vivo'}" class="w-full h-auto object-cover aspect-video">
                         <div class="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md">LIVE</div>
                         <div class="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-md flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i> ${stream.viewerCount || 0}</div>
                     </div>
-                    <div class="card-content flex items-start gap-2">
-                        <img src="${stream.streamerPic}" class="streamer-pic rounded-full">
+                    <div class="p-3 flex items-start gap-3">
+                        <img src="${stream.streamerPic}" class="w-8 h-8 rounded-full">
                         <div>
-                            <h3 class="card-title font-bold truncate">${stream.title}</h3>
-                            <p class="card-info text-[var(--text-secondary)]">${stream.streamerUsername || stream.streamerWallet.substring(0, 6)}</p>
-                            <span class="card-category bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full mt-1 inline-block">${stream.category}</span>
+                            <h3 class="font-bold text-sm truncate">${stream.title}</h3>
+                            <p class="text-xs text-[var(--text-secondary)]">${stream.streamerUsername || stream.streamerWallet.substring(0, 6)}</p>
+                            <span class="text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full mt-1 inline-block">${stream.category}</span>
                         </div>
                     </div>
                 </div>`;
@@ -728,56 +690,58 @@
             }
             
             const querySnapshot = await getDocs(streamsQuery);
-            let featuredStreamsHTML = '';
-            let remainingStreamsHTML = '';
+            let streamsGridHTML = '';
+            let carouselHTML = '';
             
             if (querySnapshot.empty) {
-                remainingStreamsHTML = `<p class="text-center text-[var(--text-secondary)] col-span-full">${translations[currentLang].no_one_live.replace('%s', category || 'any')}</p>`;
+                streamsGridHTML = `<p class="text-center text-[var(--text-secondary)] col-span-full">${translations[currentLang].no_one_live.replace('%s', category || 'any')}</p>`;
             } else {
                 let streamDocs = querySnapshot.docs;
                 
                 // Ordenar por viewerCount (más vistas)
                 streamDocs.sort((a, b) => (b.data().viewerCount || 0) - (a.data().viewerCount || 0));
                 
-                // Tomar los 5 primeros (o menos) para el carrusel
-                const featuredStreamDocs = streamDocs.slice(0, 5);
-                const remainingStreamDocs = streamDocs.slice(5);
-
-                if (featuredStreamDocs.length > 0) {
-                    featuredStreamsHTML = featuredStreamDocs.map((doc, index) => renderFeaturedStreamCard(doc, index)).join('');
+                // Tomar los 5 primeros para el carrusel (si no es una categoría)
+                let carouselDocs = [];
+                if (!category) {
+                    carouselDocs = streamDocs.splice(0, 5); // Quita los primeros 5
+                    carouselHTML = carouselDocs.map(renderCarouselStreamCard).join('');
                 }
                 
-                if (remainingStreamDocs.length > 0) {
-                    remainingStreamsHTML = remainingStreamDocs.map(doc => renderStreamCard(doc)).join('');
-                } else if (featuredStreamDocs.length === 0) {
-                     remainingStreamsHTML = `<p class="text-center text-[var(--text-secondary)] col-span-full">${translations[currentLang].no_one_live.replace('%s', category || 'any')}</p>`;
+                // Renderizar las tarjetas restantes en la cuadrícula
+                if (streamDocs.length > 0) {
+                    streamsGridHTML = streamDocs.map(renderExploreStreamCard).join('');
+                } else if (carouselDocs.length > 0) {
+                     streamsGridHTML = `<p class="text-center text-[var(--text-secondary)] col-span-full">No hay otros streams en vivo en este momento.</p>`;
+                } else {
+                    streamsGridHTML = `<p class="text-center text-[var(--text-secondary)] col-span-full">${translations[currentLang].no_one_live.replace('%s', category || 'any')}</p>`;
                 }
             }
             
             const title = category ? `Canales en Vivo - ${category}` : translations[currentLang].explore_title;
             
-            const carouselHTML = featuredStreamsHTML ? `
-                <div class="cover-carousel-container">
-                    <div class="cover-carousel" id="featured-streams-carousel">
-                        ${featuredStreamsHTML}
+            const featuredSectionHTML = !category ? `
+                <div class="carousel-container relative mb-8">
+                    <!-- Degradados -->
+                    <div class="carousel-mask left"></div>
+                    <div class="carousel-mask right"></div>
+                    <!-- Track -->
+                    <div id="carousel-track" class="carousel-track">
+                        ${carouselHTML}
                     </div>
-                    <div class="carousel-fade carousel-fade-left"></div>
-                    <div class="carousel-fade carousel-fade-right"></div>
-                    <button class="carousel-nav-btn prev" id="carousel-prev"><i data-lucide="chevron-left"></i></button>
-                    <button class="carousel-nav-btn next" id="carousel-next"><i data-lucide="chevron-right"></i></button>
-                </div>` : '';
-            
+                    <!-- Botones -->
+                    <button id="carousel-prev" class_name="carousel-btn left"><i data-lucide="chevron-left"></i></button>
+                    <button id="carousel-next" class="carousel-btn right"><i data-lucide="chevron-right"></i></button>
+                </div>
+            ` : '';
+
             renderPage(`
-                ${carouselHTML}
+                ${featuredSectionHTML}
                 <h1 class="text-3xl font-bold mb-6" data-key="explore_title">${title}</h1>
-                <div class="streams-grid">
-                    ${remainingStreamsHTML}
+                <div id="streams-grid" class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    ${streamsGridHTML}
                 </div>`, 'explore');
             
-            if (featuredStreamsHTML) {
-                setupCarousel();
-            }
-
             document.querySelectorAll('.stream-card').forEach(card => {
                 card.addEventListener('click', () => {
                     navigationHistory.push(currentPageRender);
@@ -785,56 +749,93 @@
                     renderWatchStreamPage(streamerWallet);
                 });
             });
+            
+            // Lógica del carrusel solo si existe
+            if (!category) {
+                setupCarousel();
+            }
         }
         
         function setupCarousel() {
-            const carousel = document.getElementById('featured-streams-carousel');
-            if (!carousel) return;
-            const items = carousel.querySelectorAll('.cover-carousel-item');
-            if (items.length === 0) return;
-
+            const track = document.getElementById('carousel-track');
             const prevBtn = document.getElementById('carousel-prev');
             const nextBtn = document.getElementById('carousel-next');
+            
+            if (!track || !prevBtn || !nextBtn) return;
+            
+            const items = track.querySelectorAll('.carousel-item');
+            if (items.length === 0) {
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+                return;
+            }
 
-            const snapLogic = () => {
-                const scrollLeft = carousel.scrollLeft;
-                const carouselWidth = carousel.clientWidth;
-                
-                items.forEach(item => {
-                    const itemLeft = item.offsetLeft - carousel.offsetLeft;
-                    const itemWidth = item.clientWidth;
-                    const itemCenter = itemLeft + itemWidth / 2;
-                    const screenCenter = scrollLeft + carouselWidth / 2;
-                    
-                    if (Math.abs(itemCenter - screenCenter) < itemWidth / 2) {
-                        item.classList.add('is-snapped');
-                    } else {
-                        item.classList.remove('is-snapped');
-                    }
+            let currentIndex = 0;
+
+            function updateCarousel() {
+                if (items.length === 0) return;
+                const itemWidth = items[0].offsetWidth;
+                const gap = 24; // 1.5rem
+                track.scrollTo({
+                    left: (itemWidth + gap) * currentIndex,
+                    behavior: 'smooth'
                 });
-            };
-            
-            carousel.addEventListener('scroll', snapLogic);
-            snapLogic(); // Run on init
-            
-            const scrollBy = (direction) => {
-                const currentItem = carousel.querySelector('.is-snapped') || items[0];
-                let targetIndex = parseInt(currentItem.dataset.index);
                 
-                if (direction === 'next') {
-                    targetIndex = (targetIndex + 1) % items.length;
-                } else {
-                    targetIndex = (targetIndex - 1 + items.length) % items.length;
-                }
-                
-                items[targetIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-            };
+                // Actualizar clases 'is-active'
+                items.forEach((item, index) => {
+                    item.classList.toggle('is-active', index === currentIndex);
+                });
+            }
 
-            prevBtn.addEventListener('click', () => scrollBy('prev'));
-            nextBtn.addEventListener('click', () => scrollBy('next'));
+            function slideNext() {
+                currentIndex = (currentIndex + 1) % items.length;
+                updateCarousel();
+            }
+
+            function slidePrev() {
+                currentIndex = (currentIndex - 1 + items.length) % items.length;
+                updateCarousel();
+            }
+
+            nextBtn.addEventListener('click', () => {
+                slideNext();
+                resetCarouselInterval();
+            });
             
-            if (carouselInterval) clearInterval(carouselInterval);
-            carouselInterval = setInterval(() => scrollBy('next'), 5000);
+            prevBtn.addEventListener('click', () => {
+                slidePrev();
+                resetCarouselInterval();
+            });
+
+            // Auto-scroll
+            function resetCarouselInterval() {
+                if (carouselInterval) clearInterval(carouselInterval);
+                carouselInterval = setInterval(slideNext, 5000);
+            }
+
+            // Snap scrolling manual
+            track.addEventListener('scroll', () => {
+                const itemWidth = items[0].offsetWidth;
+                const gap = 24;
+                const scrollLeft = track.scrollLeft;
+                const newIndex = Math.round(scrollLeft / (itemWidth + gap));
+                
+                if (newIndex !== currentIndex) {
+                    currentIndex = newIndex;
+                     // Actualizar clases 'is-active'
+                    items.forEach((item, index) => {
+                        item.classList.toggle('is-active', index === currentIndex);
+                    });
+                }
+            });
+            
+            // Pausar en hover
+            track.addEventListener('mouseenter', () => clearInterval(carouselInterval));
+            track.addEventListener('mouseleave', resetCarouselInterval);
+
+            // Iniciar
+            items[0].classList.add('is-active');
+            resetCarouselInterval();
         }
 
         
@@ -842,7 +843,7 @@
             currentPageRender = renderCategoriesPage;
             const categoriesHTML = CATEGORIES.map(cat => `
                 <div class="category-card group bg-[var(--background-secondary)] rounded-xl overflow-hidden border border-[var(--border-color)] hover:border-[var(--brand-color-purple)] transition-all transform hover:-translate-y-1 duration-300 cursor-pointer" data-category="${cat}">
-                    <img src="${CATEGORY_IMAGES[cat] || `https://placehold.co/300x400/141418/2a2a32?text=${cat.replace(' ', '+')}`}" class="w-full h-auto object-cover aspect-[3/4]">
+                    <img src="${CATEGORY_IMAGES[cat] || `https://placehold.co/300x400/141418/2a2a32?text=${cat.replace(' ', '+')}`}" class="w-full h-auto object-cover">
                     <div class="p-4 bg-[var(--background-secondary)]"><h3 class="font-bold text-lg truncate">${cat}</h3></div>
                 </div>`).join('');
             
@@ -884,23 +885,34 @@
                         </div>
                     </div>
                     <div class="lg:col-span-2 space-y-6">
+                        <!-- NUEVO: Contenedor de depósito adaptativo -->
                         <div class="bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)]">
                             <h3 class="font-semibold text-lg mb-4 text-purple-400">Depositar BITS</h3>
-                            <div class="bg-[var(--background-tertiary)] p-6 rounded-lg text-center">
+                            <div id="deposit-container" class="bg-[var(--background-tertiary)] p-6 rounded-lg text-center">
                                 <p class="text-sm text-[var(--text-secondary)] mb-3">Deposita tokens BITS usando Solana Pay o tu wallet Phantom.</p>
+                                
                                 <div class="flex items-center justify-center mb-4 min-h-[144px]">
                                     <img id="solana-qr-img" src="" alt="QR de pago Solana" class="w-36 h-36 rounded-lg border border-[var(--border-color)] hidden opacity-0 transition-opacity duration-300">
                                 </div>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                                
+                                <div class="space-y-3">
                                     <input id="bits-amount" type="number" min="1" step="1" placeholder="Monto en BITS" class="bg-[var(--background-secondary)] p-2 rounded-lg text-center w-full">
-                                    <button id="bits-gen-btn" class="purple-gradient-bg text-white font-semibold py-2 rounded-lg">Generar QR</button>
+                                    
+                                    <!-- Botón solo PC -->
+                                    <button id="bits-gen-btn" class="purple-gradient-bg text-white font-semibold py-2 rounded-lg w-full">Generar QR</button>
+                                    
+                                    <!-- Botón solo Móvil (se rellena por JS) -->
+                                    <div id="solana-pay-button-container"></div>
+
+                                    <!-- Botón solo PC -->
+                                    <button id="phantom-pay-btn" class="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-2 px-4 rounded-lg transition-all flex items-center justify-center gap-2">
+                                        <img src="https://cimg.co/wp-content/uploads/2025/08/19125824/1755608303-phantom-wallet-logo.png" class="w-5 h-5"/> Pagar con Phantom
+                                    </button>
                                 </div>
-                                <button id="phantom-pay-btn" class="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-2 px-4 rounded-lg transition-all flex items-center justify-center gap-2">
-                                    <img src="https://cimg.co/wp-content/uploads/2025/08/19125824/1755608303-phantom-wallet-logo.png" class="w-5 h-5"/> Pagar con Phantom
-                                </button>
                                 <p id="bits-status" class="text-sm text-gray-400 mt-3 h-5">Estado: esperando...</p>
                             </div>
                         </div>
+                        
                         <div class="bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)]">
                             <h3 class="font-semibold text-lg mb-4" data-key="balance_withdrawal">Balance & Withdrawal</h3>
                             <div class="bg-[var(--background-tertiary)] p-6 rounded-lg mb-6">
@@ -914,11 +926,9 @@
                             <div id="withdraw-message" class="text-center text-sm h-5 mt-2"></div>
                         </div>
                         
-                        <!-- Historial de Transacciones -->
                         <div class="bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)]">
                             <h3 class="font-semibold text-lg mb-4" data-key="transaction_history">Historial de Transacciones</h3>
                             <div id="transaction-history-container" class="space-y-3 max-h-96 overflow-y-auto pr-2">
-                                <!-- El historial se cargará aquí dinámicamente -->
                                 <p id="transaction-history-loading" class="text-[var(--text-secondary)] text-sm">Cargando historial...</p>
                             </div>
                         </div>
@@ -942,10 +952,7 @@
             try {
                 const txCollection = collection(db, "users", currentUser.walletAddress, "transactions");
                 await addDoc(txCollection, {
-                    type, // 'deposit', 'withdrawal', 'subscription_purchase', 'subscription_reward', 'vip_emoji_purchase', 'vip_emoji_reward', 'reward_transfer'
-                    amount, // puede ser positivo o negativo
-                    timestamp: serverTimestamp(),
-                    ...details // E.g., { toUser: '...', fromUser: '...', emojiId: '...' }
+                    type, amount, timestamp: serverTimestamp(), ...details 
                 });
             } catch (error) {
                 console.error("Error logging transaction:", error);
@@ -965,7 +972,7 @@
                     return;
                 }
                 
-                container.innerHTML = ''; // Limpiar
+                container.innerHTML = ''; 
                 
                 snapshot.forEach(doc => {
                     const tx = doc.data();
@@ -974,7 +981,7 @@
                     
                     const date = tx.timestamp ? tx.timestamp.toDate().toLocaleString(currentLang.startsWith('es') ? 'es-ES' : 'en-US') : '...';
                     let amountColor = tx.amount > 0 ? 'text-green-400' : 'text-red-400';
-                    if (tx.type === 'reward_transfer' || tx.type === 'stream_reward' || tx.type === 'subscription_reward' || tx.type === 'vip_emoji_reward') amountColor = 'text-purple-400';
+                    if (tx.type === 'reward_transfer') amountColor = 'text-purple-400';
                     
                     let description = translations[currentLang][`tx_${tx.type}`] || tx.type;
                     if (tx.details?.username) {
@@ -1007,8 +1014,29 @@ function initBitsDepositLogic() {
     const img = document.getElementById("solana-qr-img");
     const status = document.getElementById("bits-status");
     const loader = document.getElementById('loader');
+    const solanaPayContainer = document.getElementById("solana-pay-button-container");
 
     if (!btnQR || !btnPhantom || !input || !img || !status) return;
+
+    // --- LÓGICA DE DETECCIÓN MÓVIL/PC ---
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+        btnQR.style.display = 'none';
+        btnPhantom.style.display = 'none';
+        solanaPayContainer.style.display = 'block';
+        // En móvil, actualizar QR y botón verde al escribir
+        input.addEventListener('input', () => generateUI(false));
+        generateUI(false); // Generar UI inicial
+    } else {
+        btnQR.style.display = 'block';
+        btnPhantom.style.display = 'block';
+        solanaPayContainer.style.display = 'none';
+        // En PC, generar con clic
+        btnQR.addEventListener("click", () => generateUI(true));
+    }
+    // --- FIN LÓGICA DETECCIÓN ---
+
 
     const RECIPIENT_WALLET = "6MX2SNsqyFbbwBQhuYngVXUXs4MseEpz3abiyN9pDZfA";
     const TOKEN_MINT_ADDRESS = "EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump";
@@ -1021,8 +1049,8 @@ function initBitsDepositLogic() {
         clearInterval(window.depositPollingInterval);
     }
     
-    // Almacenamiento local de firmas procesadas para evitar duplicados
-    let processingSignatures = new Set();
+    // Variable para evitar procesamiento duplicado
+    let processingSignature = null;
 
     async function startQrPolling(reference, amount, solanaPayUrl) {
         if (window.depositPollingInterval) clearInterval(window.depositPollingInterval);
@@ -1030,7 +1058,7 @@ function initBitsDepositLogic() {
         status.innerHTML = `Escanea el QR para pagar ${amount} BITS. Esperando pago... <div class="w-4 h-4 border-2 border-dashed rounded-full animate-spin inline-block ml-2"></div>`;
         
         let pollCount = 0;
-        const maxPolls = 90; // 7.5 minutos
+        const maxPolls = 90;
 
         window.depositPollingInterval = setInterval(async () => {
             pollCount++;
@@ -1045,15 +1073,9 @@ function initBitsDepositLogic() {
             try {
                 const response = await fetch(SOLANA_RPC_URL, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-api-key': TATUM_API_KEY
-                    },
+                    headers: { 'Content-Type': 'application/json', 'x-api-key': TATUM_API_KEY },
                     body: JSON.stringify({
-                        jsonrpc: '2.0',
-                        id: 1,
-                        method: 'getSignaturesForAddress',
-                        params: [RECIPIENT_WALLET, { limit: 50 }]
+                        jsonrpc: '2.0', id: 1, method: 'getSignaturesForAddress', params: [RECIPIENT_WALLET, { limit: 50 }]
                     })
                 });
 
@@ -1068,23 +1090,14 @@ function initBitsDepositLogic() {
                 if (foundSignature) {
                     console.log("✅ Pago detectado con firma:", foundSignature.signature);
                     
-                    if (processingSignatures.has(foundSignature.signature)) {
-                        console.log("⚠️ Transacción ya en proceso de verificación.");
+                    // --- FIX DUPLICADOS ---
+                    // Si ya estamos procesando esta firma, ignorar este intervalo
+                    if (processingSignature === foundSignature.signature) {
+                        console.log("⚠️ Transacción ya en proceso, ignorando poll.");
                         return;
                     }
-                    processingSignatures.add(foundSignature.signature);
-                    
-                    // Verificar si ya procesamos esta transacción en Firebase
-                    const signatureRef = doc(db, "users", currentUser.walletAddress, "usedSignatures", foundSignature.signature);
-                    const signatureDoc = await getDoc(signatureRef);
-                    
-                    if (signatureDoc.exists()) {
-                        console.log("⚠️ Transacción ya procesada anteriormente en Firebase");
-                        status.textContent = "⚠️ Esta transacción ya fue procesada.";
-                        clearInterval(window.depositPollingInterval);
-                        processingSignatures.delete(foundSignature.signature);
-                        return;
-                    }
+                    processingSignature = foundSignature.signature;
+                    // --- FIN FIX ---
 
                     clearInterval(window.depositPollingInterval);
                     
@@ -1093,7 +1106,7 @@ function initBitsDepositLogic() {
                     const connection = new solanaWeb3.Connection(SOLANA_RPC_URL, {
                         commitment: 'confirmed',
                         httpHeaders: { 'x-api-key': TATUM_API_KEY },
-                        confirmTransactionInitialTimeout: 60000 // 60 segundos timeout
+                        confirmTransactionInitialTimeout: 60000 
                     });
 
                     try {
@@ -1126,21 +1139,23 @@ function initBitsDepositLogic() {
                         const postAmount = postBalances ? parseFloat(postBalances.uiTokenAmount.uiAmount) : 0;
                         const transferredAmount = postAmount - prevAmount;
 
-                        console.log("📊 Análisis de transacción:", { prevAmount, postAmount, transferredAmount, expectedAmount: amount });
+                        console.log("📊 Análisis de transacción:", {
+                            prevAmount, postAmount, transferredAmount, expectedAmount: amount
+                        });
 
                         if (transferredAmount >= amount) {
-                            await processSuccessfulPayment(signatureRef, foundSignature.signature, amount, transferredAmount, reference, 'qr');
+                            await processSuccessfulPayment(foundSignature.signature, amount, transferredAmount, reference, 'qr');
                         } else {
                             status.textContent = `⚠️ Pago detectado pero el monto es incorrecto. Se transfirieron ${transferredAmount} BITS, se esperaban ${amount} BITS.`;
-                            console.warn("Monto de la transacción no coincide.", { expected: amount, actual: transferredAmount });
-                            processingSignatures.delete(foundSignature.signature); // Permitir re-intento si falla
+                            processingSignature = null; // Liberar bloqueo
                         }
 
                     } catch (confirmationError) {
                         console.warn("Error en confirmación, verificando estado de la transacción:", confirmationError);
                         if (confirmationError.message.includes('timeout') || confirmationError.message.includes('not confirmed')) {
-                            await handleUnconfirmedTransaction(connection, foundSignature.signature, signatureRef, amount, reference, 'qr');
+                            await handleUnconfirmedTransaction(connection, foundSignature.signature, amount, reference, 'qr');
                         } else {
+                            processingSignature = null; // Liberar bloqueo
                             throw confirmationError;
                         }
                     }
@@ -1149,30 +1164,36 @@ function initBitsDepositLogic() {
             } catch (err) {
                 console.error("Error durante el sondeo de QR:", err);
                 status.textContent = `❌ Error: ${err.message}`;
-                // No limpiar processingSignatures aquí, podría ser un error temporal
+                processingSignature = null; // Liberar bloqueo
             }
-        }, 5000); // Verificar cada 5 segundos
+        }, 5000);
     }
 
-    async function handleUnconfirmedTransaction(connection, signature, signatureRef, amount, reference, method) {
+    async function handleUnconfirmedTransaction(connection, signature, amount, reference, method) {
         status.textContent = "⏳ La transacción está tomando más tiempo de lo esperado. Verificando estado...";
         
         try {
-            const txDetails = await connection.getTransaction(signature, { commitment: 'confirmed' });
+            const txDetails = await connection.getTransaction(signature, {
+                commitment: 'confirmed'
+            });
             
             if (!txDetails) {
-                const txDetailsFinalized = await connection.getTransaction(signature, { commitment: 'finalized' });
+                const txDetailsFinalized = await connection.getTransaction(signature, {
+                    commitment: 'finalized'
+                });
+                
                 if (txDetailsFinalized && !txDetailsFinalized.meta?.err) {
-                    await processSuccessfulPayment(signatureRef, signature, amount, amount, reference, "finalized", method);
+                    await processSuccessfulPayment(signature, amount, amount, reference, "finalized", method);
                     return;
                 }
+                
                 status.innerHTML = `⏳ Transacción pendiente. <a href="https://solscan.io/tx/${signature}" target="_blank" class="text-purple-400 underline">Ver en explorador</a>. Se verificará automáticamente.`;
                 continueBackgroundVerification(signature, amount, reference, method);
                 return;
             }
             
             if (!txDetails.meta?.err) {
-                await processSuccessfulPayment(signatureRef, signature, amount, amount, reference, "confirmed", method);
+                await processSuccessfulPayment(signature, amount, amount, reference, "confirmed", method);
             } else {
                 throw new Error("Transacción fallida: " + JSON.stringify(txDetails.meta.err));
             }
@@ -1180,7 +1201,7 @@ function initBitsDepositLogic() {
         } catch (verificationError) {
             console.error("Error en verificación de transacción:", verificationError);
             status.innerHTML = `⚠️ No se pudo verificar el estado. <a href="https://solscan.io/tx/${signature}" target="_blank" class="text-purple-400 underline">Verifica manually</a> y contacta soporte si es necesario.`;
-            processingSignatures.delete(signature); // Permitir re-intento si falla
+            processingSignature = null; // Liberar bloqueo
         }
     }
 
@@ -1196,39 +1217,32 @@ function initBitsDepositLogic() {
                 
                 if (txDetails && !txDetails.meta?.err) {
                     clearInterval(backgroundInterval);
-                    const signatureRef = doc(db, "users", currentUser.walletAddress, "usedSignatures", signature);
-                    await processSuccessfulPayment(signatureRef, signature, amount, amount, reference, "finalized (background)", method);
+                    await processSuccessfulPayment(signature, amount, amount, reference, "finalized (background)", method);
                     showToast(`¡Transacción confirmada! Se añadieron ${amount} BITS a tu cuenta.`);
                 }
             } catch (error) {
                 console.log("Verificación en segundo plano:", error.message);
             }
-        }, 10000); // Verificar cada 10 segundos
+        }, 10000);
     }
 
-    async function processSuccessfulPayment(signatureRef, signature, expectedAmount, actualAmount, reference, confirmationType = "confirmed", method = 'unknown') {
+    async function processSuccessfulPayment(signature, expectedAmount, actualAmount, reference, confirmationType = "confirmed", method = 'unknown') {
         
-        // --- ¡CORRECCIÓN CLAVE! ---
-        // Verificar si esta firma ya se está procesando o se procesó.
-        if (processingSignatures.has(signature) && status.textContent.includes('¡Transacción')) {
-             console.log("⚠️ Bloqueo de duplicado: processSuccessfulPayment ya fue llamado para", signature);
-             return;
+        // --- FIX DUPLICADOS: Comprobar ANTES de escribir ---
+        const signatureRef = doc(db, "users", currentUser.walletAddress, "usedSignatures", signature);
+        const signatureDoc = await getDoc(signatureRef);
+        
+        if (signatureDoc.exists()) {
+            console.log("⚠️ Transacción ya procesada anteriormente. Ignorando.");
+            status.textContent = "⚠️ Esta transacción ya fue procesada.";
+            processingSignature = null; // Liberar bloqueo
+            return;
         }
-        processingSignatures.add(signature);
+        // --- FIN FIX ---
         
         status.textContent = `✅ ¡Transacción ${confirmationType}! Actualizando saldo...`;
         
         try {
-            // DOBLE VERIFICACIÓN en Firebase antes de escribir
-            const sigDoc = await getDoc(signatureRef);
-            if (sigDoc.exists()) {
-                console.log("⚠️ Bloqueo de duplicado: La firma ya existe en Firebase.", signature);
-                status.textContent = "✅ Transacción ya acreditada.";
-                processingSignatures.delete(signature);
-                return;
-            }
-
-            // Marcar la transacción como procesada
             await setDoc(signatureRef, {
                 processedAt: serverTimestamp(),
                 amount: actualAmount,
@@ -1238,22 +1252,24 @@ function initBitsDepositLogic() {
                 signature: signature
             });
 
-            // Actualizar el balance del usuario usando increment
             const userRef = doc(db, "users", currentUser.walletAddress);
             await updateDoc(userRef, { 
                 bitBalance: increment(expectedAmount) 
             });
             
-            // Registrar transacción de depósito
             await logTransaction('deposit', expectedAmount, { method: method, signature: signature });
 
             showToast(`¡Se han añadido ${expectedAmount} BITS a tu cuenta!`);
             status.innerHTML = `✅ Depósito exitoso (${confirmationType}). <a href="https://solscan.io/tx/${signature}" target="_blank" class="text-purple-400 underline">Ver en explorador</a>`;
-            document.getElementById("bits-amount").value = '';
-            document.getElementById("solana-qr-img").classList.add("hidden", "opacity-0");
             
-            const payButton = document.getElementById("solana-pay-button");
-            if (payButton) payButton.classList.add("hidden");
+            if (isMobile) {
+                // No limpiar el input en móvil
+            } else {
+                document.getElementById("bits-amount").value = '';
+                document.getElementById("solana-qr-img").classList.add("hidden", "opacity-0");
+                const payButton = document.getElementById("solana-pay-button");
+                if (payButton) payButton.style.display = 'none';
+            }
             
             console.log("✅ Balance actualizado correctamente");
             
@@ -1261,64 +1277,51 @@ function initBitsDepositLogic() {
             console.error("Error actualizando Firebase:", firebaseError);
             status.textContent = "❌ Error al actualizar el balance. Contacta con soporte.";
             showToast("Error al actualizar el balance. Contacta con soporte.", true);
-            // Si falla firebase, borramos el "lock" local para permitir re-intento manual
-            processingSignatures.delete(signature);
-            // Nota: No borramos el doc en usedSignatures, por si el error fue en bitBalance
+        } finally {
+             processingSignature = null; // Liberar bloqueo
         }
-        // No borramos la firma de processingSignatures.
-        // Debe quedar ahí para evitar que CUALQUIER otra llamada (QR o Phantom) la procese.
     }
 
-    function createSolanaPayButton(solanaPayUrl, amount, reference) {
-        const existingButton = document.getElementById("solana-pay-button");
-        if (existingButton) existingButton.remove();
-
-        const payButton = document.createElement("button");
-        payButton.id = "solana-pay-button";
-        payButton.type = "button";
-        payButton.className = "w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-2 mb-4";
+    function createSolanaPayButton(solanaPayUrl, amount) {
+        let payButton = document.getElementById("solana-pay-button");
+        if (!payButton) {
+            payButton = document.createElement("button");
+            payButton.id = "solana-pay-button";
+            payButton.type = "button";
+            // Botón verde/azul como en la imagen
+            payButton.className = "w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-2";
+            
+            payButton.addEventListener("click", function() {
+                window.location.href = solanaPayUrl; // Funciona en móvil y PC (abre pestaña nueva)
+            });
+            
+            solanaPayContainer.appendChild(payButton);
+        }
+        
         payButton.innerHTML = `
             <i data-lucide="wallet" class="w-5 h-5"></i>
-            <span>Pagar ${amount} BITS </span>
-        `;
-
-        payButton.addEventListener("click", function() {
-            if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) {
-                window.location.href = solanaPayUrl;
-            } else {
-                window.open(solanaPayUrl, '_blank');
-            }
-        });
-
-        const gridContainer = document.querySelector('.grid.grid-cols-1.sm\\:grid-cols-2.gap-3.mb-3');
-        if (gridContainer) {
-            gridContainer.parentNode.insertBefore(payButton, gridContainer.nextSibling);
-        } else {
-            const qrButtonContainer = btnQR.parentElement;
-            qrButtonContainer.parentNode.insertBefore(payButton, qrButtonContainer.nextSibling);
-        }
+            <span>Pagar ${amount} BITS</span>`;
+        payButton.style.display = 'flex';
+        
         lucide.createIcons();
     }
 
     function makeQRClickeable(qrElement, solanaPayUrl) {
         qrElement.style.cursor = 'pointer';
         qrElement.title = 'Haz clic para abrir Solana Pay';
-        
-        qrElement.addEventListener('click', function() {
-            if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) {
-                window.location.href = solanaPayUrl;
-            } else {
-                window.open(solanaPayUrl, '_blank');
-            }
-        });
+        qrElement.onclick = () => { window.location.href = solanaPayUrl; };
     }
 
-    btnQR.addEventListener("click", () => {
+    // Función unificada para generar QR y Botón
+    function generateUI(startPoll = false) {
         if (window.depositPollingInterval) clearInterval(window.depositPollingInterval);
         
         const amount = parseFloat(input.value);
         if (!amount || amount <= 0) {
-            status.textContent = "❌ Ingresa un monto válido.";
+            if (startPoll) status.textContent = "❌ Ingresa un monto válido.";
+            img.classList.add("hidden", "opacity-0");
+            const payButton = document.getElementById("solana-pay-button");
+            if (payButton) payButton.style.display = 'none';
             return;
         }
         
@@ -1330,19 +1333,23 @@ function initBitsDepositLogic() {
         const reference = `LP${Date.now()}${Math.random().toString(36).substring(2, 8)}`;
         const solanaPayUrl = `solana:${RECIPIENT_WALLET}?amount=${amount}&spl-token=${TOKEN_MINT_ADDRESS}&memo=${encodeURIComponent(reference)}&label=LivePayout&message=Depósito%20de%20${amount}%20BITS`;
         
-        QRCode.toDataURL(solanaPayUrl, { width: 300, colorDark: "#14F195", colorLight: "#00000000" }, (err, dataUrl) => {
+        QRCode.toDataURL(solanaPayUrl, { width: 300, colorDark: "#FFFFFF", colorLight: "#00000000" }, (err, dataUrl) => {
             if (!err) {
                 img.src = dataUrl;
                 img.classList.remove("hidden");
                 requestAnimationFrame(() => img.classList.add("opacity-100"));
                 makeQRClickeable(img, solanaPayUrl);
-                createSolanaPayButton(solanaPayUrl, amount, reference);
-                startQrPolling(reference, amount, solanaPayUrl);
+                createSolanaPayButton(solanaPayUrl, amount);
+                
+                if (startPoll || isMobile) { // Iniciar polling en PC (al hacer clic) o en Móvil (automáticamente)
+                    startQrPolling(reference, amount, solanaPayUrl);
+                }
             } else {
                 status.textContent = "❌ Error al generar QR.";
             }
         });
-    });
+    }
+
 
     btnPhantom.addEventListener("click", async () => {
         if (window.depositPollingInterval) clearInterval(window.depositPollingInterval);
@@ -1374,7 +1381,7 @@ function initBitsDepositLogic() {
             const connection = new solanaWeb3.Connection(SOLANA_RPC_URL, {
                 commitment: 'confirmed',
                 httpHeaders: { 'x-api-key': TATUM_API_KEY },
-                confirmTransactionInitialTimeout: 60000
+                confirmTransactionInitialTimeout: 60000 
             });
             const fromWallet = new solanaWeb3.PublicKey(currentUser.walletAddress);
             const toWallet = new solanaWeb3.PublicKey(RECIPIENT_WALLET);
@@ -1395,10 +1402,7 @@ function initBitsDepositLogic() {
             
             const transaction = new solanaWeb3.Transaction().add(
                 splToken.createTransferInstruction(
-                    fromAta,
-                    toAta,
-                    fromWallet,
-                    amount * Math.pow(10, TOKEN_DECIMALS)
+                    fromAta, toAta, fromWallet, amount * Math.pow(10, TOKEN_DECIMALS)
                 ),
                 new solanaWeb3.TransactionInstruction({
                     keys: [],
@@ -1414,11 +1418,13 @@ function initBitsDepositLogic() {
             status.textContent = "Por favor, aprueba la transacción en Phantom...";
             const { signature } = await provider.signAndSendTransaction(transaction);
             
-            if (processingSignatures.has(signature)) {
-                 console.log("⚠️ Transacción ya en proceso (Phantom).");
-                 return;
+            // --- FIX DUPLICADOS ---
+            if (processingSignature === signature) {
+                console.log("⚠️ Transacción ya en proceso, ignorando.");
+                return;
             }
-            processingSignatures.add(signature);
+            processingSignature = signature;
+            // --- FIN FIX ---
             
             status.textContent = "Procesando transacción en la red... (puede tomar hasta 60 segundos)";
             
@@ -1430,21 +1436,12 @@ function initBitsDepositLogic() {
                 }
 
                 await processSuccessfulPayment(
-                    doc(db, "users", currentUser.walletAddress, "usedSignatures", signature),
-                    signature,
-                    amount,
-                    amount,
-                    reference,
-                    'phantom',
-                    'phantom'
+                    signature, amount, amount, reference, 'phantom', 'phantom'
                 );
 
             } catch (confirmationError) {
                 console.warn("Error en confirmación Phantom:", confirmationError);
-                await handleUnconfirmedTransaction(connection, signature, 
-                    doc(db, "users", currentUser.walletAddress, "usedSignatures", signature),
-                    amount, reference, 'phantom'
-                );
+                await handleUnconfirmedTransaction(connection, signature, amount, reference, 'phantom');
             }
 
         } catch (error) {
@@ -1453,6 +1450,7 @@ function initBitsDepositLogic() {
                  status.textContent = "❌ Transacción fallida o cancelada.";
                  showToast(error.message || "La transacción fue rechazada o falló.", true);
             }
+            processingSignature = null; // Liberar bloqueo
         } finally {
             loader.classList.add('hidden');
         }
@@ -1556,9 +1554,7 @@ function initBitsDepositLogic() {
             unsubscribeStream = onSnapshot(doc(db, "streams", streamerWallet), (docSnap) => {
                 if (!docSnap.exists()) {
                     showToast(translations[currentLang].stream_ended);
-                    if (currentPageRender === renderWatchStreamPage) { // Evitar doble render si ya estamos navegando
-                         renderExplorePage();
-                    }
+                    renderExplorePage();
                 } else {
                     document.getElementById('stream-title-display').textContent = docSnap.data().title;
                 }
@@ -1581,12 +1577,7 @@ function initBitsDepositLogic() {
                         } else {
                             const isSub = currentUser && (await getDoc(doc(db, "users", streamerWallet, "subscribers", msg.userWallet))).exists();
                             msgEl.className = 'text-sm';
-                            // Mensaje del sistema (MOD)
-                            if (msg.userWallet === 'system') {
-                                msgEl.innerHTML = `<p class="font-bold" style="color: ${msg.userColor || '#FF0000'}">${msg.text}</p>`;
-                            } else {
-                                msgEl.innerHTML = `<p>${isSub ? '<svg class="member-badge" viewBox="0 0 24 24" fill="gold"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path></svg>' : ''}<strong class="font-semibold" style="color: ${msg.userColor || '#FFFFFF'}">${msg.userName}:</strong> ${msg.text}</p>`;
-                            }
+                            msgEl.innerHTML = `<p>${isSub ? '<svg class="member-badge" viewBox="0 0 24 24" fill="gold"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path></svg>' : ''}<strong class="font-semibold" style="color: ${msg.userColor || '#FFFFFF'}">${msg.userName}:</strong> ${msg.text}</p>`;
                         }
                         chatMessages.appendChild(msgEl);
                     }
@@ -1594,7 +1585,7 @@ function initBitsDepositLogic() {
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             });
             
-            if(chatForm) chatForm.addEventListener('submit', async (e) => {
+            if(chatForm) chatForm.addEventListener('submit', async (e) => { 
                 e.preventDefault();
                 if (!requireAuth()) return;
                 
@@ -1636,9 +1627,11 @@ function initBitsDepositLogic() {
             }
             if(adInterval) clearInterval(adInterval);
             if(window.depositPollingInterval) clearInterval(window.depositPollingInterval);
+            if(carouselInterval) clearInterval(carouselInterval); // Limpiar carrusel
             adInterval = null;
             unsubscribeChat = null;
             unsubscribeStream = null;
+            carouselInterval = null;
         }
 
         function renderStudioStream() {
@@ -1879,7 +1872,7 @@ function initBitsDepositLogic() {
             }
             subBtn.onclick = async () => {
                 if (!requireAuth()) return;
-                const subscriptionCost = 100;
+                const subscriptionCost = 100; // Definido
                 if (currentUser.bitBalance < subscriptionCost) return showToast(translations[currentLang].insufficient_bits_subscribe);
                 loader.classList.remove('hidden');
                 try {
@@ -1895,7 +1888,7 @@ function initBitsDepositLogic() {
                         t.update(streamerUserRef, { creatorRewardsBalance: increment(subscriptionCost) });
                         t.set(subRef, { subscribedAt: serverTimestamp(), expiresAt: 'never' });
                         
-                        const txTime = serverTimestamp();
+                        const txTime = serverTimestamp(); 
                         const txColBuyer = collection(db, "users", currentUser.walletAddress, "transactions");
                         t.set(doc(txColBuyer), {
                             type: 'subscription_purchase',
@@ -2078,9 +2071,9 @@ function initBitsDepositLogic() {
                                 msgEl.className = 'super-chat text-xs'; 
                                 msgEl.innerHTML = `<div class="flex items-center gap-1 mb-1"><img src="${msg.vipEmoji.url}" class="w-6 h-6"><div class="font-bold">${userNameBtn} ${translations[currentLang].sent} ${msg.vipEmoji.price} BIT</div></div><p>${msg.text}</p>`;
                             } else if (msg.userWallet === 'system') {
-                                msgEl.className = 'text-xs p-1 font-bold';
-                                msgEl.style.color = msg.userColor || '#FF0000'; // Rojo por defecto
-                                msgEl.innerHTML = msg.text;
+                                // Mensaje de sistema (ban) en rojo
+                                msgEl.className = 'text-xs p-1 font-bold text-red-500';
+                                msgEl.innerHTML = `[${msg.userName}] ${msg.text}`;
                             } else { 
                                 msgEl.className = 'text-xs p-1'; 
                                 msgEl.innerHTML = `${userNameBtn}: ${msg.text}`; 
@@ -2099,7 +2092,7 @@ function initBitsDepositLogic() {
                     const currentMinutes = Math.floor((Date.now() - startTime) / 60000);
                     if (currentMinutes >= lastRewardTimeInMinutes + REWARD_INTERVAL_MINUTES) {
                         lastRewardTimeInMinutes += REWARD_INTERVAL_MINUTES;
-                        const amount = REWARD_AMOUNT;
+                        const amount = REWARD_AMOUNT; 
                         
                         await runTransaction(db, async (t) => {
                             const userRef = doc(db, "users", currentUser.walletAddress);
@@ -2191,16 +2184,30 @@ function initBitsDepositLogic() {
         
         function setupModModalListeners() {
             if (!modModal) return;
-            modModal.addEventListener('click', (e) => { if (e.target === modModal) hideModModal(); });
+
+            modModal.addEventListener('click', (e) => {
+                if (e.target === modModal) {
+                    hideModModal();
+                }
+            });
+            
             modModalCancel.addEventListener('click', hideModModal);
+            
             modModalContent.addEventListener('click', (e) => {
                 const actionBtn = e.target.closest('.mod-action-btn');
                 if (actionBtn) {
                     const durationStr = actionBtn.dataset.duration;
                     let durationMinutes = 0;
-                    if (durationStr === 'perma') durationMinutes = null;
-                    else durationMinutes = parseInt(durationStr, 10);
-                    if (modModalTargetUser.wallet) banUser(currentUser.walletAddress, modModalTargetUser.wallet, modModalTargetUser.name, durationMinutes);
+                    
+                    if (durationStr === 'perma') {
+                        durationMinutes = null; 
+                    } else {
+                        durationMinutes = parseInt(durationStr, 10);
+                    }
+                    
+                    if (modModalTargetUser.wallet) {
+                        banUser(currentUser.walletAddress, modModalTargetUser.wallet, modModalTargetUser.name, durationMinutes);
+                    }
                     hideModModal();
                 }
             });
@@ -2208,9 +2215,12 @@ function initBitsDepositLogic() {
         
         function showModModal(userWallet, userName) {
             if (!modModal || !modModalUsername) return;
+            
             if (userWallet === currentUser.walletAddress) return;
+            
             modModalTargetUser = { wallet: userWallet, name: userName };
             modModalUsername.textContent = `Baneando a: ${userName}`;
+            
             modModal.classList.remove('hidden');
             setTimeout(() => {
                 modModal.classList.remove('opacity-0', 'scale-95');
@@ -2241,7 +2251,7 @@ function initBitsDepositLogic() {
                 banMessage = `Usuario ${bannedUserName} ha sido baneado permanentemente.`;
             } else {
                 const expiresDate = new Date(Date.now() + durationMinutes * 60 * 1000);
-                expiresAt = expiresDate;
+                expiresAt = expiresDate; 
                 banMessage = `Usuario ${bannedUserName} ha sido baneado por ${durationMinutes} minuto(s).`;
             }
             
@@ -2256,10 +2266,10 @@ function initBitsDepositLogic() {
                 
                 const chatRef = collection(db, 'streams', streamerWallet, 'chat');
                 await addDoc(chatRef, {
-                    text: `[MOD] ${banMessage}`,
+                    text: banMessage,
                     userName: 'Sistema',
                     userWallet: 'system',
-                    userColor: '#E53E3E', // Rojo (Tailwind red-600)
+                    userColor: '#FF0000', // Color Rojo
                     createdAt: serverTimestamp()
                 });
                 
