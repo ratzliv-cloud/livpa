@@ -943,6 +943,17 @@
                                 <div class="flex items-center justify-center mb-4 min-h-[144px]">
                                     <img id="solana-qr-img" src="" alt="QR de pago Solana" class="w-36 h-36 rounded-lg border border-[var(--border-color)] hidden opacity-0 transition-opacity duration-300">
                                 </div>
+
+                                <!-- INICIO: SECCIÓN RESTAURADA -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                                    <input id="bits-amount" type="number" min="1" step="1" placeholder="Monto en BITS" class="bg-[var(--background-secondary)] p-2 rounded-lg text-center w-full sm:col-span-1">
+                                    
+                                    <!-- Botón 'Generar QR' solo en PC -->
+                                    <button id="bits-gen-btn" class="purple-gradient-bg text-white font-semibold py-2 rounded-lg ${isMobile ? 'hidden' : ''} sm:col-span-1">
+                                        Generar QR
+                                    </button>
+                                </div>
+                                <!-- FIN: SECCIÓN RESTAURADA -->
                                 
                                 <!-- Botón 'Pagar (Solana Pay)' solo en Móvil. En PC se oculta. -->
                                 <button id="solana-pay-button" class="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-2 mb-4 ${isMobile ? '' : 'hidden'}">
