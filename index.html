@@ -620,13 +620,15 @@
                 }
             });
             
-            // --- NUEVO: Lógica para colapsar sidebar en Desktop ---
+            // --- MODIFICADO: Lógica para colapsar sidebar en Desktop ---
             desktopToggleSidebar.addEventListener('click', () => {
                 isSidebarCollapsed = !isSidebarCollapsed;
                 sidebar.classList.toggle('md:w-64', !isSidebarCollapsed);
                 sidebar.classList.toggle('md:w-20', isSidebarCollapsed); // Ancho colapsado
-                mainContent.classList.toggle('md:ml-64', !isSidebarCollapsed);
-                mainContent.classList.toggle('md:ml-20', isSidebarCollapsed);
+                
+                // --- LÍNEAS ELIMINADAS ---
+                // Se eliminó la lógica que ajustaba mainContent.classList.toggle
+                
                 document.querySelectorAll('.sidebar-text').forEach(el => {
                     el.classList.toggle('md:hidden', isSidebarCollapsed);
                 });
@@ -650,8 +652,10 @@
             if (isSidebarCollapsed) {
                 sidebar.classList.remove('md:w-64');
                 sidebar.classList.add('md:w-20');
-                mainContent.classList.remove('md:ml-64');
-                mainContent.classList.add('md:ml-20');
+                
+                // --- LÍNEAS ELIMINADAS ---
+                // Se eliminó la lógica que ajustaba mainContent
+                
                 document.querySelectorAll('.sidebar-text').forEach(el => el.classList.add('md:hidden'));
                 desktopToggleSidebar.querySelector('i').setAttribute('data-lucide', 'panel-right-close');
                 lucide.createIcons();
@@ -663,7 +667,8 @@
                 sidebar.querySelector('#recommended-channels').previousElementSibling.classList.add('md:text-center');
                 sidebar.querySelector('#creator-section').firstElementChild.classList.add('md:text-center');
             } else {
-                 mainContent.classList.add('md:ml-64'); // Asegurar margen inicial
+                 // --- LÍNEA ELIMINADA ---
+                 // Se eliminó mainContent.classList.add('md:ml-64');
             }
 
 
