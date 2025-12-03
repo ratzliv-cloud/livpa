@@ -298,9 +298,13 @@
                 <span data-key="welcome_to">Welcome to</span> 
                 <span style="color: var(--brand-color-purple);">Live</span><span class="text-white">Payout</span>
             </h1>
-            <p class="text-[var(--text-secondary)] mb-8" data-key="login_prompt">Enter with your public Solana wallet address to start.</p>
+            <!-- MODIFICADO: Mensaje de login actualizado -->
+            <p class="text-[var(--text-secondary)] mb-8" data-key="login_prompt">Enter with your Solana wallet and password.</p>
             <form id="login-form" class="space-y-4">
-                <input type="text" id="wallet-address" placeholder="Ej: 5x...yZ" class="w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-1)] transition-all">
+                <input type="text" id="wallet-address" placeholder="Solana Wallet (Ej: 5x...yZ)" class="w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-1)] transition-all">
+                <!-- AÑADIDO: Campo de contraseña -->
+                <input type="password" id="login-password" placeholder="Password" class="w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-1)] transition-all">
+                
                 <button type="submit" class="w-full purple-gradient-bg text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:btn-glow" data-key="login_button">
                     Enter / Create Account
                 </button>
@@ -341,17 +345,20 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        // MODIFICADO: Importar funciones de email/password
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js"; // Añadido
         import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, addDoc, serverTimestamp, updateDoc, increment, deleteDoc, getDocs, query, where, writeBatch, orderBy, limit, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
+        // MODIFICADO: Nueva Configuración de Firebase solicitada
         const firebaseConfig = {
-            apiKey: "AIzaSyACz8EaihKTwAQHAnNCZJ-k8WxF1BDUOGs",
-            authDomain: "livep-d622a.firebaseapp.com",
-            projectId: "livep-d622a",
-            storageBucket: "livep-d622a.firebasestorage.app",
-            messagingSenderId: "257830156699",
-            appId: "1:257830156699:web:30f1b92479ea035d4ac93e",
-            measurementId: "G-EHBX5PD4G4"
+            apiKey: "AIzaSyCqOTWcQ4uOC851_-j4JBUcENkCa-9xWdE",
+            authDomain: "liveclips-93af8.firebaseapp.com",
+            projectId: "liveclips-93af8",
+            storageBucket: "liveclips-93af8.firebasestorage.app",
+            messagingSenderId: "1075447494440",
+            appId: "1:1075447494440:web:471562928542e95839021d",
+            measurementId: "G-0ZC5V02V76"
         };
         
         const CATEGORIES = ['Just Chatting', 'Crypto Raiders', 'Axie Infinity', 'Star Atlas', 'Decentraland', 'The Sandbox', 'Gods Unchained', 'Music', 'Gaming', 'DeFi'];
@@ -366,7 +373,7 @@
         const WITHDRAWAL_MINIMUM_BIT = 1000000;
         const BIT_COIN_LOGO_URL = "https://images.pump.fun/coin-image/EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump?variant=600x600&ipfs=bafybeiekzpu4uxvcrbvzmzteiqmia3fe2ana2ttyueqgvxodlhcsbpibre&src=https%3A%F%2Fipfs.io%2Fipfs%2Fbafybeiekzpu4uxvcrbvzmzteiqmia3fe2ana2ttyueqgvxodlhcsbpibre";
 
-        let app, auth, db;
+        let app, auth, db, analytics;
         let currentUser = null;
         let unsubscribeUser = null;
         let currentLang = 'en';
@@ -380,12 +387,14 @@
 
         app = initializeApp(firebaseConfig);
         auth = getAuth(app);
+        analytics = getAnalytics(app); // Añadido
         db = getFirestore(app);
         
         const loginModal = document.getElementById('login-modal');
         const appContainer = document.getElementById('app-container');
         const loginForm = document.getElementById('login-form');
         const walletAddressInput = document.getElementById('wallet-address');
+        const passwordInput = document.getElementById('login-password'); // MODIFICADO
         const loginError = document.getElementById('login-error');
         const mainContent = document.getElementById('main-content');
         const userProfileArea = document.getElementById('user-profile-area');
@@ -421,9 +430,19 @@
                 if (storedWallet) {
                     await setupUser(storedWallet);
                 } else {
-                    currentUser = null;
-                    updateUIForAuthState();
-                    loader.classList.add('hidden');
+                    // Si hay auth pero no hay wallet en localstorage (raro), intentamos obtener del email falso
+                    const email = user.email;
+                    if (email && email.includes('@livepayout.app')) {
+                        const walletFromEmail = email.split('@')[0];
+                         localStorage.setItem('walletAddress', walletFromEmail);
+                         await setupUser(walletFromEmail);
+                    } else {
+                        // Si no hay wallet en localstorage ni en el email falso, forzamos logout/login
+                        auth.signOut();
+                        currentUser = null;
+                        updateUIForAuthState();
+                        loader.classList.add('hidden');
+                    }
                 }
             } else {
                 currentUser = null;
@@ -440,40 +459,95 @@
             e.preventDefault();
             loginError.textContent = '';
             const walletAddress = walletAddressInput.value.trim();
+            const password = passwordInput.value.trim(); // Nuevo campo
+            
             if (walletAddress.length < 32 || walletAddress.length > 44) {
                 loginError.textContent = 'Please enter a valid Solana wallet address.';
                 return;
             }
+            if (password.length < 6) {
+                loginError.textContent = 'Password must be at least 6 characters.';
+                return;
+            }
+
             loader.classList.remove('hidden');
+            
+            // Generar email falso para Firebase Auth
+            const fakeEmail = `${walletAddress}@livepayout.app`;
+            
             try {
                 localStorage.setItem('walletAddress', walletAddress);
-                if (!auth.currentUser) {
-                    await signInAnonymously(auth);
-                } else {
-                    await setupUser(walletAddress);
+                
+                try {
+                    // 1. Intentar loguear primero
+                    await signInWithEmailAndPassword(auth, fakeEmail, password);
+                } catch (signInError) {
+                    // 2. Si falla el login, verificar el error
+                    if (signInError.code === 'auth/user-not-found') {
+                        // Intentar registro si el usuario no existe
+                         try {
+                            await createUserWithEmailAndPassword(auth, fakeEmail, password);
+                            // Si se crea con éxito, setupUser se llamará vía onAuthStateChanged
+                        } catch (createError) {
+                            // Este error solo debería ocurrir si el email/wallet está "reservado" pero no completó la creación de usuario.
+                            // Dejamos que el error se propague.
+                            throw createError;
+                        }
+                    } else if (signInError.code === 'auth/wrong-password' || signInError.code === 'auth/invalid-credential') {
+                        // Contraseña incorrecta, devolver un mensaje específico
+                        loginError.textContent = 'Incorrect password or wallet address.';
+                        loader.classList.add('hidden');
+                        localStorage.removeItem('walletAddress');
+                        return;
+                    } else {
+                        throw signInError; // Propagar otros errores de login
+                    }
                 }
+
             } catch (error) {
-                console.error("Login error:", error);
-                loginError.textContent = 'There was an error logging in. Please try again.';
+                console.error("Login/Registration error:", error);
+                loginError.textContent = 'Error logging in: ' + error.message;
                 localStorage.removeItem('walletAddress');
                 loader.classList.add('hidden');
             }
         });
         
+        /**
+         * Ensures a user profile exists in Firestore based on the Solana wallet.
+         * This runs after a successful Firebase Auth login/registration.
+         */
         async function setupUser(wallet) {
             const userRef = doc(db, "users", wallet);
             const userSnap = await getDoc(userRef);
+            
+            // Si el documento de usuario no existe, crearlo.
             if (!userSnap.exists()) {
                 await setDoc(userRef, {
-                    walletAddress: wallet, username: `Wallet...${wallet.substring(wallet.length - 4)}`, profilePicture: `https://placehold.co/128x128/1a1a1a/4ade80?text=${wallet.substring(0,1)}`, bitBalance: 1000, creatorRewardsBalance: 0, createdAt: serverTimestamp(), authUid: auth.currentUser.uid, followersCount: 0, followingCount: 0
+                    walletAddress: wallet, 
+                    username: `Wallet...${wallet.substring(wallet.length - 4)}`, 
+                    profilePicture: `https://placehold.co/128x128/1a1a1a/4ade80?text=${wallet.substring(0,1)}`, 
+                    bitBalance: 1000, 
+                    creatorRewardsBalance: 0, 
+                    createdAt: serverTimestamp(), 
+                    authUid: auth.currentUser.uid, // CRÍTICO: Guardar el UID de Firebase Auth
+                    followersCount: 0, 
+                    followingCount: 0
                 });
             } else {
-                if (!userSnap.data().username) await updateDoc(userRef, { username: `Wallet...${wallet.substring(wallet.length - 4)}` });
-                if (userSnap.data().authUid !== auth.currentUser.uid) await updateDoc(userRef, { authUid: auth.currentUser.uid });
+                // Si existe, asegurar que el authUid esté actualizado
+                if (userSnap.data().authUid !== auth.currentUser.uid) {
+                    await updateDoc(userRef, { authUid: auth.currentUser.uid });
+                }
+                if (!userSnap.data().username) { 
+                    await updateDoc(userRef, { username: `Wallet...${wallet.substring(wallet.length - 4)}` });
+                }
             }
             loadUserProfile(wallet);
         }
 
+        /**
+         * Listens to the user's Firestore profile to keep currentUser state updated.
+         */
         async function loadUserProfile(wallet) {
             if (unsubscribeUser) unsubscribeUser();
             const userRef = doc(db, "users", wallet);
@@ -492,7 +566,7 @@
                         currentPageRender();
                     }
                     renderHeader();
-                } else { logout(); }
+                } else { logout(); } // Si el documento del usuario se elimina, cerrar sesión.
             }, (error) => { console.error("Error listening to user changes:", error); logout(); });
         }
 
@@ -515,12 +589,12 @@
             stopStream();
             if(unsubscribeUser) unsubscribeUser();
             localStorage.removeItem('walletAddress');
+            // Cerrar sesión en Firebase Auth
             if(auth.currentUser) auth.signOut();
-            else {
-                currentUser = null;
-                updateUIForAuthState();
-                renderExplorePage();
-            }
+            
+            currentUser = null;
+            updateUIForAuthState();
+            renderExplorePage();
         }
 
         function renderHeader() {
@@ -756,7 +830,7 @@
                 </div>`;
         }
 
-        // --- MODIFICADO: renderExplorePage (con carrusel + cuadrícula pequeña) ---
+        // --- MODIFICADO: renderExplorePage (con carrusel + cuadrícula pequeña + AUTOPLAY HOVER) ---
         async function renderExplorePage(category = null) {
             currentPageRender = () => renderExplorePage(category);
             let streamsQuery = query(collection(db, "streams"), where("status", "==", "live"));
@@ -820,12 +894,35 @@
                 </div>`, 'explore');
             
             // Event listener para todos los stream cards (carrusel y cuadrícula)
+            // MODIFICADO: Añadida lógica de autoplay al hacer hover/touch
+            let hoverTimer;
             document.querySelectorAll('.stream-card, .stream-card-small').forEach(card => {
+                const streamerWallet = card.dataset.streamerWallet;
+                
+                // Click estándar
                 card.addEventListener('click', () => {
+                    clearTimeout(hoverTimer);
                     navigationHistory.push(currentPageRender);
-                    const streamerWallet = card.dataset.streamerWallet;
                     renderWatchStreamPage(streamerWallet);
                 });
+
+                // Hover (Desktop)
+                card.addEventListener('mouseenter', () => {
+                    if (!isMobile) {
+                        // Navegar tras 800ms de hover
+                        hoverTimer = setTimeout(() => {
+                            navigationHistory.push(currentPageRender);
+                            renderWatchStreamPage(streamerWallet);
+                        }, 800);
+                    }
+                });
+
+                card.addEventListener('mouseleave', () => {
+                    clearTimeout(hoverTimer);
+                });
+                
+                // Touch (Móvil) - Opcional si queremos que el touch también haga "autoplay"
+                // Pero en móvil, el "tap" ya es un click, así que funciona por defecto.
             });
             
             // --- NUEVO: Lógica del Carrusel ---
@@ -1264,7 +1361,7 @@ function initBitsDepositLogic() {
                         }
                         
                         if (txDetails.meta.err) {
-                            throw new Error("La transacción fallió: " + JSON.stringify(txDetails.meta.err));
+                            throw new Error("La transacción falló: " + JSON.stringify(txDetails.meta.err));
                         }
 
                         const postBalances = txDetails.meta.postTokenBalances?.find(tb => 
@@ -1402,6 +1499,7 @@ function initBitsDepositLogic() {
         status.textContent = `✅ ¡Transacción ${confirmationType}! Actualizando saldo...`;
         
         try {
+            // CRÍTICO: Registramos la firma en el sub-documento del usuario para evitar el doble gasto.
             await setDoc(signatureRef, {
                 processedAt: serverTimestamp(),
                 amount: actualAmount,
@@ -1411,6 +1509,7 @@ function initBitsDepositLogic() {
                 signature: signature
             });
 
+            // CRÍTICO: Acreditamos el balance del usuario. Esto funciona gracias a las reglas de seguridad actualizadas.
             const userRef = doc(db, "users", currentUser.walletAddress);
             await updateDoc(userRef, { 
                 bitBalance: increment(expectedAmount) 
@@ -1475,196 +1574,6 @@ function initBitsDepositLogic() {
             }
             tabButtons.forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.target)));
             switchTab('studio-stream');
-        }
-        
-        let unsubscribeChat = null;
-        let unsubscribeStream = null;
-        let viewerPeerConnection = null;
-        async function renderWatchStreamPage(streamerWallet) {
-            currentPageRender = () => renderWatchStreamPage(streamerWallet);
-            mainContent.classList.add('!p-0', 'md:!p-0', '!overflow-hidden');
-
-            const streamerDoc = await getDoc(doc(db, "users", streamerWallet));
-            const streamerData = streamerDoc.exists() ? streamerDoc.data() : { profilePicture: '', followersCount: 0, username: 'Streamer' };
-            
-            const watchHTML = `
-            <div class="w-full h-full flex flex-col lg:flex-row">
-                <!-- Top section (scrollable): Video + info -->
-                <div class="flex-1 lg:p-8 p-4 overflow-y-auto">
-                    <div class="flex flex-col gap-4 max-w-4xl mx-auto">
-                         <div id="video-container" class="relative w-full aspect-video bg-black rounded-lg flex items-center justify-center flex-shrink-0">
-                            <div id="video-overlay" class="absolute inset-0 flex items-center justify-center text-white text-xl z-10" data-key="connecting_stream">Connecting to stream...</div>
-                            <video id="remote-video" autoplay playsinline class="w-full h-full object-contain opacity-0 transition-opacity duration-500"></video>
-                        </div>
-                        <div id="stream-info-panel">
-                            <div class="bg-[var(--background-secondary)] p-4 rounded-lg border border-[var(--border-color)] flex flex-col sm:flex-row justify-between items-center gap-4">
-                                <div class="flex items-center gap-4">
-                                    <h2 id="stream-title-display" class="font-bold text-lg">Loading...</h2>
-                                    <p class="text-sm text-[var(--text-secondary)]">${streamerData.username} | ${streamerData.followersCount || 0} <span data-key="followers">followers</span></p>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-2 mt-2">
-                                <button id="follow-btn" class="font-bold py-2 px-6 rounded-lg transition-all h-11 flex-1 bg-gray-800 text-center"></button>
-                                <button id="subscribe-btn" class="purple-gradient-bg hover:opacity-90 text-white font-bold py-2 px-6 rounded-lg flex items-center justify-center gap-2 h-11 flex-1">
-                                    <i data-lucide="star" class="w-4 h-4"></i> <span data-key="subscribe">Subscribe</span> (100 BIT)
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Bottom section (fixed height on mobile): Chat -->
-                <div class="w-full lg:w-80 lg:max-h-full flex-shrink-0 bg-[var(--background-secondary)] lg:rounded-lg p-4 flex flex-col border-t lg:border-l lg:border-t-0 border-[var(--border-color)] h-1/2 lg:h-auto">
-                    <h3 class="font-bold text-lg mb-2 flex-shrink-0" data-key="live_chat">Live Chat</h3>
-                    <div id="chat-messages" class="flex-grow space-y-2 overflow-y-auto pr-2 min-h-0"></div>
-                    <div id="chat-input-container" class="flex-shrink-0 relative mt-auto pt-4" style="padding-bottom: env(safe-area-inset-bottom);">
-                         <div id="vip-emoji-panel" class="hidden absolute bottom-full mb-2 left-0 w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg p-2 grid grid-cols-5 gap-2">
-                           ${VIP_EMOJIS.map(e => `<button class="vip-emoji-btn group" data-emoji-id="${e.id}"><img src="${e.url}" class="w-10 h-10 transition-transform group-hover:scale-110"><div class="text-xs flex items-center justify-center gap-1">${e.price} <img src="${BIT_COIN_LOGO_URL}" class="w-3 h-3 rounded-full object-cover inline-block"></div></button>`).join('')}
-                        </div>
-                        <form id="chat-form" class="flex gap-2">
-                           <button type="button" id="open-vip-emojis" class="flex-shrink-0 p-2 purple-gradient-bg hover:opacity-90 rounded-lg"><i data-lucide="smile"></i></button>
-                           <input type="text" id="chat-input" data-key-placeholder="chat_placeholder" placeholder="Send a message..." class="flex-grow bg-[var(--background-tertiary)] rounded-lg px-3 py-2 text-sm min-w-0" required>
-                           <button type="submit" class="flex-shrink-0 purple-gradient-bg px-3 rounded-lg"><i data-lucide="send"></i></button>
-                        </form>
-                    </div>
-                </div>
-            </div>`;
-            mainContent.innerHTML = watchHTML;
-            setLanguage(currentLang);
-            lucide.createIcons();
-            updateHeaderButtons(true);
-            
-            joinStream(streamerWallet);
-            if (!currentUser) {
-                document.getElementById('chat-input-container').innerHTML = `<div class="text-center p-4 py-6 text-sm text-gray-400 rounded-lg bg-[var(--background-tertiary)]">Please <button id="login-prompt-chat" class="text-purple-400 font-bold hover:underline">log in</button> to chat or interact.</div>`;
-                document.getElementById('stream-info-panel').style.display = 'none';
-                document.getElementById('login-prompt-chat').onclick = () => { loginModal.style.display = 'flex'; };
-            } else {
-                setupFollowButton(streamerWallet);
-                setupSubscribeButton(streamerWallet);
-                setupVipEmojiPanel(streamerWallet);
-            }
-            
-            unsubscribeStream = onSnapshot(doc(db, "streams", streamerWallet), (docSnap) => {
-                if (!docSnap.exists()) {
-                    showToast(translations[currentLang].stream_ended);
-                    renderExplorePage();
-                } else {
-                    document.getElementById('stream-title-display').textContent = docSnap.data().title;
-                }
-            });
-            
-            const chatMessages = document.getElementById('chat-messages');
-            const chatForm = document.getElementById('chat-form');
-            const chatInput = document.getElementById('chat-input');
-            const chatRef = collection(db, 'streams', streamerWallet, 'chat');
-            const q = query(chatRef, orderBy("createdAt", "desc"), limit(50));
-            
-            unsubscribeChat = onSnapshot(q, async (snapshot) => {
-                snapshot.docChanges().reverse().forEach(async change => {
-                    if (change.type === "added") {
-                        const msg = change.doc.data();
-                        const msgEl = document.createElement('div');
-                        
-                        // --- MODIFICADO: Mensaje de sistema en rojo ---
-                        if (msg.userWallet === 'system') {
-                            msgEl.className = 'text-sm p-1 text-red-500 italic'; // Color rojo
-                            msgEl.innerHTML = `<strong class="font-semibold" style="color: ${msg.userColor || '#FF5555'}">${msg.userName}:</strong> ${msg.text}`;
-                        }
-                        else if (msg.vipEmoji) {
-                            msgEl.className = 'super-chat';
-                            msgEl.innerHTML = `<div class="flex items-center gap-2 mb-2"><img src="${msg.vipEmoji.url}" class="w-10 h-10"><div class="font-bold text-lg">${msg.userName} ${translations[currentLang].sent} ${msg.vipEmoji.price} BIT</div></div><p class="text-white text-md">${msg.text}</p>`;
-                        } else {
-                            const isSub = currentUser && (await getDoc(doc(db, "users", streamerWallet, "subscribers", msg.userWallet))).exists();
-                            msgEl.className = 'text-sm';
-                            msgEl.innerHTML = `<p>${isSub ? '<svg class="member-badge" viewBox="0 0 24 24" fill="gold"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path></svg>' : ''}<strong class="font-semibold" style="color: ${msg.userColor || '#FFFFFF'}">${msg.userName}:</strong> ${msg.text}</p>`;
-                        }
-                        chatMessages.appendChild(msgEl);
-                    }
-                });
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            });
-            
-            if(chatForm) chatForm.addEventListener('submit', async (e) => { 
-                e.preventDefault();
-                if (!requireAuth()) return;
-                
-                try {
-                    const banRef = doc(db, 'streams', streamerWallet, 'bans', currentUser.walletAddress);
-                    const banSnap = await getDoc(banRef);
-                    
-                    if (banSnap.exists()) {
-                        const banData = banSnap.data();
-                        const expiresAt = banData.expiresAt ? banData.expiresAt.toDate() : null;
-                        
-                        if (expiresAt === null || expiresAt > new Date()) {
-                            showToast(translations[currentLang].you_are_banned, true);
-                            return;
-                        } else {
-                            await deleteDoc(banRef);
-                        }
-                    }
-                } catch (err) {
-                    console.error("Error checking ban status:", err);
-                }
-                
-                const text = chatInput.value.trim();
-                if (text) {
-                    addDoc(chatRef, { text, userName: currentUser.username, userWallet: currentUser.walletAddress, userColor: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'), createdAt: serverTimestamp() });
-                    chatInput.value = '';
-                }
-            });
-        }
-        
-        function cleanupWatchPage() {
-            mainContent.classList.remove('!p-0', 'md:!p-0', '!overflow-hidden');
-            mainContent.classList.add('p-4', 'md:p-8');
-            if (unsubscribeChat) unsubscribeChat();
-            if (unsubscribeStream) unsubscribeStream();
-            if (viewerPeerConnection) {
-                viewerPeerConnection.close();
-                viewerPeerConnection = null;
-            }
-            if(adInterval) clearInterval(adInterval);
-            if(window.depositPollingInterval) clearInterval(window.depositPollingInterval);
-            if(carouselTimer) clearInterval(carouselTimer); // Detener timer del carrusel
-            adInterval = null;
-            unsubscribeChat = null;
-            unsubscribeStream = null;
-            carouselTimer = null;
-        }
-
-        function renderStudioStream() {
-            currentPageRender = renderStudioStream;
-            const categoriesOptions = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
-            return `
-                <div class="flex flex-col lg:flex-row gap-6 h-full">
-                    <div class="w-full lg:w-2/3 space-y-4"><h2 class="text-2xl font-bold" data-key="stream_dashboard">Stream Dashboard</h2>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                             <div><label class="font-semibold text-sm" data-key="stream_title">Stream Title</label><input id="stream-title-input" type="text" value="My awesome stream on Live Payout!" class="mt-1 w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg p-2"></div>
-                             <div><label class="font-semibold text-sm" data-key="category">Category</label><select id="stream-category-select" class="mt-1 w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg p-2">${categoriesOptions}</select></div>
-                        </div>
-                         <div><label class="font-semibold text-sm" data-key="thumbnail_url">Thumbnail URL (Optional)</label><input id="stream-thumbnail-input" type="text" data-key-placeholder="thumbnail_placeholder" placeholder="https://example.com/image.png" class="mt-1 w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg p-2"></div>
-                        <div><label class="font-semibold text-sm" data-key="microphone">Microphone</label><select id="mic-select" class="mt-1 w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg p-2"></select></div>
-                        <div class="flex flex-col sm:flex-row gap-4">
-                            <button id="select-cam-btn" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50" data-key="use_camera"><i data-lucide="camera"></i>Use Camera</button>
-                            <button id="select-screen-btn" class="flex-1 purple-gradient-bg hover:opacity-90 text-white p-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50" data-key="share_screen"><i data-lucide="screen-share"></i>Share Screen</button>
-                        </div>
-                        <div class="bg-black p-2 rounded-lg">
-                            <h3 class="font-semibold text-center mb-2 flex items-center justify-center gap-2" id="stream-status-container">
-                                <span id="stream-status-text" data-key="preview">Preview</span><span id="studio-viewer-count" class="flex items-center gap-1 text-sm text-gray-400"></span><span id="stream-timer" class="font-mono"></span>
-                            </h3><video id="local-video-preview" muted autoplay playsinline></video>
-                        </div>
-                    </div>
-                    <div class="w-full lg:w-1/3 flex flex-col gap-4">
-                         <div class="flex items-center justify-between"><h2 class="text-2xl font-bold" data-key="chat">Chat</h2></div>
-                        <div id="studio-chat-messages" class="flex-grow bg-[var(--background-tertiary)] rounded-lg p-2 space-y-2 overflow-y-auto border border-[var(--border-color)] h-64 lg:h-auto"></div>
-                        <div class="flex gap-4">
-                            <button id="start-stream-btn" class="flex-1 purple-gradient-bg text-white font-bold p-3 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50" disabled><i data-lucide="play-circle"></i><span data-key="start_stream">Start</span></button>
-                            <button id="stop-stream-btn" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold p-3 rounded-lg flex items-center justify-center gap-2 disabled:bg-gray-600 disabled:opacity-50" disabled><i data-lucide="stop-circle"></i><span data-key="stop_stream">Stop</span></button>
-                        </div>
-                    </div>
-                </div>`;
         }
         
         function renderStudioAnalytics() {
@@ -2158,9 +2067,25 @@ function initBitsDepositLogic() {
                  if(viewerPeerConnection.iceConnectionState === 'connected' || viewerPeerConnection.iceConnectionState === 'completed'){
                     if(videoOverlay) videoOverlay.style.display = 'none'; if(remoteVideo) remoteVideo.classList.add('opacity-100');
                     if(adInterval) clearInterval(adInterval); adInterval = setInterval(showAd, 120000);
+                    
+                    // --- Autoplay al conectar (redundante, pero necesario para asegurar) ---
+                    // Se llama a play aquí también, ya que srcObject se asigna antes y el play()
+                    // en el evento ontrack puede ser bloqueado por el navegador.
+                    remoteVideo.play()
+                        .then(() => { console.log("Autoplay on connection successful."); })
+                        .catch(error => { console.warn("Autoplay on connection failed:", error); });
+                    // ----------------------------------------------------------------------
                 }
             };
-            viewerPeerConnection.ontrack = e => { if (e.streams && e.streams[0] && remoteVideo.srcObject !== e.streams[0]) remoteVideo.srcObject = e.streams[0]; };
+            viewerPeerConnection.ontrack = e => { 
+                if (e.streams && e.streams[0] && remoteVideo.srcObject !== e.streams[0]) {
+                    remoteVideo.srcObject = e.streams[0];
+                    // Intenta el autoplay inmediatamente si el stream llega
+                    remoteVideo.play()
+                        .then(() => { console.log("Autoplay on track successful."); })
+                        .catch(error => { console.warn("Autoplay on track failed:", error); });
+                }
+            };
             if (currentUser) {
                 viewerPeerConnection.onicecandidate = e => e.candidate && addDoc(collection(viewerRef, 'iceCandidatesFromViewer'), e.candidate.toJSON());
                 onSnapshot(collection(viewerRef, 'iceCandidates'), s => s.docChanges().forEach(change => {
@@ -2283,7 +2208,7 @@ function initBitsDepositLogic() {
 
         const translations = {
             en: {
-                explore: "Explore", categories: "Categories", creator: "Creator", creator_studio: "Creator Studio", recommended_channels: "Recommended Channels", followers: "followers", save: "Save", logout: "Log Out", processing: "Processing...", action_error: "Error processing action.", ad_warning: "An ad will appear in %s...", ad_playing: "Ad is playing...", welcome_to: "Welcome to", login_prompt: "Enter with your public Solana wallet address to start.", login_button: "Enter / Create Account", explore_title: "Explore Live Channels", categories_title: "Explore Categories", no_one_live: "No one is live in the '%s' category right now.", connecting_stream: "Connecting to stream...", live_chat: "Live Chat", chat_placeholder: "Send a message...", follow: "Follow", unfollow: "Unfollow", subscribe: "Subscribe", subscribed: "Subscribed", stream_ended: "The stream has ended.", sent: "sent", settings: "Settings", language: "Language", edit_profile: "Edit Profile", balance_withdrawal: "Balance & Withdrawal", current_balance: "Your Current Balance", withdrawal_minimum_bit: "You need a minimum of %a BIT to withdraw.", request_withdrawal: "Request Withdrawal", need_more_to_withdraw: "You need %a more BIT to withdraw.", withdrawal_ready: "You can request your withdrawal now.", withdrawal_requested: "Withdrawal request sent!", withdrawal_requested_toast: "Your withdrawal request has been sent.", withdrawal_error: "Error sending request.", profile_updated: "Profile updated successfully.", username: "Username", profile_pic_url: "Profile Picture URL", save_changes: "Save Changes", price_fetch_error: "Could not fetch price.", cannot_calculate_withdrawal: "Cannot calculate withdrawal requirements.", stream_dashboard: "Stream Dashboard", stream_title: "Stream Title", category: "Category", thumbnail_url: "Thumbnail URL (Optional)", thumbnail_placeholder: "https://example.com/image.png", microphone: "Microphone", use_camera: "Use Camera", share_screen: "Share Screen", preview: "Preview", chat: "Chat", start_stream: "Start", stop_stream: "Stop", analytics_rewards: "Analytics & Rewards", earnings_summary: "Earnings Summary", accumulated_rewards: "Accumulated Rewards", rewards_info: "You earn %a BIT for every %m minutes of streaming.", send_to_balance: "Send to Main Balance", followed_user: "You are now following %s.", unfollowed_user: "You have unfollowed %s.", insufficient_bits_subscribe: "You don't have enough BITs to subscribe.", subscribed_to_user: "You have subscribed to %s for 100 BIT", subscription_error: "Error processing subscription.", superchat_no_text: "Write a message to send with your VIP emoji.", insufficient_bits_emoji: "You need %p BIT to send this emoji.", superchat_error: "Error sending Super Chat.", media_error: "Could not access camera/screen.", no_video_source: "First select a video source.", stream_started: "Stream started!", stream_start_error: "Permission error. Could not start stream.", stream_stopped: "Stream stopped.", reward_notification: "+%a BIT for streaming %m minutes!", rewards_transferred: "%a BIT transferred to your balance.",
+                explore: "Explore", categories: "Categories", creator: "Creator", creator_studio: "Creator Studio", recommended_channels: "Recommended Channels", followers: "followers", save: "Save", logout: "Log Out", processing: "Processing...", action_error: "Error processing action.", ad_warning: "An ad will appear in %s...", ad_playing: "Ad is playing...", welcome_to: "Welcome to", login_prompt: "Enter with your Solana wallet and password.", login_button: "Enter / Create Account", explore_title: "Explore Live Channels", categories_title: "Explore Categories", no_one_live: "No one is live in the '%s' category right now.", connecting_stream: "Connecting to stream...", live_chat: "Live Chat", chat_placeholder: "Send a message...", follow: "Follow", unfollow: "Unfollow", subscribe: "Subscribe", subscribed: "Subscribed", stream_ended: "The stream has ended.", sent: "sent", settings: "Settings", language: "Language", edit_profile: "Edit Profile", balance_withdrawal: "Balance & Withdrawal", current_balance: "Your Current Balance", withdrawal_minimum_bit: "You need a minimum of %a BIT to withdraw.", request_withdrawal: "Request Withdrawal", need_more_to_withdraw: "You need %a more BIT to withdraw.", withdrawal_ready: "You can request your withdrawal now.", withdrawal_requested: "Withdrawal request sent!", withdrawal_requested_toast: "Your withdrawal request has been sent.", withdrawal_error: "Error sending request.", profile_updated: "Profile updated successfully.", username: "Username", profile_pic_url: "Profile Picture URL", save_changes: "Save Changes", price_fetch_error: "Could not fetch price.", cannot_calculate_withdrawal: "Cannot calculate withdrawal requirements.", stream_dashboard: "Stream Dashboard", stream_title: "Stream Title", category: "Category", thumbnail_url: "Thumbnail URL (Optional)", thumbnail_placeholder: "https://example.com/image.png", microphone: "Microphone", use_camera: "Use Camera", share_screen: "Share Screen", preview: "Preview", chat: "Chat", start_stream: "Start", stop_stream: "Stop", analytics_rewards: "Analytics & Rewards", earnings_summary: "Earnings Summary", accumulated_rewards: "Accumulated Rewards", rewards_info: "You earn %a BIT for every %m minutes of streaming.", send_to_balance: "Send to Main Balance", followed_user: "You are now following %s.", unfollowed_user: "You have unfollowed %s.", insufficient_bits_subscribe: "You don't have enough BITs to subscribe.", subscribed_to_user: "You have subscribed to %s for 100 BIT", subscription_error: "Error processing subscription.", superchat_no_text: "Write a message to send with your VIP emoji.", insufficient_bits_emoji: "You need %p BIT to send this emoji.", superchat_error: "Error sending Super Chat.", media_error: "Could not access camera/screen.", no_video_source: "First select a video source.", stream_started: "Stream started!", stream_start_error: "Permission error. Could not start stream.", stream_stopped: "Stream stopped.", reward_notification: "+%a BIT for streaming %m minutes!", rewards_transferred: "%a BIT transferred to your balance.",
                 transaction_history: "Transaction History",
                 no_transactions: "No transactions yet.",
                 you_are_banned: "You are banned from this chat.",
@@ -2297,7 +2222,7 @@ function initBitsDepositLogic() {
                 tx_stream_reward: "Stream Reward",
             },
             es: {
-                explore: "Explorar", categories: "Categorías", creator: "Creador", creator_studio: "Estudio del Creador", recommended_channels: "Canales Recomendados", followers: "seguidores", save: "Guardar", logout: "Cerrar Sesión", processing: "Procesando...", action_error: "Error al procesar la acción.", ad_warning: "Un anuncio aparecerá en %s...", ad_playing: "Anuncio en curso...", welcome_to: "Bienvenido a", login_prompt: "Ingresa con tu dirección de wallet pública de Solana para empezar.", login_button: "Entrar / Crear Cuenta", explore_title: "Explorar Canales en Vivo", categories_title: "Explorar Categorías", no_one_live: "No hay nadie en vivo en la categoría '%s' en este momento.", connecting_stream: "Conectando al stream...", live_chat: "Chat en Vivo", chat_placeholder: "Escribe un mensaje...", follow: "Seguir", unfollow: "Dejar de Seguir", subscribe: "Suscribirse", subscribed: "Suscrito", stream_ended: "La transmisión ha finalizado.", sent: "envió", settings: "Configuración", language: "Idioma", edit_profile: "Editar Perfil", balance_withdrawal: "Balance y Retiros", current_balance: "Tu Saldo Actual", withdrawal_minimum_bit: "Necesitas un mínimo de %a BIT para retirar.", request_withdrawal: "Solicitar Retiro", need_more_to_withdraw: "Te faltan %a BIT para poder retirar.", withdrawal_ready: "Ya puedes solicitar tu retiro.", withdrawal_requested: "¡Solicitud de retiro enviada!", withdrawal_requested_toast: "Tu solicitud de retiro ha sido enviada.", withdrawal_error: "Error al enviar la solicitud.", profile_updated: "Perfil actualizado correctamente.", username: "Nombre de usuario", profile_pic_url: "URL de foto de perfil", save_changes: "Guardar Cambios", price_fetch_error: "No se pudo obtener el precio.", cannot_calculate_withdrawal: "No se pueden calcular los requisitos de retiro.", stream_dashboard: "Panel de Transmisión", stream_title: "Título del Stream", category: "Categoría", thumbnail_url: "URL de la Miniatura (Opcional)", thumbnail_placeholder: "https://ejemplo.com/imagen.png", microphone: "Micrófono", use_camera: "Usar Cámara", share_screen: "Compartir Pantalla", preview: "Vista Previa", chat: "Chat", start_stream: "Iniciar", stop_stream: "Detener", analytics_rewards: "Analíticas y Recompensas", earnings_summary: "Resumen de Ganancias", accumulated_rewards: "Recompensas Acumuladas", rewards_info: "Ganas %a BIT por cada %m minutos de transmisión.", send_to_balance: "Enviar a Balance Principal", followed_user: "Ahora sigues a %s.", unfollowed_user: "Has dejado de seguir a %s.", insufficient_bits_subscribe: "No tienes suficientes BITs para suscribirte.", subscribed_to_user: "Te has suscrito a %s por 100 BIT", subscription_error: "Error al procesar la suscripción.", superchat_no_text: "Escribe un mensaje para enviarlo con tu emoji VIP.", insufficient_bits_emoji: "Necesitas %p BIT para enviar este emoji.", superchat_error: "Error al enviar el Super Chat.", media_error: "No se pudo acceder a la cámara/pantalla.", no_video_source: "Primero selecciona una fuente de video.", stream_started: "¡Has iniciado la transmisión!", stream_start_error: "Error de permisos. No se pudo iniciar el stream.", stream_stopped: "Transmisión detenida.", reward_notification: "¡+%a BIT por transmitir %m minutos!", rewards_transferred: "%a BIT transferidos a tu balance.",
+                explore: "Explorar", categories: "Categorías", creator: "Creador", creator_studio: "Estudio del Creador", recommended_channels: "Canales Recomendados", followers: "seguidores", save: "Guardar", logout: "Cerrar Sesión", processing: "Procesando...", action_error: "Error al procesar la acción.", ad_warning: "Un anuncio aparecerá en %s...", ad_playing: "Anuncio en curso...", welcome_to: "Bienvenido a", login_prompt: "Ingresa con tu dirección de wallet pública de Solana y contraseña para empezar.", login_button: "Entrar / Crear Cuenta", explore_title: "Explorar Canales en Vivo", categories_title: "Explorar Categorías", no_one_live: "No hay nadie en vivo en la categoría '%s' en este momento.", connecting_stream: "Conectando al stream...", live_chat: "Chat en Vivo", chat_placeholder: "Escribe un mensaje...", follow: "Seguir", unfollow: "Dejar de Seguir", subscribe: "Suscribirse", subscribed: "Suscrito", stream_ended: "La transmisión ha finalizado.", sent: "envió", settings: "Configuración", language: "Idioma", edit_profile: "Editar Perfil", balance_withdrawal: "Balance y Retiros", current_balance: "Tu Saldo Actual", withdrawal_minimum_bit: "Necesitas un mínimo de %a BIT para retirar.", request_withdrawal: "Solicitar Retiro", need_more_to_withdraw: "Te faltan %a BIT para poder retirar.", withdrawal_ready: "Ya puedes solicitar tu retiro.", withdrawal_requested: "¡Solicitud de retiro enviada!", withdrawal_requested_toast: "Tu solicitud de retiro ha sido enviada.", withdrawal_error: "Error al enviar la solicitud.", profile_updated: "Perfil actualizado correctamente.", username: "Nombre de usuario", profile_pic_url: "URL de foto de perfil", save_changes: "Guardar Cambios", price_fetch_error: "No se pudo obtener el precio.", cannot_calculate_withdrawal: "No se pueden calcular los requisitos de retiro.", stream_dashboard: "Panel de Transmisión", stream_title: "Título del Stream", category: "Categoría", thumbnail_url: "URL de la Miniatura (Opcional)", thumbnail_placeholder: "https://ejemplo.com/imagen.png", microphone: "Micrófono", use_camera: "Usar Cámara", share_screen: "Compartir Pantalla", preview: "Vista Previa", chat: "Chat", start_stream: "Iniciar", stop_stream: "Detener", analytics_rewards: "Analíticas y Recompensas", earnings_summary: "Resumen de Ganancias", accumulated_rewards: "Recompensas Acumuladas", rewards_info: "Ganas %a BIT por cada %m minutos de transmisión.", send_to_balance: "Enviar a Balance Principal", followed_user: "Ahora sigues a %s.", unfollowed_user: "Has dejado de seguir a %s.", insufficient_bits_subscribe: "No tienes suficientes BITs para suscribirte.", subscribed_to_user: "Te has suscrito a %s por 100 BIT", subscription_error: "Error al procesar la suscripción.", superchat_no_text: "Escribe un mensaje para enviarlo con tu emoji VIP.", insufficient_bits_emoji: "Necesitas %p BIT para enviar este emoji.", superchat_error: "Error al enviar el Super Chat.", media_error: "No se pudo acceder a la cámara/pantalla.", no_video_source: "Primero selecciona una fuente de video.", stream_started: "¡Has iniciado la transmisión!", stream_start_error: "Error de permisos. No se pudo iniciar el stream.", stream_stopped: "Transmisión detenida.", reward_notification: "¡+%a BIT por transmitir %m minutos!", rewards_transferred: "%a BIT transferidos a tu balance.",
                 transaction_history: "Historial de Transacciones",
                 no_transactions: "Aún no hay transacciones.",
                 you_are_banned: "Estás baneado de este chat.",
