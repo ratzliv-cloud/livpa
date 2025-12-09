@@ -234,17 +234,21 @@
                     <i data-lucide="menu" id="mobile-menu-icon"></i>
                 </button>
                 
-                <!-- NUEVO: Botón de colapsar sidebar (Solo Desktop) -->
                 <button id="desktop-toggle-sidebar" class="hidden md:block p-2 -ml-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--background-tertiary)]">
                     <i data-lucide="panel-left-close"></i>
                 </button>
                 
                 <a href="#" class="flex items-center nav-action" data-target="explore">
-                    <img src="https://i.postimg.cc/50KvH8vD/log-peque.png" alt="Live Payout Logo" class="w-10 h-10 rounded-full">
+                    <img src="https://i.postimg.cc/50KvH8vD/log-peque.png" alt="Logo" class="w-10 h-10 rounded-full">
                 </a>
                 <div class="hidden md:flex items-center gap-2 text-[var(--text-secondary)]">
                     <a href="#" class="nav-link nav-action px-3 py-2 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-all flex items-center gap-2" data-target="explore" data-key="explore"><i data-lucide="compass"></i><span class="sidebar-text">Explore</span></a>
                     <a href="#" class="nav-link nav-action px-3 py-2 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-all flex items-center gap-2" data-target="categories" data-key="categories"><i data-lucide="layout-grid"></i><span class="sidebar-text">Categories</span></a>
+                    
+                    <!-- BOTÓN CLIPS (Desktop) -->
+                    <a href="https://liveclips.vercel.app/" target="_blank" class="nav-link px-3 py-2 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-all flex items-center gap-2 text-red-500 font-bold">
+                        <i data-lucide="clapperboard"></i><span class="sidebar-text">CLIPS</span>
+                    </a>
                 </div>
             </div>
             <div id="user-profile-area" class="flex items-center gap-2 md:gap-4">
@@ -253,21 +257,26 @@
         </header>
 
         <div class="flex flex-1 overflow-hidden">
-            <!-- MODIFICADO: Añadido transition-width -->
             <aside id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-[var(--background-secondary)] flex flex-col z-40 transform -translate-x-full transition-all duration-300 md:relative md:translate-x-0 md:border-r md:border-[var(--border-color)] md:flex-shrink-0 md:transition-width">
                 <div class="p-4 border-b border-[var(--border-color)] md:hidden">
                     <a href="#" class="flex items-center gap-2 nav-action" data-target="explore">
-                        <img src="https://i.postimg.cc/50KvH8vD/log-peque.png" alt="Live Payout Logo" class="w-8 h-8 rounded-full">
+                        <img src="https://i.postimg.cc/50KvH8vD/log-peque.png" alt="Logo" class="w-8 h-8 rounded-full">
                         <span class="font-bold text-lg">Live Payout</span>
                     </a>
                 </div>
-                <nav class="flex flex-col space-y-2 p-4 md:p-4"> <!-- md:p-0 a md:p-4 -->
+                <nav class="flex flex-col space-y-2 p-4 md:p-4"> 
                     <div class="md:hidden">
                         <a href="#" class="nav-link nav-action flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-colors" data-target="explore" data-key="explore"><i data-lucide="compass" class="w-5 h-5"></i>Explore</a>
                         <a href="#" class="nav-link nav-action flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-colors" data-target="categories" data-key="categories"><i data-lucide="layout-grid" class="w-5 h-5"></i>Categories</a>
+                        
+                        <!-- BOTÓN CLIPS (Móvil) -->
+                        <a href="https://liveclips.vercel.app/" target="_blank" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-colors text-red-500 font-bold">
+                            <i data-lucide="clapperboard" class="w-5 h-5"></i><span>CLIPS</span>
+                        </a>
+                        
                         <div class="my-2 border-t border-[var(--border-color)]"></div>
                     </div>
-                    <div id="creator-section" class="overflow-hidden"> <!-- Añadido overflow-hidden -->
+                    <div id="creator-section" class="overflow-hidden"> 
                         <h3 class="px-3 text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider sidebar-text" data-key="creator">Creator</h3>
                         <a href="#" class="nav-link nav-action flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 bg-[var(--background-tertiary)] border border-[var(--border-color)] hover:border-[var(--brand-color-purple)] hover:shadow-[0_0_15px_rgba(167,139,250,0.4)]" data-target="studio">
                             <img src='https://i.postimg.cc/PxTt1gVn/7219b8450aa254b2d47645e0660295c1-icono-o-logotipo-de-camara-de-video.png' class='w-5 h-5 flex-shrink-0' alt='Creator Studio Icon'>
@@ -276,7 +285,7 @@
                     </div>
                 </nav>
                 <div class="my-4 border-t border-[var(--border-color)]"></div>
-                <div class="px-4 flex-1 overflow-y-auto overflow-x-hidden"> <!-- Añadido overflow-x-hidden -->
+                <div class="px-4 flex-1 overflow-y-auto overflow-x-hidden">
                   <h3 class="px-3 text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-2 sidebar-text" data-key="recommended_channels">Recommended Channels</h3>
                   <div id="recommended-channels" class="space-y-3">
                       <!-- Canales recomendados se cargan aquí -->
@@ -284,7 +293,6 @@
                 </div>
             </aside>
 
-            <!-- MODIFICADO: Añadido transition-all -->
             <main id="main-content" class="flex-1 bg-[var(--background-primary)] flex flex-col overflow-y-auto p-4 md:p-8 transition-all duration-300">
                 <!-- Contenido por defecto: Explorar -->
             </main>
@@ -298,13 +306,10 @@
                 <span data-key="welcome_to">Welcome to</span> 
                 <span style="color: var(--brand-color-purple);">Live</span><span class="text-white">Payout</span>
             </h1>
-            <!-- MODIFICADO: Mensaje de login actualizado -->
             <p class="text-[var(--text-secondary)] mb-8" data-key="login_prompt">Enter with your Solana wallet and password.</p>
             <form id="login-form" class="space-y-4">
                 <input type="text" id="wallet-address" placeholder="Solana Wallet (Ej: 5x...yZ)" class="w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-1)] transition-all">
-                <!-- AÑADIDO: Campo de contraseña -->
                 <input type="password" id="login-password" placeholder="Password" class="w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-1)] transition-all">
-                
                 <button type="submit" class="w-full purple-gradient-bg text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:btn-glow" data-key="login_button">
                     Enter / Create Account
                 </button>
@@ -326,13 +331,11 @@
         <div id="ad-slot" class="w-full max-w-lg h-auto flex items-center justify-center"></div>
     </div>
     
-    <!-- Modal de Moderación (inicialmente oculto) -->
     <div id="mod-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[101] hidden opacity-0 scale-95" role="dialog" aria-modal="true" aria-labelledby="mod-modal-title">
         <div id="mod-modal-content" class="bg-[var(--background-secondary)] p-6 rounded-2xl shadow-2xl w-full max-w-sm border border-[var(--border-color)] transform scale-100">
             <h2 id="mod-modal-title" class="text-xl font-bold mb-2">Moderar Usuario</h2>
             <p class="text-[var(--text-secondary)] mb-4" id="mod-modal-username">Vas a moderar a...</p>
             <div class="grid grid-cols-2 gap-3">
-                <!-- MODIFICADO: Tiempos de ban actualizados -->
                 <button class="mod-action-btn bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg" data-duration="5">Ban 5 Min</button>
                 <button class="mod-action-btn bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg" data-duration="10">Ban 10 Min</button>
                 <button class="mod-action-btn bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg" data-duration="60">Ban 1 Hora</button>
@@ -345,12 +348,10 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        // MODIFICADO: Importar funciones de email/password
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js"; // Añadido
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
         import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, addDoc, serverTimestamp, updateDoc, increment, deleteDoc, getDocs, query, where, writeBatch, orderBy, limit, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        // MODIFICADO: Nueva Configuración de Firebase solicitada
         const firebaseConfig = {
             apiKey: "AIzaSyCqOTWcQ4uOC851_-j4JBUcENkCa-9xWdE",
             authDomain: "liveclips-93af8.firebaseapp.com",
@@ -381,20 +382,22 @@
         let navigationHistory = [];
         
         let modModalTargetUser = { wallet: null, name: null };
-        let isSidebarCollapsed = false; // NUEVO: Estado de la sidebar
-        let carouselTimer = null; // NUEVO: Timer para el carrusel
-
+        let isSidebarCollapsed = false;
+        let carouselTimer = null;
+        
+        // --- NUEVO: Variable para el intervalo de inactividad ---
+        let inactivityInterval = null;
 
         app = initializeApp(firebaseConfig);
         auth = getAuth(app);
-        analytics = getAnalytics(app); // Añadido
+        analytics = getAnalytics(app); 
         db = getFirestore(app);
         
         const loginModal = document.getElementById('login-modal');
         const appContainer = document.getElementById('app-container');
         const loginForm = document.getElementById('login-form');
         const walletAddressInput = document.getElementById('wallet-address');
-        const passwordInput = document.getElementById('login-password'); // MODIFICADO
+        const passwordInput = document.getElementById('login-password');
         const loginError = document.getElementById('login-error');
         const mainContent = document.getElementById('main-content');
         const userProfileArea = document.getElementById('user-profile-area');
@@ -405,14 +408,13 @@
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const mobileMenuIcon = document.getElementById('mobile-menu-icon');
         const backButton = document.getElementById('back-button');
-        const desktopToggleSidebar = document.getElementById('desktop-toggle-sidebar'); // NUEVO
+        const desktopToggleSidebar = document.getElementById('desktop-toggle-sidebar');
         
         const modModal = document.getElementById('mod-modal');
         const modModalContent = document.getElementById('mod-modal-content');
         const modModalUsername = document.getElementById('mod-modal-username');
         const modModalCancel = document.getElementById('mod-modal-cancel');
 
-        // --- NUEVO: Detección de Móvil ---
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
         function requireAuth() {
@@ -430,7 +432,6 @@
                 if (storedWallet) {
                     await setupUser(storedWallet);
                 } else {
-                    // Si hay auth pero no hay wallet en localstorage (raro), intentamos obtener del email falso
                     const email = user.email;
                     if (email && email.includes('@livepayout.app')) {
                         const walletFromEmail = email.split('@')[0];
@@ -457,7 +458,7 @@
             e.preventDefault();
             loginError.textContent = '';
             const walletAddress = walletAddressInput.value.trim();
-            const password = passwordInput.value.trim(); // Nuevo campo
+            const password = passwordInput.value.trim();
             
             if (walletAddress.length < 32 || walletAddress.length > 44) {
                 loginError.textContent = 'Please enter a valid Solana wallet address.';
@@ -470,22 +471,17 @@
 
             loader.classList.remove('hidden');
             
-            // Generar email falso para Firebase Auth
             const fakeEmail = `${walletAddress}@livepayout.app`;
             
             try {
                 localStorage.setItem('walletAddress', walletAddress);
                 
                 try {
-                    // Intentar loguear primero
                     await signInWithEmailAndPassword(auth, fakeEmail, password);
                 } catch (signInError) {
-                    // Si falla el login, intentamos crear la cuenta
                     if (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential' || signInError.code === 'auth/wrong-password') {
-                        // Intentar registro
                          try {
                             await createUserWithEmailAndPassword(auth, fakeEmail, password);
-                            // Si se crea con éxito, setupUser se llamará vía onAuthStateChanged
                         } catch (createError) {
                             if (createError.code === 'auth/email-already-in-use') {
                                 loginError.textContent = 'Incorrect password for this wallet.';
@@ -622,7 +618,6 @@
             }, 4000);
         }
 
-        // --- MODIFICADO: setupNavigation ---
         function setupNavigation() {
             const pages = {
                 'explore': { render: renderExplorePage, pageKey: 'explore', auth: false },
@@ -642,8 +637,11 @@
 
                 const navAction = e.target.closest('.nav-action');
                 if (navAction) {
-                    e.preventDefault();
                     const targetPageKey = navAction.dataset.target;
+                    // No prevenir la acción si es un enlace externo como CLIPS
+                    if (!targetPageKey && navAction.target === '_blank') return;
+
+                    e.preventDefault();
                     const page = pages[targetPageKey];
                     if (page) {
                         if(page.auth && !requireAuth()) return;
@@ -666,42 +664,32 @@
                 }
             });
             
-            // --- MODIFICADO: Lógica para colapsar sidebar en Desktop ---
             desktopToggleSidebar.addEventListener('click', () => {
                 isSidebarCollapsed = !isSidebarCollapsed;
                 sidebar.classList.toggle('md:w-64', !isSidebarCollapsed);
-                sidebar.classList.toggle('md:w-20', isSidebarCollapsed); // Ancho colapsado
-                
-                // --- LÍNEAS ELIMINADAS ---
-                // Se eliminó la lógica que ajustaba mainContent.classList.toggle
+                sidebar.classList.toggle('md:w-20', isSidebarCollapsed); 
                 
                 document.querySelectorAll('.sidebar-text').forEach(el => {
                     el.classList.toggle('md:hidden', isSidebarCollapsed);
                 });
                 
-                // Cambiar ícono del botón
                 const icon = desktopToggleSidebar.querySelector('i');
                 icon.setAttribute('data-lucide', isSidebarCollapsed ? 'panel-right-close' : 'panel-left-close');
                 lucide.createIcons();
                 
-                // Ajustar padding de nav-links
                 sidebar.querySelectorAll('nav a, nav h3').forEach(el => {
                      el.classList.toggle('md:px-3', !isSidebarCollapsed);
-                     el.classList.toggle('md:px-2', isSidebarCollapsed); // Menos padding
+                     el.classList.toggle('md:px-2', isSidebarCollapsed);
                      if(el.tagName === 'A') el.classList.toggle('md:justify-start', !isSidebarCollapsed);
                      if(el.tagName === 'A') el.classList.toggle('md:justify-center', isSidebarCollapsed);
                 });
                 sidebar.querySelector('#recommended-channels').previousElementSibling.classList.toggle('md:text-center', isSidebarCollapsed);
                 sidebar.querySelector('#creator-section').firstElementChild.classList.toggle('md:text-center', isSidebarCollapsed);
             });
-            // Aplicar estado colapsado inicial (si es necesario)
+
             if (isSidebarCollapsed) {
                 sidebar.classList.remove('md:w-64');
                 sidebar.classList.add('md:w-20');
-                
-                // --- LÍNEAS ELIMINADAS ---
-                // Se eliminó la lógica que ajustaba mainContent
-                
                 document.querySelectorAll('.sidebar-text').forEach(el => el.classList.add('md:hidden'));
                 desktopToggleSidebar.querySelector('i').setAttribute('data-lucide', 'panel-right-close');
                 lucide.createIcons();
@@ -712,9 +700,6 @@
                 });
                 sidebar.querySelector('#recommended-channels').previousElementSibling.classList.add('md:text-center');
                 sidebar.querySelector('#creator-section').firstElementChild.classList.add('md:text-center');
-            } else {
-                 // --- LÍNEA ELIMINADA ---
-                 // Se eliminó mainContent.classList.add('md:ml-64');
             }
 
 
@@ -737,7 +722,7 @@
         function updateHeaderButtons(isSubPage) {
             backButton.classList.toggle('hidden', !isSubPage);
             mobileMenuBtn.classList.toggle('hidden', isSubPage);
-            desktopToggleSidebar.classList.toggle('hidden', isSubPage); // Ocultar también en subpáginas
+            desktopToggleSidebar.classList.toggle('hidden', isSubPage);
         }
 
         function setActiveLink(activeTarget) {
@@ -753,14 +738,12 @@
             setLanguage(currentLang);
             lucide.createIcons();
             
-            // Detener el timer del carrusel si salimos de la página de exploración
             if (activeTargetKey !== 'explore' && carouselTimer) {
                 clearInterval(carouselTimer);
                 carouselTimer = null;
             }
         }
         
-        // --- MODIFICADO: renderStreamCard (para carrusel) ---
         function renderStreamCard(streamDoc) {
             const stream = streamDoc.data();
             return `
@@ -781,7 +764,6 @@
                 </div>`;
         }
         
-        // --- NUEVO: renderStreamCardSmall (para cuadrícula inferior) ---
         function renderStreamCardSmall(streamDoc) {
             const stream = streamDoc.data();
             return `
@@ -802,7 +784,6 @@
                 </div>`;
         }
 
-        // --- MODIFICADO: renderExplorePage (con carrusel + cuadrícula pequeña + AUTOPLAY HOVER) ---
         async function renderExplorePage(category = null) {
             currentPageRender = () => renderExplorePage(category);
             let streamsQuery = query(collection(db, "streams"), where("status", "==", "live"));
@@ -819,21 +800,17 @@
             } else {
                 let streamDocs = querySnapshot.docs;
                 
-                // Ordenar por viewerCount (más vistas)
                 streamDocs.sort((a, b) => (b.data().viewerCount || 0) - (a.data().viewerCount || 0));
                 
-                // Tomar los 5 primeros para el carrusel
                 const carouselDocs = streamDocs.splice(0, 5); 
                 
                 carouselDocs.forEach((doc, index) => {
-                    // El primer item es activo por defecto
                     carouselHTML += `
                         <div class="carousel-item p-2 ${index === 0 ? 'is-active' : ''}" data-index="${index}">
                             ${renderStreamCard(doc)}
                         </div>`;
                 });
                 
-                // Renderizar las tarjetas restantes en la cuadrícula pequeña
                 streamDocs.forEach(doc => {
                     smallGridHTML += renderStreamCardSmall(doc);
                 });
@@ -847,7 +824,6 @@
             
             const title = category ? `Canales en Vivo - ${category}` : translations[currentLang].explore_title;
             
-            // Estructura HTML con carrusel y cuadrícula pequeña
             renderPage(`
                 <!-- Carrusel Destacado -->
                 ${carouselHTML ? `
@@ -865,23 +841,18 @@
                     ${smallGridHTML}
                 </div>`, 'explore');
             
-            // Event listener para todos los stream cards (carrusel y cuadrícula)
-            // MODIFICADO: Añadida lógica de autoplay al hacer hover/touch
             let hoverTimer;
             document.querySelectorAll('.stream-card, .stream-card-small').forEach(card => {
                 const streamerWallet = card.dataset.streamerWallet;
                 
-                // Click estándar
                 card.addEventListener('click', () => {
                     clearTimeout(hoverTimer);
                     navigationHistory.push(currentPageRender);
                     renderWatchStreamPage(streamerWallet);
                 });
 
-                // Hover (Desktop)
                 card.addEventListener('mouseenter', () => {
                     if (!isMobile) {
-                        // Navegar tras 800ms de hover
                         hoverTimer = setTimeout(() => {
                             navigationHistory.push(currentPageRender);
                             renderWatchStreamPage(streamerWallet);
@@ -892,12 +863,8 @@
                 card.addEventListener('mouseleave', () => {
                     clearTimeout(hoverTimer);
                 });
-                
-                // Touch (Móvil) - Opcional si queremos que el touch también haga "autoplay"
-                // Pero en móvil, el "tap" ya es un click, así que funciona por defecto.
             });
             
-            // --- NUEVO: Lógica del Carrusel ---
             const carousel = document.getElementById('featured-carousel');
             if (carousel) {
                 const navPrev = document.querySelector('.carousel-nav.prev');
@@ -938,7 +905,6 @@
                         resetTimer();
                     };
                     
-                    // Actualizar 'is-active' al hacer scroll manual
                     carousel.onscroll = () => {
                         const scrollLeft = carousel.scrollLeft;
                         const itemWidth = items[0].offsetWidth;
@@ -951,10 +917,9 @@
                         }
                     };
 
-                    // Timer automático
                     const resetTimer = () => {
                         if (carouselTimer) clearInterval(carouselTimer);
-                        carouselTimer = setInterval(() => slide(1), 5000); // Cambia cada 5 segundos
+                        carouselTimer = setInterval(() => slide(1), 5000); 
                     };
                     
                     resetTimer();
@@ -1008,7 +973,6 @@
                         </div>
                     </div>
                     <div class="lg:col-span-2 space-y-6">
-                        <!-- --- MODIFICADO: Lógica de Depósito --- -->
                         <div class="bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)]">
                             <h3 class="font-semibold text-lg mb-4 text-purple-400">Depositar BITS</h3>
                             <div class="bg-[var(--background-tertiary)] p-6 rounded-lg text-center">
@@ -1018,18 +982,14 @@
                                     <img id="solana-qr-img" src="" alt="QR de pago Solana" class="w-36 h-36 rounded-lg border border-[var(--border-color)] hidden opacity-0 transition-opacity duration-300">
                                 </div>
 
-                                <!-- INICIO: SECCIÓN RESTAURADA -->
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                                     <input id="bits-amount" type="number" min="1" step="1" placeholder="Monto en BITS" class="bg-[var(--background-secondary)] p-2 rounded-lg text-center w-full sm:col-span-1">
                                     
-                                    <!-- Botón 'Generar QR' solo en PC -->
                                     <button id="bits-gen-btn" class="purple-gradient-bg text-white font-semibold py-2 rounded-lg ${isMobile ? 'hidden' : ''} sm:col-span-1">
                                         Generar QR
                                     </button>
                                 </div>
-                                <!-- FIN: SECCIÓN RESTAURADA -->
                                 
-                                <!-- Botón 'Pagar (Solana Pay)' solo en Móvil. En PC se oculta. -->
                                 <button id="solana-pay-button" class="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-2 mb-4 ${isMobile ? '' : 'hidden'}">
                                     <i data-lucide="wallet" class="w-5 h-5"></i>
                                     <span>Pagar BITS</span>
@@ -1135,10 +1095,9 @@
         }
 
  
-// --- MODIFICADO: initBitsDepositLogic ---
 function initBitsDepositLogic() {
-    const btnQR = document.getElementById("bits-gen-btn"); // Botón Generar QR (PC)
-    const btnSolanaPay = document.getElementById("solana-pay-button"); // Botón Pagar BITS (Verde)
+    const btnQR = document.getElementById("bits-gen-btn");
+    const btnSolanaPay = document.getElementById("solana-pay-button");
     const input = document.getElementById("bits-amount");
     const img = document.getElementById("solana-qr-img");
     const status = document.getElementById("bits-status");
@@ -1152,16 +1111,13 @@ function initBitsDepositLogic() {
     const TATUM_API_KEY = "t-68f69f0447bf5156a36067b3-b0b00e1660324a54ad70ef28";
     const TOKEN_DECIMALS = 6;
     
-    // Limpiar intervalos anteriores
     if (window.depositPollingInterval) {
         clearInterval(window.depositPollingInterval);
     }
     
-    // Variable de estado para evitar procesamiento duplicado
     let processingSignature = null;
 
 
-    // Función principal para generar QR y URL de pago
     function generatePayment(amount) {
         if (!amount || amount <= 0) {
             status.textContent = "❌ Ingresa un monto válido.";
@@ -1185,7 +1141,6 @@ function initBitsDepositLogic() {
                 
                 makeQRClickeable(img, solanaPayUrl);
                 
-                // Configurar el botón de Solana Pay (verde)
                 btnSolanaPay.querySelector('span').textContent = `Pagar ${amount} BITS`;
                 btnSolanaPay.onclick = () => {
                      if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) {
@@ -1195,12 +1150,9 @@ function initBitsDepositLogic() {
                     }
                 };
                 
-                // --- MODIFICADO ---
-                // Mostrar el botón de pagar solo en móvil
                 if (isMobile) {
                     btnSolanaPay.classList.remove("hidden");
                 }
-                // En PC, este botón permanecerá oculto.
 
                 startQrPolling(reference, amount, solanaPayUrl);
             } else {
@@ -1209,7 +1161,6 @@ function initBitsDepositLogic() {
         });
     }
 
-    // Lógica para PC (Click en "Generar QR")
     if (!isMobile && btnQR) {
         btnQR.addEventListener("click", () => {
             const amount = parseFloat(input.value);
@@ -1217,7 +1168,6 @@ function initBitsDepositLogic() {
         });
     }
 
-    // Lógica para Móvil (Actualización automática al escribir)
     if (isMobile) {
         let debounceTimer;
         input.addEventListener("input", () => {
@@ -1227,16 +1177,14 @@ function initBitsDepositLogic() {
                 if (amount && amount > 0) {
                     generatePayment(amount);
                 } else {
-                    // Ocultar QR si el monto es inválido
                     img.classList.add("hidden", "opacity-0");
                     btnSolanaPay.classList.add("hidden");
                     if (window.depositPollingInterval) clearInterval(window.depositPollingInterval);
                     status.textContent = "Estado: esperando...";
                 }
-            }, 500); // 500ms de espera antes de generar
+            }, 500); 
         });
         
-        // Generar pago inicial si ya hay un valor (ej. al volver a la página)
         const initialAmount = parseFloat(input.value);
         if (initialAmount && initialAmount > 0) {
             generatePayment(initialAmount);
@@ -1288,13 +1236,11 @@ function initBitsDepositLogic() {
                 if (foundSignature) {
                     console.log("✅ Pago detectado con firma:", foundSignature.signature);
                     
-                    // --- FIX: Evitar duplicados ---
                     if (processingSignature === foundSignature.signature) {
                         console.log("⚠️ Transacción ya está siendo procesada, esperando...");
                         return;
                     }
                     processingSignature = foundSignature.signature;
-                    // -----------------------------
 
                     const signatureRef = doc(db, "users", currentUser.walletAddress, "usedSignatures", foundSignature.signature);
                     const signatureDoc = await getDoc(signatureRef);
@@ -1303,7 +1249,7 @@ function initBitsDepositLogic() {
                         console.log("⚠️ Transacción ya procesada anteriormente");
                         status.textContent = "⚠️ Esta transacción ya fue procesada.";
                         clearInterval(window.depositPollingInterval);
-                        processingSignature = null; // Liberar
+                        processingSignature = null;
                         return;
                     }
 
@@ -1359,7 +1305,7 @@ function initBitsDepositLogic() {
                                 expected: amount, 
                                 actual: transferredAmount 
                             });
-                            processingSignature = null; // Liberar si falla
+                            processingSignature = null;
                         }
 
                     } catch (confirmationError) {
@@ -1367,7 +1313,7 @@ function initBitsDepositLogic() {
                         if (confirmationError.message.includes('timeout') || confirmationError.message.includes('not confirmed')) {
                             await handleUnconfirmedTransaction(connection, foundSignature.signature, signatureRef, amount, reference, 'qr');
                         } else {
-                            processingSignature = null; // Liberar si falla
+                            processingSignature = null;
                             throw confirmationError;
                         }
                     }
@@ -1376,7 +1322,7 @@ function initBitsDepositLogic() {
             } catch (err) {
                 console.error("Error durante el sondeo de QR:", err);
                 status.textContent = `❌ Error: ${err.message}`;
-                processingSignature = null; // Liberar si falla
+                processingSignature = null; 
             }
         }, 5000); 
     }
@@ -1413,24 +1359,21 @@ function initBitsDepositLogic() {
         } catch (verificationError) {
             console.error("Error en verificación de transacción:", verificationError);
             status.innerHTML = `⚠️ No se pudo verificar el estado. <a href="https://solscan.io/tx/${signature}" target="_blank" class="text-purple-400 underline">Verifica manually</a> y contacta soporte si es necesario.`;
-            processingSignature = null; // Liberar
+            processingSignature = null;
         }
     }
 
     async function continueBackgroundVerification(signature, amount, reference, method) {
         const backgroundInterval = setInterval(async () => {
             try {
-                // --- FIX: Evitar duplicados ---
-                // Verificar si ya fue procesada antes de re-intentar
                 const signatureRef = doc(db, "users", currentUser.walletAddress, "usedSignatures", signature);
                 const signatureDoc = await getDoc(signatureRef);
                 if (signatureDoc.exists()) {
                     console.log("Verificación BG: Transacción ya procesada.");
                     clearInterval(backgroundInterval);
-                    processingSignature = null; // Liberar
+                    processingSignature = null;
                     return;
                 }
-                // -----------------------------
 
                 const connection = new solanaWeb3.Connection(SOLANA_RPC_URL, {
                     commitment: 'confirmed',
@@ -1452,21 +1395,19 @@ function initBitsDepositLogic() {
 
     async function processSuccessfulPayment(signatureRef, signature, expectedAmount, actualAmount, reference, confirmationType = "confirmed", method = 'unknown') {
         
-        // --- FIX: Evitar duplicados (Doble chequeo) ---
         try {
             const signatureDoc = await getDoc(signatureRef);
             if (signatureDoc.exists()) {
                 console.warn(`Intento de doble procesamiento bloqueado para la firma: ${signature}`);
                 status.textContent = "⚠️ Esta transacción ya fue procesada.";
-                processingSignature = null; // Liberar
+                processingSignature = null;
                 return;
             }
         } catch (e) {
             console.error("Error en doble chequeo:", e);
-            processingSignature = null; // Liberar
+            processingSignature = null;
             return;
         }
-        // ------------------------------------------
 
         status.textContent = `✅ ¡Transacción ${confirmationType}! Actualizando saldo...`;
         
@@ -1502,7 +1443,7 @@ function initBitsDepositLogic() {
             status.textContent = "❌ Error al actualizar el balance. Contacta con soporte.";
             showToast("Error al actualizar el balance. Contacta con soporte.", true);
         } finally {
-            processingSignature = null; // Liberar el bloqueo
+            processingSignature = null;
         }
     }
 
@@ -1558,7 +1499,6 @@ function initBitsDepositLogic() {
             
             const watchHTML = `
             <div class="w-full h-full flex flex-col lg:flex-row">
-                <!-- Top section (scrollable): Video + info -->
                 <div class="flex-1 lg:p-8 p-4 overflow-y-auto">
                     <div class="flex flex-col gap-4 max-w-4xl mx-auto">
                          <div id="video-container" class="relative w-full aspect-video bg-black rounded-lg flex items-center justify-center flex-shrink-0">
@@ -1582,7 +1522,6 @@ function initBitsDepositLogic() {
                     </div>
                 </div>
 
-                <!-- Bottom section (fixed height on mobile): Chat -->
                 <div class="w-full lg:w-80 lg:max-h-full flex-shrink-0 bg-[var(--background-secondary)] lg:rounded-lg p-4 flex flex-col border-t lg:border-l lg:border-t-0 border-[var(--border-color)] h-1/2 lg:h-auto">
                     <h3 class="font-bold text-lg mb-2 flex-shrink-0" data-key="live_chat">Live Chat</h3>
                     <div id="chat-messages" class="flex-grow space-y-2 overflow-y-auto pr-2 min-h-0"></div>
@@ -1635,9 +1574,8 @@ function initBitsDepositLogic() {
                         const msg = change.doc.data();
                         const msgEl = document.createElement('div');
                         
-                        // --- MODIFICADO: Mensaje de sistema en rojo ---
                         if (msg.userWallet === 'system') {
-                            msgEl.className = 'text-sm p-1 text-red-500 italic'; // Color rojo
+                            msgEl.className = 'text-sm p-1 text-red-500 italic';
                             msgEl.innerHTML = `<strong class="font-semibold" style="color: ${msg.userColor || '#FF5555'}">${msg.userName}:</strong> ${msg.text}`;
                         }
                         else if (msg.vipEmoji) {
@@ -1696,7 +1634,7 @@ function initBitsDepositLogic() {
             }
             if(adInterval) clearInterval(adInterval);
             if(window.depositPollingInterval) clearInterval(window.depositPollingInterval);
-            if(carouselTimer) clearInterval(carouselTimer); // Detener timer del carrusel
+            if(carouselTimer) clearInterval(carouselTimer);
             adInterval = null;
             unsubscribeChat = null;
             unsubscribeStream = null;
@@ -2136,9 +2074,8 @@ function initBitsDepositLogic() {
                             const msg = change.doc.data(), msgEl = document.createElement('div');
                             const userNameBtn = `<button class="font-semibold mod-user-btn hover:underline" style="color: ${msg.userColor || '#FFF'}" data-wallet="${msg.userWallet}" data-name="${msg.userName}">${msg.userName}</button>`;
                             
-                            // --- MODIFICADO: Mensaje de sistema en rojo ---
                             if (msg.userWallet === 'system') {
-                                msgEl.className = 'text-xs p-1 text-red-500 italic'; // Color rojo
+                                msgEl.className = 'text-xs p-1 text-red-500 italic';
                                 msgEl.innerHTML = `<strong>${msg.userName}:</strong> ${msg.text}`;
                             }
                             else if (msg.vipEmoji) {
@@ -2182,12 +2119,45 @@ function initBitsDepositLogic() {
                 }, 15000);
                 if(adInterval) clearInterval(adInterval);
                 adInterval = setInterval(showAd, 120000);
+                
+                // --- NUEVO: Monitor de Inactividad ---
+                let inactiveSeconds = 0;
+                if (inactivityInterval) clearInterval(inactivityInterval);
+                inactivityInterval = setInterval(() => {
+                    if (!localStream) return;
+                    const videoTracks = localStream.getVideoTracks();
+                    
+                    // Se considera activo si hay al menos un track de video en estado 'live' y NO muteado
+                    const isVideoActive = videoTracks.length > 0 && videoTracks.some(t => t.readyState === 'live' && !t.muted);
+
+                    if (!isVideoActive) {
+                        inactiveSeconds++;
+                        // Si pasan 300 segundos (5 minutos) de inactividad, cerramos el stream
+                        if (inactiveSeconds >= 300) {
+                            stopStream();
+                            showToast(translations[currentLang].stream_closed_inactivity || "Stream cerrado por inactividad (sin video).", true);
+                        }
+                    } else {
+                        // Si vuelve la actividad, reseteamos el contador
+                        inactiveSeconds = 0;
+                    }
+                }, 1000); // Chequeo cada segundo
+                
                 showToast(translations[currentLang].stream_started);
             } catch (error) { console.error("Error starting stream:", error); showToast(translations[currentLang].stream_start_error); stopStream(); } finally { loader.classList.add('hidden'); }
         }
 
         async function stopStream() {
-            if (streamTimerInterval) clearInterval(streamTimerInterval); if (rewardInterval) clearInterval(rewardInterval); if (adInterval) clearInterval(adInterval);
+            if (streamTimerInterval) clearInterval(streamTimerInterval); 
+            if (rewardInterval) clearInterval(rewardInterval); 
+            if (adInterval) clearInterval(adInterval);
+            
+            // --- NUEVO: Limpiar intervalo de inactividad ---
+            if (inactivityInterval) {
+                clearInterval(inactivityInterval);
+                inactivityInterval = null;
+            }
+
             if (localStream) localStream.getTracks().forEach(track => track.stop());
             if (viewersUnsubscribe) viewersUnsubscribe(); if (unsubscribeStudioChat) unsubscribeStudioChat();
             Object.values(peerConnections).forEach(pc => pc.close());
@@ -2364,6 +2334,7 @@ function initBitsDepositLogic() {
                 tx_vip_emoji_reward: "VIP Emoji",
                 tx_reward_transfer: "Rewards Transfer",
                 tx_stream_reward: "Stream Reward",
+                stream_closed_inactivity: "Stream closed due to video inactivity.",
             },
             es: {
                 explore: "Explorar", categories: "Categorías", creator: "Creador", creator_studio: "Estudio del Creador", recommended_channels: "Canales Recomendados", followers: "seguidores", save: "Guardar", logout: "Cerrar Sesión", processing: "Procesando...", action_error: "Error al procesar la acción.", ad_warning: "Un anuncio aparecerá en %s...", ad_playing: "Anuncio en curso...", welcome_to: "Bienvenido a", login_prompt: "Ingresa con tu wallet de Solana y contraseña.", login_button: "Entrar / Crear Cuenta", explore_title: "Explorar Canales en Vivo", categories_title: "Explorar Categorías", no_one_live: "No hay nadie en vivo en la categoría '%s' en este momento.", connecting_stream: "Conectando al stream...", live_chat: "Chat en Vivo", chat_placeholder: "Escribe un mensaje...", follow: "Seguir", unfollow: "Dejar de Seguir", subscribe: "Suscribirse", subscribed: "Suscrito", stream_ended: "La transmisión ha finalizado.", sent: "envió", settings: "Configuración", language: "Idioma", edit_profile: "Editar Perfil", balance_withdrawal: "Balance y Retiros", current_balance: "Tu Saldo Actual", withdrawal_minimum_bit: "Necesitas un mínimo de %a BIT para retirar.", request_withdrawal: "Solicitar Retiro", need_more_to_withdraw: "Te faltan %a BIT para poder retirar.", withdrawal_ready: "Ya puedes solicitar tu retiro.", withdrawal_requested: "¡Solicitud de retiro enviada!", withdrawal_requested_toast: "Tu solicitud de retiro ha sido enviada.", withdrawal_error: "Error al enviar la solicitud.", profile_updated: "Perfil actualizado correctamente.", username: "Nombre de usuario", profile_pic_url: "URL de foto de perfil", save_changes: "Guardar Cambios", price_fetch_error: "No se pudo obtener el precio.", cannot_calculate_withdrawal: "No se pueden calcular los requisitos de retiro.", stream_dashboard: "Panel de Transmisión", stream_title: "Título del Stream", category: "Categoría", thumbnail_url: "URL de la Miniatura (Opcional)", thumbnail_placeholder: "https://ejemplo.com/imagen.png", microphone: "Micrófono", use_camera: "Usar Cámara", share_screen: "Compartir Pantalla", preview: "Vista Previa", chat: "Chat", start_stream: "Iniciar", stop_stream: "Detener", analytics_rewards: "Analíticas y Recompensas", earnings_summary: "Resumen de Ganancias", accumulated_rewards: "Recompensas Acumuladas", rewards_info: "Ganas %a BIT por cada %m minutos de transmisión.", send_to_balance: "Enviar a Balance Principal", followed_user: "Ahora sigues a %s.", unfollowed_user: "Has dejado de seguir a %s.", insufficient_bits_subscribe: "No tienes suficientes BITs para suscribirte.", subscribed_to_user: "Te has suscrito a %s por 100 BIT", subscription_error: "Error al procesar la suscripción.", superchat_no_text: "Escribe un mensaje para enviarlo con tu emoji VIP.", insufficient_bits_emoji: "Necesitas %p BIT para enviar este emoji.", superchat_error: "Error al enviar el Super Chat.", media_error: "No se pudo acceder a la cámara/pantalla.", no_video_source: "Primero selecciona una fuente de video.", stream_started: "¡Has iniciado la transmisión!", stream_start_error: "Error de permisos. No se pudo iniciar el stream.", stream_stopped: "Transmisión detenida.", reward_notification: "¡+%a BIT por transmitir %m minutos!", rewards_transferred: "%a BIT transferidos a tu balance.",
@@ -2378,6 +2349,7 @@ function initBitsDepositLogic() {
                 tx_vip_emoji_reward: "Emoji VIP",
                 tx_reward_transfer: "Transferencia de Recompensa",
                 tx_stream_reward: "Recompensa de Stream",
+                stream_closed_inactivity: "Stream cerrado por inactividad de video.",
             }
         };
 
