@@ -750,7 +750,7 @@
             return `
                 <div class="stream-card group bg-[var(--background-secondary)] rounded-xl overflow-hidden border border-[var(--border-color)] hover:border-[var(--brand-color-purple)] transition-all transform hover:-translate-y-1 duration-300 cursor-pointer" data-streamer-wallet="${streamDoc.id}">
                     <div class="relative">
-                        <img src="${stream.thumbnailUrl || 'https://placehold.co/400x225/141418/2a2a32?text=En+Vivo'}" class="w-full aspect-video object-cover">
+                        <img src="${stream.thumbnailUrl || 'https://placehold.co/400x225/141418/2a2a32?text=LIVE'}" class="w-full aspect-video object-cover">
                         <div class="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md">LIVE</div>
                         <div class="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-md flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i> ${stream.viewerCount || 0}</div>
                     </div>
@@ -2373,5 +2373,6 @@ function initBitsDepositLogic() {
 </body>
 
 </html>
+
 
 
