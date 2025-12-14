@@ -819,7 +819,7 @@
                 if (streamDocs.length === 0 && carouselHTML === '') {
                      smallGridHTML = `<p class="text-center text-[var(--text-secondary)] col-span-full">No hay streams en vivo en este momento.</p>`;
                 } else if (streamDocs.length === 0 && carouselHTML !== '') {
-                    smallGridHTML = `<p class="text-center text-[var(--text-secondary)] col-span-full">No hay otros streams en vivo en este momento.</p>`;
+                    smallGridHTML = `<p class="text-center text-[var(--text-secondary)] col-span-full">There are no other live streams at this time.</p>`;
                 }
             }
             
@@ -975,7 +975,7 @@
                     </div>
                     <div class="lg:col-span-2 space-y-6">
                         <div class="bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)]">
-                            <h3 class="font-semibold text-lg mb-4 text-purple-400">Depositar BITS</h3>
+                            <h3 class="font-semibold text-lg mb-4 text-purple-400">Deposit</h3>
                             <div class="bg-[var(--background-tertiary)] p-6 rounded-lg text-center">
                                 <p class="text-sm text-[var(--text-secondary)] mb-3">Deposita tokens BITS usando Solana Pay.</p>
                                 
@@ -984,10 +984,10 @@
                                 </div>
 
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                                    <input id="bits-amount" type="number" min="1" step="1" placeholder="Monto en BITS" class="bg-[var(--background-secondary)] p-2 rounded-lg text-center w-full sm:col-span-1">
+                                    <input id="bits-amount" type="number" min="1" step="1" placeholder="Amount" class="bg-[var(--background-secondary)] p-2 rounded-lg text-center w-full sm:col-span-1">
                                     
                                     <button id="bits-gen-btn" class="purple-gradient-bg text-white font-semibold py-2 rounded-lg ${isMobile ? 'hidden' : ''} sm:col-span-1">
-                                        Generar QR
+                                        Generate QR
                                     </button>
                                 </div>
                                 
@@ -2373,6 +2373,7 @@ function initBitsDepositLogic() {
 </body>
 
 </html>
+
 
 
 
