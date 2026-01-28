@@ -2364,21 +2364,7 @@ function initBitsDepositLogic() {
             window.addEventListener('pagehide', leaveStream, { once: true });
         }
         
-        function showModModal(userWallet, userName) {
-            if (!modModal || !modModalUsername) return;
-            
-            if (userWallet === currentUser.walletAddress) return;
-            
-            modModalTargetUser = { wallet: userWallet, name: userName };
-            modModalUsername.textContent = `Baneando a: ${userName}`;
-            
-            modModal.classList.remove('hidden');
-            setTimeout(() => {
-                modModal.classList.remove('opacity-0', 'scale-95');
-                modModalContent.classList.remove('scale-100'); 
-                modModalContent.classList.add('scale-100');
-            }, 10);
-        }
+     
 
         function hideModModal() {
             if (!modModal) return;
