@@ -1993,7 +1993,15 @@ function initBitsDepositLogic() {
         }
 
         let localStream = null, peerConnections = {}, viewersUnsubscribe = null, streamTimerInterval = null, rewardInterval = null, unsubscribeStudioChat = null;
-        const iceServers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+       const iceServers = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' },
+                { urls: 'stun:stun3.l.google.com:19302' },
+                { urls: 'stun:stun4.l.google.com:19302' }
+            ]
+        };
 
         async function attachStreamListeners() {
             document.getElementById('select-cam-btn').onclick = () => getMedia('camera');
@@ -2040,33 +2048,97 @@ function initBitsDepositLogic() {
             } catch (error) { console.error(`Error getting ${type}`, error); showToast(translations[currentLang].media_error); }
         }
 
-        async function startStream() {
+      async function startStream() {
             if (!localStream) return showToast(translations[currentLang].no_video_source);
+            
             const streamRef = doc(db, 'streams', currentUser.walletAddress);
             loader.classList.remove('hidden');
+
             try {
+                // Crear el documento del stream
                 await setDoc(streamRef, {
-                    status: 'live', title: document.getElementById('stream-title-input').value, category: document.getElementById('stream-category-select').value, thumbnailUrl: document.getElementById('stream-thumbnail-input').value, streamerWallet: currentUser.walletAddress, streamerPic: currentUser.profilePicture, streamerUsername: currentUser.username, viewerCount: 0
+                    status: 'live',
+                    title: document.getElementById('stream-title-input').value,
+                    category: document.getElementById('stream-category-select').value,
+                    thumbnailUrl: document.getElementById('stream-thumbnail-input').value,
+                    streamerWallet: currentUser.walletAddress,
+                    streamerPic: currentUser.profilePicture,
+                    streamerUsername: currentUser.username,
+                    viewerCount: 0
                 });
+
+                // Escuchar nuevos espectadores
                 viewersUnsubscribe = onSnapshot(collection(streamRef, 'viewers'), (snapshot) => {
                     updateDoc(streamRef, { viewerCount: snapshot.size });
                     const studioViewerCount = document.getElementById('studio-viewer-count');
                     if(studioViewerCount) { studioViewerCount.innerHTML = `<i data-lucide="users" class="w-4 h-4"></i> ${snapshot.size}`; lucide.createIcons(); }
+
                     snapshot.docChanges().forEach(async (change) => {
-                        const viewerUid = change.doc.id, viewerData = change.doc.data();
+                        const viewerUid = change.doc.id;
+                        const viewerData = change.doc.data();
+
+                        // 1. Si entra un nuevo espectador con una oferta
                         if (change.type === 'added' && viewerData.offer) {
-                            peerConnections[viewerUid] = new RTCPeerConnection(iceServers);
-                            localStream.getTracks().forEach(track => peerConnections[viewerUid].addTrack(track, localStream));
-                            peerConnections[viewerUid].onicecandidate = e => e.candidate && addDoc(collection(change.doc.ref, 'iceCandidates'), e.candidate.toJSON());
-                            onSnapshot(collection(change.doc.ref, 'iceCandidatesFromViewer'), snap => snap.docChanges().forEach(c => c.type === 'added' && peerConnections[viewerUid].addIceCandidate(new RTCIceCandidate(c.doc.data()))));
-                            await peerConnections[viewerUid].setRemoteDescription(new RTCSessionDescription(viewerData.offer));
-                            const answer = await peerConnections[viewerUid].createAnswer();
-                            await peerConnections[viewerUid].setLocalDescription(answer);
-                            await updateDoc(change.doc.ref, { answer });
+                            console.log("Nuevo espectador detectado:", viewerUid);
+                            
+                            // Crear conexión
+                            const pc = new RTCPeerConnection(iceServers);
+                            peerConnections[viewerUid] = pc;
+
+                            // Añadir tracks locales (cámara/pantalla)
+                            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+                            // Cola para guardar candidatos que lleguen antes de tiempo
+                            const iceQueue = [];
+
+                            // Manejar candidatos que YO (Streamer) genero para enviarlos al Viewer
+                            pc.onicecandidate = e => e.candidate && addDoc(collection(change.doc.ref, 'iceCandidates'), e.candidate.toJSON());
+
+                            // Escuchar candidatos del Viewer
+                            onSnapshot(collection(change.doc.ref, 'iceCandidatesFromViewer'), snap => {
+                                snap.docChanges().forEach(c => {
+                                    if (c.type === 'added') {
+                                        const candidate = new RTCIceCandidate(c.doc.data());
+                                        // SI la conexión remota ya está lista, añadirlo. SI NO, guardarlo en cola.
+                                        if (pc.remoteDescription) {
+                                            pc.addIceCandidate(candidate).catch(e => console.warn("Error agregando candidato ICE:", e));
+                                        } else {
+                                            iceQueue.push(candidate);
+                                        }
+                                    }
+                                });
+                            });
+
+                            // Procesar la Oferta
+                            try {
+                                await pc.setRemoteDescription(new RTCSessionDescription(viewerData.offer));
+                                
+                                // Una vez procesada la oferta, vaciamos la cola de candidatos pendientes
+                                while (iceQueue.length > 0) {
+                                    const c = iceQueue.shift();
+                                    pc.addIceCandidate(c).catch(e => console.warn("Error procesando cola ICE:", e));
+                                }
+
+                                const answer = await pc.createAnswer();
+                                await pc.setLocalDescription(answer);
+                                
+                                // Enviar respuesta a Firestore
+                                await updateDoc(change.doc.ref, { answer });
+                                
+                            } catch (err) {
+                                console.error("Error estableciendo conexión con viewer:", err);
+                            }
                         }
-                        if (change.type === 'removed' && peerConnections[viewerUid]) { peerConnections[viewerUid].close(); delete peerConnections[viewerUid]; }
+
+                        // Limpieza si el espectador se va
+                        if (change.type === 'removed' && peerConnections[viewerUid]) {
+                            peerConnections[viewerUid].close();
+                            delete peerConnections[viewerUid];
+                        }
                     });
                 });
+
+                // Configurar Chat del Studio
                 const studioChatMessages = document.getElementById('studio-chat-messages');
                 const chatRef = collection(streamRef, 'chat');
                 unsubscribeStudioChat = onSnapshot(query(chatRef, orderBy("createdAt", "desc"), limit(50)), (snapshot) => {
@@ -2091,61 +2163,60 @@ function initBitsDepositLogic() {
                     });
                     studioChatMessages.scrollTop = studioChatMessages.scrollHeight;
                 });
+
+                // UI Updates
                 document.getElementById('stream-status-text').innerHTML = `<span class="text-red-500 font-bold flex items-center gap-2"><div class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>LIVE</span>`;
-                document.getElementById('start-stream-btn').disabled = true; document.getElementById('stop-stream-btn').disabled = false;
+                document.getElementById('start-stream-btn').disabled = true; 
+                document.getElementById('stop-stream-btn').disabled = false;
+                
+                // Timers y Rewards
                 let startTime = Date.now(), timerEl = document.getElementById('stream-timer');
                 streamTimerInterval = setInterval(() => { const e=Date.now()-startTime,s=Math.floor(e/1e3%60).toString().padStart(2,'0'),m=Math.floor(e/6e4%60).toString().padStart(2,'0'),h=Math.floor(e/36e5).toString().padStart(2,'0'); if(timerEl)timerEl.textContent=`${h}:${m}:${s}`}, 1000);
+                
                 let lastRewardTimeInMinutes = 0;
                 rewardInterval = setInterval(async () => {
                     const currentMinutes = Math.floor((Date.now() - startTime) / 60000);
                     if (currentMinutes >= lastRewardTimeInMinutes + REWARD_INTERVAL_MINUTES) {
                         lastRewardTimeInMinutes += REWARD_INTERVAL_MINUTES;
                         const amount = REWARD_AMOUNT; 
-                        
                         await runTransaction(db, async (t) => {
                             const userRef = doc(db, "users", currentUser.walletAddress);
                             t.update(userRef, { creatorRewardsBalance: increment(amount) });
-                            
                             const txCol = collection(db, "users", currentUser.walletAddress, "transactions");
-                            t.set(doc(txCol), {
-                                type: 'stream_reward',
-                                amount: amount,
-                                timestamp: serverTimestamp(),
-                                details: { minutes: lastRewardTimeInMinutes }
-                            });
+                            t.set(doc(txCol), { type: 'stream_reward', amount: amount, timestamp: serverTimestamp(), details: { minutes: lastRewardTimeInMinutes } });
                         });
-                        
                         showToast(translations[currentLang].reward_notification.replace('%a', amount.toLocaleString()).replace('%m', lastRewardTimeInMinutes));
                     }
                 }, 15000);
+
                 if(adInterval) clearInterval(adInterval);
                 adInterval = setInterval(showAd, 120000);
                 
-                // --- NUEVO: Monitor de Inactividad ---
+                // Monitor de Inactividad
                 let inactiveSeconds = 0;
                 if (inactivityInterval) clearInterval(inactivityInterval);
                 inactivityInterval = setInterval(() => {
                     if (!localStream) return;
                     const videoTracks = localStream.getVideoTracks();
-                    
-                    // Se considera activo si hay al menos un track de video en estado 'live' y NO muteado
                     const isVideoActive = videoTracks.length > 0 && videoTracks.some(t => t.readyState === 'live' && !t.muted);
-
                     if (!isVideoActive) {
                         inactiveSeconds++;
-                        // Si pasan 300 segundos (5 minutos) de inactividad, cerramos el stream
                         if (inactiveSeconds >= 300) {
                             stopStream();
-                            showToast(translations[currentLang].stream_closed_inactivity || "Stream cerrado por inactividad (sin video).", true);
+                            showToast(translations[currentLang].stream_closed_inactivity, true);
                         }
-                    } else {
-                        // Si vuelve la actividad, reseteamos el contador
-                        inactiveSeconds = 0;
-                    }
-                }, 1000); // Chequeo cada segundo
+                    } else { inactiveSeconds = 0; }
+                }, 1000);
                 
                 showToast(translations[currentLang].stream_started);
-            } catch (error) { console.error("Error starting stream:", error); showToast(translations[currentLang].stream_start_error); stopStream(); } finally { loader.classList.add('hidden'); }
+
+            } catch (error) { 
+                console.error("Error starting stream:", error); 
+                showToast(translations[currentLang].stream_start_error); 
+                stopStream(); 
+            } finally { 
+                loader.classList.add('hidden'); 
+            }
         }
 
         async function stopStream() {
@@ -2188,70 +2259,109 @@ function initBitsDepositLogic() {
             showToast(translations[currentLang].stream_stopped);
         }
 
-        async function joinStream(streamerWallet) {
+       async function joinStream(streamerWallet) {
+            console.log("Iniciando conexión como espectador...");
             viewerPeerConnection = new RTCPeerConnection(iceServers);
-            const remoteVideo = document.getElementById('remote-video'), videoOverlay = document.getElementById('video-overlay');
-            const viewerRef = doc(db, 'streams', streamerWallet, 'viewers', auth.currentUser ? auth.currentUser.uid : `guest_${Date.now()}`);
+            
+            const remoteVideo = document.getElementById('remote-video');
+            const videoOverlay = document.getElementById('video-overlay');
+            
+            // Usamos un ID único, si no está logueado usamos 'guest'
+            const myUid = auth.currentUser ? auth.currentUser.uid : `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const viewerRef = doc(db, 'streams', streamerWallet, 'viewers', myUid);
+            
             const iceCandidateBuffer = [];
+
+            // Monitorear estado de conexión
             viewerPeerConnection.oniceconnectionstatechange = () => {
+                console.log("Estado conexión Viewer:", viewerPeerConnection.iceConnectionState);
                 if(videoOverlay) videoOverlay.textContent = `Status: ${viewerPeerConnection.iceConnectionState}`;
-                 if(viewerPeerConnection.iceConnectionState === 'connected' || viewerPeerConnection.iceConnectionState === 'completed'){
-                    if(videoOverlay) videoOverlay.style.display = 'none'; if(remoteVideo) remoteVideo.classList.add('opacity-100');
-                    if(adInterval) clearInterval(adInterval); adInterval = setInterval(showAd, 120000);
+                
+                if(viewerPeerConnection.iceConnectionState === 'connected' || viewerPeerConnection.iceConnectionState === 'completed'){
+                    if(videoOverlay) videoOverlay.style.display = 'none'; 
+                    if(remoteVideo) remoteVideo.classList.add('opacity-100');
+                    if(adInterval) clearInterval(adInterval); 
+                    adInterval = setInterval(showAd, 120000);
+                } else if (viewerPeerConnection.iceConnectionState === 'failed' || viewerPeerConnection.iceConnectionState === 'disconnected') {
+                     if(videoOverlay) {
+                        videoOverlay.style.display = 'flex';
+                        videoOverlay.textContent = "Connection lost. Reconnecting...";
+                     }
                 }
             };
-            viewerPeerConnection.ontrack = e => { if (e.streams && e.streams[0] && remoteVideo.srcObject !== e.streams[0]) remoteVideo.srcObject = e.streams[0]; };
-            if (currentUser) {
-                viewerPeerConnection.onicecandidate = e => e.candidate && addDoc(collection(viewerRef, 'iceCandidatesFromViewer'), e.candidate.toJSON());
-                onSnapshot(collection(viewerRef, 'iceCandidates'), s => s.docChanges().forEach(change => {
-                    if (change.type === 'added') { const candidate = new RTCIceCandidate(change.doc.data()); if (viewerPeerConnection.currentRemoteDescription) viewerPeerConnection.addIceCandidate(candidate); else iceCandidateBuffer.push(candidate); }
-                }));
-            }
-            const offer = await viewerPeerConnection.createOffer({offerToReceiveVideo: true, offerToReceiveAudio: true});
-            await viewerPeerConnection.setLocalDescription(offer);
-            await setDoc(viewerRef, { offer });
-            onSnapshot(viewerRef, async (docSnap) => {
-                const data = docSnap.data();
-                if (data && data.answer && !viewerPeerConnection.currentRemoteDescription) {
-                    await viewerPeerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-                    iceCandidateBuffer.forEach(c => viewerPeerConnection.addIceCandidate(c)); iceCandidateBuffer.length = 0;
-                }
-            });
-            const leaveStream = () => { if(viewerPeerConnection) { viewerPeerConnection.close(); deleteDoc(viewerRef).catch(()=>{}); } if(adInterval) clearInterval(adInterval); };
-            window.addEventListener('pagehide', leaveStream, { once: true });
-        }
-        
-        window.onbeforeunload = () => { if (Object.keys(peerConnections).length > 0) stopStream(); }
-        
-        function setupModModalListeners() {
-            if (!modModal) return;
 
-            modModal.addEventListener('click', (e) => {
-                if (e.target === modModal) {
-                    hideModModal();
-                }
-            });
-            
-            modModalCancel.addEventListener('click', hideModModal);
-            
-            modModalContent.addEventListener('click', (e) => {
-                const actionBtn = e.target.closest('.mod-action-btn');
-                if (actionBtn) {
-                    const durationStr = actionBtn.dataset.duration;
-                    let durationMinutes = 0;
-                    
-                    if (durationStr === 'perma') {
-                        durationMinutes = null; 
-                    } else {
-                        durationMinutes = parseInt(durationStr, 10);
+            // Recibir video/audio
+            viewerPeerConnection.ontrack = e => { 
+                if (e.streams && e.streams[0]) {
+                    console.log("Stream recibido!");
+                    if (remoteVideo.srcObject !== e.streams[0]) {
+                        remoteVideo.srcObject = e.streams[0]; 
                     }
-                    
-                    if (modModalTargetUser.wallet) {
-                        banUser(currentUser.walletAddress, modModalTargetUser.wallet, modModalTargetUser.name, durationMinutes);
-                    }
-                    hideModModal();
                 }
+            };
+
+            // Enviar mis candidatos al Streamer
+            viewerPeerConnection.onicecandidate = e => {
+                if (e.candidate) {
+                    addDoc(collection(viewerRef, 'iceCandidatesFromViewer'), e.candidate.toJSON());
+                }
+            };
+
+            // Escuchar candidatos que vienen del Streamer
+            onSnapshot(collection(viewerRef, 'iceCandidates'), s => {
+                s.docChanges().forEach(change => {
+                    if (change.type === 'added') { 
+                        const candidate = new RTCIceCandidate(change.doc.data()); 
+                        // Si ya tenemos descripción remota (Answer), añadimos. Si no, al buffer.
+                        if (viewerPeerConnection.currentRemoteDescription) {
+                            viewerPeerConnection.addIceCandidate(candidate).catch(e => console.warn("Error addIceCandidate Viewer:", e));
+                        } else {
+                            iceCandidateBuffer.push(candidate); 
+                        }
+                    }
+                });
             });
+
+            // Crear Oferta
+            try {
+                // Habilitar recepción de audio/video
+                viewerPeerConnection.addTransceiver('video', { direction: 'recvonly' });
+                viewerPeerConnection.addTransceiver('audio', { direction: 'recvonly' });
+
+                const offer = await viewerPeerConnection.createOffer();
+                await viewerPeerConnection.setLocalDescription(offer);
+                
+                // Subir oferta a Firestore
+                await setDoc(viewerRef, { offer });
+
+                // Esperar Respuesta (Answer) del Streamer
+                onSnapshot(viewerRef, async (docSnap) => {
+                    const data = docSnap.data();
+                    if (data && data.answer && !viewerPeerConnection.currentRemoteDescription) {
+                        console.log("Respuesta recibida del streamer");
+                        await viewerPeerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                        
+                        // Procesar candidatos guardados
+                        while (iceCandidateBuffer.length > 0) {
+                            const c = iceCandidateBuffer.shift();
+                            viewerPeerConnection.addIceCandidate(c).catch(e => console.warn("Error buffer Viewer:", e));
+                        }
+                    }
+                });
+
+            } catch (err) {
+                console.error("Error en joinStream:", err);
+            }
+
+            // Limpieza al salir de la página
+            const leaveStream = () => { 
+                if(viewerPeerConnection) { 
+                    viewerPeerConnection.close(); 
+                    deleteDoc(viewerRef).catch(()=>{}); 
+                } 
+                if(adInterval) clearInterval(adInterval); 
+            };
+            window.addEventListener('pagehide', leaveStream, { once: true });
         }
         
         function showModModal(userWallet, userName) {
@@ -2369,6 +2479,63 @@ function initBitsDepositLogic() {
         // --- INICIALIZACIÓN ---
         setInterval(updateWithdrawalStatus, 30000);
         loader.classList.remove('hidden');
+        // --- FUNCIONES DEL MODAL DE MODERACIÓN (Añadir al final del script) ---
+
+        function setupModModalListeners() {
+            if (!modModal) return;
+
+            modModal.addEventListener('click', (e) => {
+                if (e.target === modModal) {
+                    hideModModal();
+                }
+            });
+            
+            if(modModalCancel) modModalCancel.addEventListener('click', hideModModal);
+            
+            modModalContent.addEventListener('click', (e) => {
+                const actionBtn = e.target.closest('.mod-action-btn');
+                if (actionBtn) {
+                    const durationStr = actionBtn.dataset.duration;
+                    let durationMinutes = 0;
+                    
+                    if (durationStr === 'perma') {
+                        durationMinutes = null; 
+                    } else {
+                        durationMinutes = parseInt(durationStr, 10);
+                    }
+                    
+                    if (modModalTargetUser.wallet) {
+                        banUser(currentUser.walletAddress, modModalTargetUser.wallet, modModalTargetUser.name, durationMinutes);
+                    }
+                    hideModModal();
+                }
+            });
+        }
+        
+        function showModModal(userWallet, userName) {
+            if (!modModal || !modModalUsername) return;
+            if (userWallet === currentUser.walletAddress) return;
+            
+            modModalTargetUser = { wallet: userWallet, name: userName };
+            modModalUsername.textContent = `Baneando a: ${userName}`;
+            
+            modModal.classList.remove('hidden');
+            setTimeout(() => {
+                modModal.classList.remove('opacity-0', 'scale-95');
+                modModalContent.classList.remove('scale-100'); 
+                modModalContent.classList.add('scale-100');
+            }, 10);
+        }
+
+        function hideModModal() {
+            if (!modModal) return;
+            modModal.classList.add('opacity-0', 'scale-95');
+            modModalContent.classList.add('scale-95');
+            setTimeout(() => {
+                modModal.classList.add('hidden');
+                modModalTargetUser = { wallet: null, name: null };
+            }, 200);
+        }
     </script>
 </body>
 
