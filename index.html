@@ -2366,15 +2366,7 @@ function initBitsDepositLogic() {
         
      
 
-        function hideModModal() {
-            if (!modModal) return;
-            modModal.classList.add('opacity-0', 'scale-95');
-            modModalContent.classList.add('scale-95');
-            setTimeout(() => {
-                modModal.classList.add('hidden');
-                modModalTargetUser = { wallet: null, name: null };
-            }, 200);
-        }
+       
         
         async function banUser(streamerWallet, bannedUserWallet, bannedUserName, durationMinutes) {
             if (!streamerWallet || !bannedUserWallet) return;
