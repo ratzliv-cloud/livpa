@@ -619,18 +619,26 @@
             }, 4000);
         }
 
-        function setupNavigation() {
+       function setupNavigation() {
             const pages = {
                 'explore': { render: renderExplorePage, pageKey: 'explore', auth: false },
                 'categories': { render: renderCategoriesPage, pageKey: 'categories', auth: false },
                 'studio': { render: renderStudioPage, pageKey: 'studio', auth: true }
             };
 
-            document.body.addEventListener('click', (e) => {
+            // Hacemos la función 'async' para poder esperar (await) a que se cierre el stream
+            document.body.addEventListener('click', async (e) => {
                 const profileButton = e.target.closest('#profile-button');
                 if (profileButton) {
                     if (!requireAuth()) return;
                     e.preventDefault();
+                    
+                    // Si estamos transmitiendo, esperamos a que se cierre antes de cambiar
+                    if (currentPageRender === renderStudioPage && localStream) {
+                        await stopStream(); 
+                        showToast(translations[currentLang].stream_stopped);
+                    }
+
                     navigationHistory.push(currentPageRender);
                     cleanupWatchPage();
                     renderSettingsPage();
@@ -643,6 +651,16 @@
                     if (!targetPageKey && navAction.target === '_blank') return;
 
                     e.preventDefault();
+
+                    // --- NUEVO: DETECCIÓN Y CIERRE SEGURO ---
+                    // Si estás en el estudio y transmitiendo...
+                    if (currentPageRender === renderStudioPage && localStream) {
+                        // ...ejecutamos stopStream y ESPERAMOS (await) a que termine de borrar en la base de datos
+                        await stopStream();
+                        showToast("Stream cerrado correctamente.", true);
+                    }
+                    // ----------------------------------------
+
                     const page = pages[targetPageKey];
                     if (page) {
                         if(page.auth && !requireAuth()) return;
@@ -654,8 +672,13 @@
                 }
             });
             
-            backButton.addEventListener('click', () => {
+            backButton.addEventListener('click', async () => {
                 if (navigationHistory.length > 0) {
+                    // También al volver atrás, si estábamos transmitiendo, cerramos y esperamos
+                    if (currentPageRender === renderStudioPage && localStream) {
+                        await stopStream();
+                    }
+                    
                     cleanupWatchPage();
                     const previousPage = navigationHistory.pop();
                     if (typeof previousPage === 'function') {
@@ -2065,6 +2088,13 @@ function initBitsDepositLogic() {
                     streamerPic: currentUser.profilePicture,
                     streamerUsername: currentUser.username,
                     viewerCount: 0
+                });
+                // --- NUEVO: Apagar si cierra la pestaña ---
+                window.addEventListener('beforeunload', (event) => {
+                    stopStream();
+                    // Opcional: Mostrar advertencia estándar del navegador
+                    event.preventDefault(); 
+                    event.returnValue = '';
                 });
 
                 // Escuchar nuevos espectadores
