@@ -2096,6 +2096,54 @@ function initBitsDepositLogic() {
                     event.preventDefault(); 
                     event.returnValue = '';
                 });
+                // --- INICIO CÓDIGO ANTI-FANTASMAS ---
+                
+                // 1. Detector universal de cierre/salida (PC y Móvil)
+                const handleExit = () => {
+                    // Si hay stream, lo borramos.
+                    // Nota: Usamos una lógica síncrona/rápida para intentar ganar al cierre del navegador
+                    if (localStream) {
+                        // Paramos pistas locales inmediatamente
+                        localStream.getTracks().forEach(track => track.stop());
+                        
+                        // Intentamos borrar el documento. 
+                        // En cierres bruscos, esto es "best-effort" (el navegador intenta enviarlo antes de morir).
+                        // Gracias a tus nuevas reglas de Firebase, esto está permitido.
+                        deleteDoc(streamRef).catch(err => console.error("Error borrando al salir:", err));
+                    }
+                };
+
+                // Evento para cuando cierras la pestaña o recargas (PC)
+                window.addEventListener('beforeunload', (e) => {
+                    handleExit();
+                    // Esto a veces ayuda a que el navegador espere unos milisegundos más
+                    e.preventDefault();
+                    e.returnValue = ''; 
+                });
+
+                // Evento crítico para MÓVILES (iOS/Android) y cambios de pestaña
+                window.addEventListener('pagehide', handleExit);
+
+                // Evento para cuando la página se oculta (cambias de app en el móvil)
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'hidden') {
+                        // Opcional: Si quieres que se corte al minimizar la app, descomenta la siguiente línea:
+                        // handleExit(); 
+                    }
+                });
+
+                // Limpieza de seguridad: Si la ruta cambia internamente en la SPA
+                const originalPushState = history.pushState;
+                history.pushState = function () {
+                    if (localStream) stopStream(); // Usamos stopStream() normal si es navegación interna
+                    originalPushState.apply(this, arguments);
+                };
+                
+                window.addEventListener('popstate', () => {
+                    if (localStream) stopStream();
+                });
+
+                // --- FIN CÓDIGO ANTI-FANTASMAS ---
 
                 // Escuchar nuevos espectadores
                 viewersUnsubscribe = onSnapshot(collection(streamRef, 'viewers'), (snapshot) => {
