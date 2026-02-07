@@ -299,6 +299,29 @@
             </main>
         </div>
     </div>
+    <div id="donation-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[101] hidden animate-fade-in">
+        <div class="bg-[var(--background-secondary)] p-6 rounded-2xl shadow-2xl w-full max-w-sm border border-[var(--brand-color-purple)] transform scale-100">
+            <h2 class="text-xl font-bold mb-4 text-center">Donar al Streamer</h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Cantidad (BITS)</label>
+                    <input type="number" id="donate-amount" class="w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg p-2 focus:border-[var(--brand-color-purple)] outline-none" placeholder="Min: 10">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Mensaje para el Bot</label>
+                    <textarea id="donate-message" rows="3" class="w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg p-2 focus:border-[var(--brand-color-purple)] outline-none" placeholder="Escribe algo..."></textarea>
+                </div>
+                
+                <div class="flex gap-3 mt-4">
+                    <button id="cancel-donation" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg">Cancelar</button>
+                    <button id="confirm-donation" class="flex-1 purple-gradient-bg hover:opacity-90 text-white font-bold p-2 rounded-lg">Donar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <div id="login-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in hidden">
         <div class="bg-[var(--background-secondary)] p-8 rounded-2xl shadow-2xl w-full max-w-md border border-[var(--border-color)] text-center transform transition-all duration-300 scale-95">
@@ -1576,8 +1599,10 @@ function initBitsDepositLogic() {
                          <div id="vip-emoji-panel" class="hidden absolute bottom-full mb-2 left-0 w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg p-2 grid grid-cols-5 gap-2">
                            ${VIP_EMOJIS.map(e => `<button class="vip-emoji-btn group" data-emoji-id="${e.id}"><img src="${e.url}" class="w-10 h-10 transition-transform group-hover:scale-110"><div class="text-xs flex items-center justify-center gap-1">${e.price} <img src="${BIT_COIN_LOGO_URL}" class="w-3 h-3 rounded-full object-cover inline-block"></div></button>`).join('')}
                         </div>
-                        <form id="chat-form" class="flex gap-2">
-                           <button type="button" id="open-vip-emojis" class="flex-shrink-0 p-2 purple-gradient-bg hover:opacity-90 rounded-lg"><i data-lucide="smile"></i></button>
+                      <form id="chat-form" class="flex gap-2">
+                           <button type="button" id="open-vip-emojis" class="flex-shrink-0 p-2 bg-[var(--background-tertiary)] hover:bg-gray-700 rounded-lg text-yellow-400"><i data-lucide="smile"></i></button>
+                           <button type="button" id="open-donation-btn" class="flex-shrink-0 p-2 purple-gradient-bg hover:opacity-90 rounded-lg text-white shadow-[0_0_10px_rgba(168,85,247,0.5)]"><i data-lucide="gift"></i></button>
+                           
                            <input type="text" id="chat-input" data-key-placeholder="chat_placeholder" placeholder="Send a message..." class="flex-grow bg-[var(--background-tertiary)] rounded-lg px-3 py-2 text-sm min-w-0" required>
                            <button type="submit" class="flex-shrink-0 purple-gradient-bg px-3 rounded-lg"><i data-lucide="send"></i></button>
                         </form>
@@ -1668,6 +1693,71 @@ function initBitsDepositLogic() {
                     chatInput.value = '';
                 }
             });
+            // Lógica del Botón de Donar
+            document.getElementById('open-donation-btn').onclick = () => {
+                if (!requireAuth()) return;
+                document.getElementById('donation-modal').classList.remove('hidden');
+            };
+            
+            document.getElementById('cancel-donation').onclick = () => {
+                document.getElementById('donation-modal').classList.add('hidden');
+            };
+
+            document.getElementById('confirm-donation').onclick = async () => {
+                const amount = parseInt(document.getElementById('donate-amount').value);
+                const text = document.getElementById('donate-message').value.trim();
+                
+                if (!amount || amount < 10) return showToast("Mínimo 10 BITS.", true);
+                if (!text) return showToast("Escribe un mensaje.", true);
+                if (currentUser.bitBalance < amount) return showToast("Saldo insuficiente.", true);
+
+                loader.classList.remove('hidden');
+                document.getElementById('donation-modal').classList.add('hidden');
+
+                try {
+                    const streamerUserRef = doc(db, "users", streamerWallet);
+                    
+                    await runTransaction(db, async (t) => {
+                        const myUserRef = doc(db, "users", currentUser.walletAddress);
+                        const myDoc = await t.get(myUserRef);
+                        if (myDoc.data().bitBalance < amount) throw "Saldo insuficiente";
+
+                        // 1. Transferir dinero
+                        t.update(myUserRef, { bitBalance: increment(-amount) });
+                        t.update(streamerUserRef, { creatorRewardsBalance: increment(amount) });
+
+                        // 2. Registrar transacciones
+                        const txTime = serverTimestamp();
+                        t.set(doc(collection(db, "users", currentUser.walletAddress, "transactions")), {
+                            type: 'donation_sent', amount: -amount, timestamp: txTime, details: { to: streamerWallet }
+                        });
+                        t.set(doc(collection(db, "users", streamerWallet, "transactions")), {
+                            type: 'donation_received', amount: amount, timestamp: txTime, details: { from: currentUser.username }
+                        });
+                    });
+
+                    // 3. Enviar mensaje especial al chat (isDonation: true)
+                    await addDoc(collection(db, 'streams', streamerWallet, 'chat'), {
+                        text: text,
+                        userName: currentUser.username,
+                        userWallet: currentUser.walletAddress,
+                        userColor: '#a855f7', // Color morado de donación
+                        createdAt: serverTimestamp(),
+                        isDonation: true, // ESTO ACTIVA EL TTS
+                        donationAmount: amount
+                    });
+
+                    document.getElementById('donate-amount').value = '';
+                    document.getElementById('donate-message').value = '';
+                    showToast(`¡Donaste ${amount} BITS!`);
+
+                } catch (e) {
+                    console.error(e);
+                    showToast("Error en la donación.", true);
+                } finally {
+                    loader.classList.add('hidden');
+                }
+            };
         }
         
         function cleanupWatchPage() {
@@ -1699,6 +1789,16 @@ function initBitsDepositLogic() {
                              <div><label class="font-semibold text-sm" data-key="category">Category</label><select id="stream-category-select" class="mt-1 w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg p-2">${categoriesOptions}</select></div>
                         </div>
                          <div><label class="font-semibold text-sm" data-key="thumbnail_url">Thumbnail URL (Optional)</label><input id="stream-thumbnail-input" type="text" data-key-placeholder="thumbnail_placeholder" placeholder="https://example.com/image.png" class="mt-1 w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg p-2"></div>
+                         <div class="flex items-center justify-between bg-[var(--background-tertiary)] p-3 rounded-lg border border-[var(--border-color)]">
+                            <div>
+                                <label class="font-bold text-sm block">Narrador de Donaciones (TTS)</label>
+                                <p class="text-xs text-[var(--text-secondary)]">El bot leerá los mensajes de donación.</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="tts-toggle" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--brand-color-purple)]"></div>
+                            </label>
+                        </div>
                         <div><label class="font-semibold text-sm" data-key="microphone">Microphone</label><select id="mic-select" class="mt-1 w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg p-2"></select></div>
                         <div class="flex flex-col sm:flex-row gap-4">
                             <button id="select-cam-btn" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50" data-key="use_camera"><i data-lucide="camera"></i>Use Camera</button>
@@ -2262,7 +2362,7 @@ function initBitsDepositLogic() {
                     });
                 });
 
-                // Configurar Chat del Studio
+               // Configurar Chat del Studio
                 const studioChatMessages = document.getElementById('studio-chat-messages');
                 const chatRef = collection(streamRef, 'chat');
                 unsubscribeStudioChat = onSnapshot(query(chatRef, orderBy("createdAt", "desc"), limit(50)), (snapshot) => {
