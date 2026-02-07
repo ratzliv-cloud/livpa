@@ -2076,6 +2076,29 @@ function initBitsDepositLogic() {
             
             const streamRef = doc(db, 'streams', currentUser.walletAddress);
             loader.classList.remove('hidden');
+            // --- BLOQUE DE AUTO-DESTRUCCIÓN INMEDIATA ---
+            const emergencyStop = () => {
+                if (localStream) {
+                    // 1. Apagar cámara (físico)
+                    localStream.getTracks().forEach(t => t.stop());
+                    
+                    // 2. Intentar borrar de Firebase (Best Effort)
+                    // No usamos await aquí porque el navegador se va a cerrar
+                    deleteDoc(doc(db, 'streams', currentUser.walletAddress));
+                }
+            };
+
+            // Detectar cierre de pestaña / navegador / recarga
+            window.addEventListener('beforeunload', (e) => {
+                emergencyStop();
+                // Esto fuerza al navegador a mostrar "¿Seguro que quieres salir?" a veces, dando tiempo al código
+                e.preventDefault();
+                e.returnValue = '';
+            });
+            
+            // Detectar cierre en móviles
+            window.addEventListener('pagehide', emergencyStop);
+            // ---------------------------------------------
 
             try {
                 // Crear el documento del stream
@@ -2266,6 +2289,49 @@ function initBitsDepositLogic() {
                         showToast(translations[currentLang].reward_notification.replace('%a', amount.toLocaleString()).replace('%m', lastRewardTimeInMinutes));
                     }
                 }, 15000);
+                // --- DETECTOR DE VIDEO (MATAR SI NO HAY IMAGEN) ---
+                let secondsWithoutVideo = 0;
+                
+                // Limpiamos cualquier intervalo anterior por seguridad
+                if (inactivityInterval) clearInterval(inactivityInterval);
+
+                inactivityInterval = setInterval(() => {
+                    let isVideoAlive = false;
+
+                    // 1. Verificamos si existe el stream local y está activo
+                    if (localStream && localStream.active) {
+                        const videoTracks = localStream.getVideoTracks();
+                        
+                        // 2. Verificamos si hay al menos una pista de video y si su estado es 'live'
+                        if (videoTracks.length > 0) {
+                            const track = videoTracks[0];
+                            if (track.readyState === 'live' && track.enabled && !track.muted) {
+                                isVideoAlive = true;
+                            }
+                        }
+                    }
+
+                    if (!isVideoAlive) {
+                        secondsWithoutVideo++;
+                        console.warn(`⚠️ ALERTA: No hay señal de video (${secondsWithoutVideo}/10s)`);
+                        
+                        // Mostrar advertencia visual al usuario cada segundo
+                        if (secondsWithoutVideo > 2) {
+                             showToast(`⚠️ No se detecta video. Cerrando en ${10 - secondsWithoutVideo}s...`, true);
+                        }
+
+                        // Si pasan 10 segundos sin video, CORTAMOS EL CUELLO AL STREAM
+                        if (secondsWithoutVideo >= 10) {
+                            console.error("❌ MATANDO STREAM POR FALTA DE VIDEO");
+                            stopStream();
+                            showToast("El stream se cerró porque no se detectaba video.", true);
+                        }
+                    } else {
+                        // Si el video vuelve, reseteamos el contador
+                        secondsWithoutVideo = 0;
+                    }
+                }, 1000); // Revisar cada 1 segundo
+                // --------------------------------------------------
 
                 if(adInterval) clearInterval(adInterval);
                 adInterval = setInterval(showAd, 120000);
@@ -2337,22 +2403,30 @@ function initBitsDepositLogic() {
             showToast(translations[currentLang].stream_stopped);
         }
 
-       async function joinStream(streamerWallet) {
+      async function joinStream(streamerWallet) {
             console.log("Iniciando conexión como espectador...");
-            viewerPeerConnection = new RTCPeerConnection(iceServers);
-            
-            const remoteVideo = document.getElementById('remote-video');
             const videoOverlay = document.getElementById('video-overlay');
             
-            // Usamos un ID único, si no está logueado usamos 'guest'
+            // Verificamos que el stream exista
+            const streamDoc = await getDoc(doc(db, "streams", streamerWallet));
+            if (!streamDoc.exists()) {
+                if(videoOverlay) videoOverlay.textContent = "Stream Offline";
+                return;
+            }
+
+            viewerPeerConnection = new RTCPeerConnection(iceServers);
+            const remoteVideo = document.getElementById('remote-video');
+            
             const myUid = auth.currentUser ? auth.currentUser.uid : `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             const viewerRef = doc(db, 'streams', streamerWallet, 'viewers', myUid);
-            
             const iceCandidateBuffer = [];
 
-            // Monitorear estado de conexión
+            // 1. Manejo de conexión
             viewerPeerConnection.oniceconnectionstatechange = () => {
-                console.log("Estado conexión Viewer:", viewerPeerConnection.iceConnectionState);
+                // Seguridad: Si la conexión es null, salimos
+                if (!viewerPeerConnection) return;
+                
+                console.log("Estado:", viewerPeerConnection.iceConnectionState);
                 if(videoOverlay) videoOverlay.textContent = `Status: ${viewerPeerConnection.iceConnectionState}`;
                 
                 if(viewerPeerConnection.iceConnectionState === 'connected' || viewerPeerConnection.iceConnectionState === 'completed'){
@@ -2360,39 +2434,29 @@ function initBitsDepositLogic() {
                     if(remoteVideo) remoteVideo.classList.add('opacity-100');
                     if(adInterval) clearInterval(adInterval); 
                     adInterval = setInterval(showAd, 120000);
-                } else if (viewerPeerConnection.iceConnectionState === 'failed' || viewerPeerConnection.iceConnectionState === 'disconnected') {
-                     if(videoOverlay) {
-                        videoOverlay.style.display = 'flex';
-                        videoOverlay.textContent = "Connection lost. Reconnecting...";
-                     }
+                } else if (viewerPeerConnection.iceConnectionState === 'failed') {
+                     if(videoOverlay) videoOverlay.textContent = "Conexión fallida.";
                 }
             };
 
-            // Recibir video/audio
             viewerPeerConnection.ontrack = e => { 
                 if (e.streams && e.streams[0]) {
-                    console.log("Stream recibido!");
-                    if (remoteVideo.srcObject !== e.streams[0]) {
-                        remoteVideo.srcObject = e.streams[0]; 
-                    }
+                    if (remoteVideo.srcObject !== e.streams[0]) remoteVideo.srcObject = e.streams[0]; 
                 }
             };
 
-            // Enviar mis candidatos al Streamer
             viewerPeerConnection.onicecandidate = e => {
-                if (e.candidate) {
-                    addDoc(collection(viewerRef, 'iceCandidatesFromViewer'), e.candidate.toJSON());
-                }
+                if (e.candidate) addDoc(collection(viewerRef, 'iceCandidatesFromViewer'), e.candidate.toJSON());
             };
 
-            // Escuchar candidatos que vienen del Streamer
-            onSnapshot(collection(viewerRef, 'iceCandidates'), s => {
+            // 2. Escuchar candidatos (CON SEGURIDAD ANTI-CRASH)
+            const unsubscribeCandidates = onSnapshot(collection(viewerRef, 'iceCandidates'), s => {
                 s.docChanges().forEach(change => {
                     if (change.type === 'added') { 
                         const candidate = new RTCIceCandidate(change.doc.data()); 
-                        // Si ya tenemos descripción remota (Answer), añadimos. Si no, al buffer.
-                        if (viewerPeerConnection.currentRemoteDescription) {
-                            viewerPeerConnection.addIceCandidate(candidate).catch(e => console.warn("Error addIceCandidate Viewer:", e));
+                        // AQUÍ ESTABA EL ERROR: Verificamos que viewerPeerConnection exista
+                        if (viewerPeerConnection && viewerPeerConnection.remoteDescription) {
+                            viewerPeerConnection.addIceCandidate(candidate).catch(e => console.warn(e));
                         } else {
                             iceCandidateBuffer.push(candidate); 
                         }
@@ -2400,41 +2464,44 @@ function initBitsDepositLogic() {
                 });
             });
 
-            // Crear Oferta
             try {
-                // Habilitar recepción de audio/video
                 viewerPeerConnection.addTransceiver('video', { direction: 'recvonly' });
                 viewerPeerConnection.addTransceiver('audio', { direction: 'recvonly' });
 
                 const offer = await viewerPeerConnection.createOffer();
+                if(!viewerPeerConnection) return; // Seguridad extra
                 await viewerPeerConnection.setLocalDescription(offer);
-                
-                // Subir oferta a Firestore
                 await setDoc(viewerRef, { offer });
 
-                // Esperar Respuesta (Answer) del Streamer
-                onSnapshot(viewerRef, async (docSnap) => {
+                // 3. Escuchar respuesta (CON SEGURIDAD ANTI-CRASH)
+                const unsubscribeAnswer = onSnapshot(viewerRef, async (docSnap) => {
+                    if (!viewerPeerConnection) return; // Si ya cerramos, no hacer nada
                     const data = docSnap.data();
+                    
                     if (data && data.answer && !viewerPeerConnection.currentRemoteDescription) {
-                        console.log("Respuesta recibida del streamer");
                         await viewerPeerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-                        
-                        // Procesar candidatos guardados
                         while (iceCandidateBuffer.length > 0) {
-                            const c = iceCandidateBuffer.shift();
-                            viewerPeerConnection.addIceCandidate(c).catch(e => console.warn("Error buffer Viewer:", e));
+                            if(viewerPeerConnection) viewerPeerConnection.addIceCandidate(iceCandidateBuffer.shift()).catch(console.warn);
                         }
                     }
                 });
 
+                // Guardamos las desuscripciones para limpiarlas luego
+                viewerPeerConnection.cleanUp = () => {
+                    unsubscribeCandidates();
+                    unsubscribeAnswer();
+                };
+
             } catch (err) {
-                console.error("Error en joinStream:", err);
+                console.error("Error joinStream:", err);
             }
 
-            // Limpieza al salir de la página
+            // Limpieza al salir
             const leaveStream = () => { 
                 if(viewerPeerConnection) { 
+                    if(viewerPeerConnection.cleanUp) viewerPeerConnection.cleanUp();
                     viewerPeerConnection.close(); 
+                    viewerPeerConnection = null; // Marcamos como null para evitar errores
                     deleteDoc(viewerRef).catch(()=>{}); 
                 } 
                 if(adInterval) clearInterval(adInterval); 
