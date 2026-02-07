@@ -808,26 +808,56 @@
                 </div>`;
         }
 
-        async function renderExplorePage(category = null) {
+       async function renderExplorePage(category = null) {
+            // 1. Guardar referencia para navegación
             currentPageRender = () => renderExplorePage(category);
+            
+            // 2. Preparar consulta (buscar streams marcados como 'live')
             let streamsQuery = query(collection(db, "streams"), where("status", "==", "live"));
             if (category) {
                 streamsQuery = query(collection(db, "streams"), where("status", "==", "live"), where("category", "==", category));
             }
             
+            // 3. Obtener datos
             const querySnapshot = await getDocs(streamsQuery);
             let carouselHTML = '';
             let smallGridHTML = '';
             
-            if (querySnapshot.empty) {
-                smallGridHTML = `<p class="text-center text-[var(--text-secondary)] col-span-full">${translations[currentLang].no_one_live.replace('%s', category || 'any')}</p>`;
+            // --- AQUÍ ESTÁ EL CAMBIO IMPORTANTE (FILTRO DE FANTASMAS) ---
+            // Filtramos los resultados antes de usarlos
+            let streamDocs = querySnapshot.docs.filter(doc => {
+                const data = doc.data();
+                
+                // Si no tiene 'lastPing' (es un stream muy nuevo o versión vieja), lo mostramos por si acaso.
+                // Con el tiempo, todos tus streams tendrán lastPing.
+                if (!data.lastPing) return true; 
+
+                const now = Date.now();
+                const lastPingTime = data.lastPing.toDate().getTime();
+                const diffSeconds = (now - lastPingTime) / 1000; // Diferencia en segundos
+                
+                // Si la última señal de vida fue hace menos de 25 segundos, LO MOSTRAMOS.
+                // Si fue hace más, lo consideramos MUERTO y lo ocultamos.
+                return diffSeconds < 25; 
+            });
+            // ------------------------------------------------------------
+            
+            // 4. Ordenar por espectadores (de mayor a menor)
+            streamDocs.sort((a, b) => (b.data().viewerCount || 0) - (a.data().viewerCount || 0));
+            
+            // 5. Generar HTML
+            if (streamDocs.length === 0) {
+                // Mensaje si no hay nadie vivo (o todos fueron filtrados como fantasmas)
+                const msg = category ? 
+                    translations[currentLang].no_one_live.replace('%s', category) : 
+                    "No hay nadie en vivo en este momento.";
+                smallGridHTML = `<p class="text-center text-[var(--text-secondary)] col-span-full py-10">${msg}</p>`;
             } else {
-                let streamDocs = querySnapshot.docs;
+                // Separar los top 5 para el carrusel
+                // Nota: splice modifica el array original, así que 'streamDocs' se queda con el resto
+                const carouselDocs = streamDocs.slice(0, 5); // Tomamos los primeros 5 para carrusel
                 
-                streamDocs.sort((a, b) => (b.data().viewerCount || 0) - (a.data().viewerCount || 0));
-                
-                const carouselDocs = streamDocs.splice(0, 5); 
-                
+                // HTML del Carrusel
                 carouselDocs.forEach((doc, index) => {
                     carouselHTML += `
                         <div class="carousel-item p-2 ${index === 0 ? 'is-active' : ''}" data-index="${index}">
@@ -835,21 +865,17 @@
                         </div>`;
                 });
                 
+                // HTML de la Cuadrícula (Mostramos TODOS, incluidos los del carrusel, o solo el resto, como prefieras. 
+                // Aquí mostramos todos para que la cuadrícula se vea llena)
                 streamDocs.forEach(doc => {
                     smallGridHTML += renderStreamCardSmall(doc);
                 });
-                
-                if (streamDocs.length === 0 && carouselHTML === '') {
-                     smallGridHTML = `<p class="text-center text-[var(--text-secondary)] col-span-full">No hay streams en vivo en este momento.</p>`;
-                } else if (streamDocs.length === 0 && carouselHTML !== '') {
-                    smallGridHTML = `<p class="text-center text-[var(--text-secondary)] col-span-full">There are no other live streams at this time.</p>`;
-                }
             }
             
             const title = category ? `Canales en Vivo - ${category}` : translations[currentLang].explore_title;
             
+            // 6. Renderizar en pantalla
             renderPage(`
-                <!-- Carrusel Destacado -->
                 ${carouselHTML ? `
                 <div id="featured-carousel-container" class="relative mb-8 -mx-4 md:-mx-8">
                     <div id="featured-carousel" class="flex overflow-x-auto snap-x snap-mandatory">
@@ -859,12 +885,12 @@
                     <button class="carousel-nav next p-2 hidden"><i data-lucide="chevron-right"></i></button>
                 </div>` : ''}
                 
-                <!-- Cuadrícula Pequeña -->
                 <h1 class="text-3xl font-bold mb-6" data-key="explore_title">${title}</h1>
                 <div id="streams-grid-small" class="gap-4">
                     ${smallGridHTML}
                 </div>`, 'explore');
             
+            // 7. Agregar eventos de click (Navegación)
             let hoverTimer;
             document.querySelectorAll('.stream-card, .stream-card-small').forEach(card => {
                 const streamerWallet = card.dataset.streamerWallet;
@@ -875,6 +901,7 @@
                     renderWatchStreamPage(streamerWallet);
                 });
 
+                // Previsualización al pasar el mouse (solo PC)
                 card.addEventListener('mouseenter', () => {
                     if (!isMobile) {
                         hoverTimer = setTimeout(() => {
@@ -889,8 +916,9 @@
                 });
             });
             
+            // 8. Lógica del Carrusel (Movimiento y botones)
             const carousel = document.getElementById('featured-carousel');
-            if (carousel) {
+            if (carousel && carouselHTML) {
                 const navPrev = document.querySelector('.carousel-nav.prev');
                 const navNext = document.querySelector('.carousel-nav.next');
                 const items = carousel.querySelectorAll('.carousel-item');
@@ -920,15 +948,10 @@
                         updateCarousel(true);
                     };
 
-                    navPrev.onclick = () => {
-                        slide(-1);
-                        resetTimer();
-                    };
-                    navNext.onclick = () => {
-                        slide(1);
-                        resetTimer();
-                    };
+                    navPrev.onclick = () => { slide(-1); resetTimer(); };
+                    navNext.onclick = () => { slide(1); resetTimer(); };
                     
+                    // Detectar scroll manual
                     carousel.onscroll = () => {
                         const scrollLeft = carousel.scrollLeft;
                         const itemWidth = items[0].offsetWidth;
@@ -2289,6 +2312,28 @@ function initBitsDepositLogic() {
                         showToast(translations[currentLang].reward_notification.replace('%a', amount.toLocaleString()).replace('%m', lastRewardTimeInMinutes));
                     }
                 }, 15000);
+                // --- NUEVO: SISTEMA DE LATIDOS (HEARTBEAT) ---
+                // Esto avisa a la base de datos cada 5 segundos que sigues vivo.
+                // Si cierras la pestaña de golpe, esto se detiene y el stream desaparece del inicio.
+                let pulseInterval = setInterval(async () => {
+                   if (auth.currentUser) {
+                       try {
+                           const activeStreamRef = doc(db, 'streams', currentUser.walletAddress);
+                           // Enviamos la hora actual del servidor
+                           await updateDoc(activeStreamRef, { lastPing: serverTimestamp() });
+                       } catch (e) {
+                           console.log("Error enviando latido:", e);
+                       }
+                   }
+                }, 5000); // Cada 5 segundos
+                
+                // Aseguramos que se limpie al parar
+                const originalStopStream = stopStream;
+                stopStream = async () => {
+                    clearInterval(pulseInterval); // Detener latidos
+                    await originalStopStream();
+                };
+                // ----------------------------------------------
                 // --- DETECTOR DE VIDEO (MATAR SI NO HAY IMAGEN) ---
                 let secondsWithoutVideo = 0;
                 
