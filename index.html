@@ -2363,31 +2363,98 @@ function initBitsDepositLogic() {
                 });
 
                // Configurar Chat del Studio
+              // Configurar Chat del Studio con TTS (Narrador) MEJORADO
                 const studioChatMessages = document.getElementById('studio-chat-messages');
                 const chatRef = collection(streamRef, 'chat');
+                
+                // --- CONFIGURACIÓN DE VOZ ---
+                const ttsToggle = document.getElementById('tts-toggle');
+                let isTtsEnabled = false;
+                
+                // Cargar voces al inicio (Chrome a veces tarda en cargarlas)
+                let availableVoices = [];
+                window.speechSynthesis.onvoiceschanged = () => {
+                    availableVoices = window.speechSynthesis.getVoices();
+                };
+
+                if(ttsToggle) {
+                    ttsToggle.addEventListener('change', (e) => {
+                        isTtsEnabled = e.target.checked;
+                        if (isTtsEnabled) {
+                            // TRUCO: Hablar inmediatamente al hacer clic para desbloquear el audio del navegador
+                            const testMsg = new SpeechSynthesisUtterance("Narrador activado");
+                            testMsg.lang = 'es-ES';
+                            testMsg.volume = 1.0;
+                            window.speechSynthesis.cancel(); // Limpiar cola anterior
+                            window.speechSynthesis.speak(testMsg);
+                        }
+                    });
+                }
+
                 unsubscribeStudioChat = onSnapshot(query(chatRef, orderBy("createdAt", "desc"), limit(50)), (snapshot) => {
                     snapshot.docChanges().reverse().forEach(change => {
                         if (change.type === "added") {
-                            const msg = change.doc.data(), msgEl = document.createElement('div');
+                            const msg = change.doc.data();
+                            const msgEl = document.createElement('div');
+                            
                             const userNameBtn = `<button class="font-semibold mod-user-btn hover:underline" style="color: ${msg.userColor || '#FFF'}" data-wallet="${msg.userWallet}" data-name="${msg.userName}">${msg.userName}</button>`;
                             
-                            if (msg.userWallet === 'system') {
+                            if (msg.isDonation) {
+                                // Estilo Donación
+                                msgEl.className = 'p-2 my-1 rounded bg-purple-900/30 border border-purple-500 text-xs animate-fade-in';
+                                msgEl.innerHTML = `
+                                    <div class="flex items-center gap-2 font-bold text-purple-300">
+                                        <i data-lucide="gift" class="w-4 h-4"></i> ${msg.userName} donó ${msg.donationAmount} BITS
+                                    </div>
+                                    <p class="text-white mt-1 text-sm font-medium">${msg.text}</p>
+                                `;
+                                lucide.createIcons();
+
+                                // --- LÓGICA DE VOZ CORREGIDA ---
+                                // 1. Verificar si está activo
+                                // 2. Verificar que el mensaje sea reciente (menos de 30 seg) para no leer mensajes viejos al recargar
+                                const now = Date.now();
+                                const msgTime = msg.createdAt ? msg.createdAt.toDate().getTime() : now; 
+                                const isRecent = (now - msgTime) < 30000; 
+
+                                if (isTtsEnabled && isRecent) {
+                                    // Cancelar cualquier habla anterior para que no se atropellen
+                                    window.speechSynthesis.cancel();
+
+                                    const utterance = new SpeechSynthesisUtterance(`${msg.userName} donó ${msg.donationAmount} bits y dice: ${msg.text}`);
+                                    
+                                    // Configuración robusta de voz
+                                    utterance.lang = 'es-ES'; 
+                                    utterance.rate = 1.0;  // Velocidad normal
+                                    utterance.pitch = 1.0; // Tono normal
+                                    utterance.volume = 1.0; // Volumen máximo
+
+                                    // Intentar forzar una voz en español si está disponible
+                                    if (availableVoices.length === 0) availableVoices = window.speechSynthesis.getVoices();
+                                    const spanishVoice = availableVoices.find(voice => voice.lang.includes('es'));
+                                    if (spanishVoice) utterance.voice = spanishVoice;
+
+                                    console.log("Narrando donación:", msg.text); // Debug en consola
+                                    window.speechSynthesis.speak(utterance);
+                                }
+                                // -------------------------------
+
+                            } else if (msg.userWallet === 'system') {
                                 msgEl.className = 'text-xs p-1 text-red-500 italic';
                                 msgEl.innerHTML = `<strong>${msg.userName}:</strong> ${msg.text}`;
-                            }
-                            else if (msg.vipEmoji) {
+                            } else if (msg.vipEmoji) {
                                 msgEl.className = 'super-chat text-xs'; 
-                                msgEl.innerHTML = `<div class="flex items-center gap-1 mb-1"><img src="${msg.vipEmoji.url}" class="w-6 h-6"><div class="font-bold">${userNameBtn} ${translations[currentLang].sent} ${msg.vipEmoji.price} BIT</div></div><p>${msg.text}</p>`;
+                                msgEl.innerHTML = `<div class="flex items-center gap-1 mb-1"><img src="${msg.vipEmoji.url}" class="w-6 h-6"><div class="font-bold">${userNameBtn} envió ${msg.vipEmoji.price} BIT</div></div><p>${msg.text}</p>`;
                             } else { 
                                 msgEl.className = 'text-xs p-1'; 
                                 msgEl.innerHTML = `${userNameBtn}: ${msg.text}`; 
                             }
+                            
                             studioChatMessages.appendChild(msgEl);
                         }
                     });
                     studioChatMessages.scrollTop = studioChatMessages.scrollHeight;
                 });
-
                 // UI Updates
                 document.getElementById('stream-status-text').innerHTML = `<span class="text-red-500 font-bold flex items-center gap-2"><div class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>LIVE</span>`;
                 document.getElementById('start-stream-btn').disabled = true; 
