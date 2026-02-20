@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script>(function(s){s.dataset.zone='10614352',s.src='https://gizokraijaw.net/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-    <title>Live Payout - Tu Plataforma de Streaming</title>
-
+    <meta name="monetag" content="484e528903cef212d20b45b44298c699">
+<script>(function(s){s.dataset.zone='10302102',s.src='https://groleegni.net/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+    <title>Live Payout - Your Streaming Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="icon" type="image/jpeg" href="https://i.postimg.cc/4xL1nYWJ/android-chrome-512x512.png">
     <link rel="manifest" href="/site.webmanifest">
-    <!-- Librerías de Solana añadidas para la nueva lógica de depósito -->
+    <!-- Solana Libraries -->
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
     <script src="https://unpkg.com/@solana/spl-token@latest/lib/index.iife.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
@@ -91,7 +91,6 @@
             object-fit: cover;
         }
         
-        /* Estilos para el modal de moderación */
         #mod-modal {
             transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
         }
@@ -99,56 +98,51 @@
             transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
-        /* --- NUEVO: Estilos del Carrusel --- */
+        /* --- Carousel Styles --- */
         #featured-carousel-container {
             position: relative;
         }
         
-        /* Contenedor del carrusel con scroll-snap */
         #featured-carousel {
             display: flex;
             overflow-x: auto;
             scroll-snap-type: x mandatory;
             scroll-behavior: smooth;
-            /* Ocultar scrollbar */
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none; /* IE 10+ */
+            scrollbar-width: none; 
+            -ms-overflow-style: none;
         }
         #featured-carousel::-webkit-scrollbar {
-            display: none; /* Chrome/Safari/Webkit */
+            display: none;
         }
 
-        /* Cada item del carrusel */
         .carousel-item {
-            flex: 0 0 90%; /* En móvil, ocupa el 90% */
+            flex: 0 0 90%; 
             scroll-snap-align: center;
             transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-            opacity: 0.3; /* Más oscuro por defecto */
+            opacity: 0.3;
             transform: scale(0.95);
         }
         
-        /* Item centrado (activo) */
         .carousel-item.is-active {
             opacity: 1;
             transform: scale(1);
         }
 
-        @media (min-width: 768px) { /* md */
+        @media (min-width: 768px) { 
             .carousel-item {
-                flex: 0 0 60%; /* En PC, ocupa el 60% */
+                flex: 0 0 60%;
             }
         }
         
-        /* Efecto de degradado en los bordes */
         #featured-carousel-container::before,
         #featured-carousel-container::after {
             content: '';
             position: absolute;
             top: 0;
             bottom: 0;
-            width: 50px; /* Ancho del degradado */
+            width: 50px;
             z-index: 10;
-            pointer-events: none; /* Permite hacer clic a través */
+            pointer-events: none;
         }
         #featured-carousel-container::before {
             left: 0;
@@ -159,7 +153,6 @@
             background: linear-gradient(to left, var(--background-primary) 0%, transparent 100%);
         }
 
-        /* Botones de navegación del carrusel */
         .carousel-nav {
             position: absolute;
             top: 50%;
@@ -168,7 +161,7 @@
             background-color: rgba(0,0,0,0.5);
             border-radius: 9999px;
             color: white;
-            opacity: 0.5; /* Más tenue por defecto */
+            opacity: 0.5;
             transition: opacity 0.2s ease;
         }
         .carousel-nav:hover {
@@ -177,42 +170,40 @@
         .carousel-nav.prev { left: 1.5rem; }
         .carousel-nav.next { right: 1.5rem; }
         
-        /* --- NUEVO: Estilos Cuadrícula Inferior --- */
+        /* --- Small Grid Styles --- */
         #streams-grid-small {
             display: grid;
-            grid-template-columns: repeat(2, 1fr); /* 2 columnas en móvil */
-            gap: 1rem; /* gap más pequeño */
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
         }
         
-        /* Tarjeta pequeña */
         .stream-card-small .thumbnail {
             width: 100%;
-            height: 100px; /* Imagen más pequeña */
+            height: 100px;
             object-fit: cover;
         }
         .stream-card-small .info {
-            padding: 0.75rem; /* Menos padding */
+            padding: 0.75rem;
         }
         .stream-card-small .info .title {
-            font-size: 0.875rem; /* Texto más pequeño */
+            font-size: 0.875rem; 
             font-weight: 600;
         }
         .stream-card-small .info .text-data {
-            font-size: 0.75rem; /* Texto más pequeño */
+            font-size: 0.75rem;
         }
 
-        /* En PC, la cuadrícula pequeña vuelve a 3 o 4 columnas */
-        @media (min-width: 640px) { /* sm */
+        @media (min-width: 640px) {
             #streams-grid-small {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
-        @media (min-width: 1024px) { /* lg */
+        @media (min-width: 1024px) {
             #streams-grid-small {
                 grid-template-columns: repeat(3, 1fr);
             }
         }
-        @media (min-width: 1280px) { /* xl */
+        @media (min-width: 1280px) {
             #streams-grid-small {
                 grid-template-columns: repeat(4, 1fr);
             }
@@ -246,14 +237,13 @@
                     <a href="#" class="nav-link nav-action px-3 py-2 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-all flex items-center gap-2" data-target="explore" data-key="explore"><i data-lucide="compass"></i><span class="sidebar-text">Explore</span></a>
                     <a href="#" class="nav-link nav-action px-3 py-2 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-all flex items-center gap-2" data-target="categories" data-key="categories"><i data-lucide="layout-grid"></i><span class="sidebar-text">Categories</span></a>
                     
-                    <!-- BOTÓN CLIPS (Desktop) -->
-                    <a href="https://liveclips.org/" target="_blank" class="nav-link px-3 py-2 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-all flex items-center gap-2 text-red-500 font-bold">
+                    <a href="https://liveclips.vercel.app/" target="_blank" class="nav-link px-3 py-2 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-all flex items-center gap-2 text-red-500 font-bold">
                         <i data-lucide="clapperboard"></i><span class="sidebar-text">CLIPS</span>
                     </a>
                 </div>
             </div>
             <div id="user-profile-area" class="flex items-center gap-2 md:gap-4">
-                <!-- Se rellena dinámicamente -->
+                <!-- Filled dynamically -->
             </div>
         </header>
 
@@ -270,8 +260,7 @@
                         <a href="#" class="nav-link nav-action flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-colors" data-target="explore" data-key="explore"><i data-lucide="compass" class="w-5 h-5"></i>Explore</a>
                         <a href="#" class="nav-link nav-action flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-colors" data-target="categories" data-key="categories"><i data-lucide="layout-grid" class="w-5 h-5"></i>Categories</a>
                         
-                        <!-- BOTÓN CLIPS (Móvil) -->
-                        <a href="https://liveclips.org/" target="_blank" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-colors text-red-500 font-bold">
+                        <a href="https://liveclips.vercel.app/" target="_blank" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--background-tertiary)] hover:text-white transition-colors text-red-500 font-bold">
                             <i data-lucide="clapperboard" class="w-5 h-5"></i><span>CLIPS</span>
                         </a>
                         
@@ -289,34 +278,34 @@
                 <div class="px-4 flex-1 overflow-y-auto overflow-x-hidden">
                   <h3 class="px-3 text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-2 sidebar-text" data-key="recommended_channels">Recommended Channels</h3>
                   <div id="recommended-channels" class="space-y-3">
-                      <!-- Canales recomendados se cargan aquí -->
+                      <!-- Recommended channels load here -->
                   </div>
                 </div>
             </aside>
 
             <main id="main-content" class="flex-1 bg-[var(--background-primary)] flex flex-col overflow-y-auto p-4 md:p-8 transition-all duration-300">
-                <!-- Contenido por defecto: Explorar -->
+                <!-- Default content -->
             </main>
         </div>
     </div>
     <div id="donation-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[101] hidden animate-fade-in">
         <div class="bg-[var(--background-secondary)] p-6 rounded-2xl shadow-2xl w-full max-w-sm border border-[var(--brand-color-purple)] transform scale-100">
-            <h2 class="text-xl font-bold mb-4 text-center">Donar al Streamer</h2>
+            <h2 class="text-xl font-bold mb-4 text-center">Donate to Streamer</h2>
             
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-semibold mb-1">Cantidad (BITS)</label>
+                    <label class="block text-sm font-semibold mb-1">Amount (BITS)</label>
                     <input type="number" id="donate-amount" class="w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg p-2 focus:border-[var(--brand-color-purple)] outline-none" placeholder="Min: 10">
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-semibold mb-1">Mensaje para el Bot</label>
-                    <textarea id="donate-message" rows="3" class="w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg p-2 focus:border-[var(--brand-color-purple)] outline-none" placeholder="Escribe algo..."></textarea>
+                    <label class="block text-sm font-semibold mb-1">Message for the Bot</label>
+                    <textarea id="donate-message" rows="3" class="w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg p-2 focus:border-[var(--brand-color-purple)] outline-none" placeholder="Write something..."></textarea>
                 </div>
                 
                 <div class="flex gap-3 mt-4">
-                    <button id="cancel-donation" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg">Cancelar</button>
-                    <button id="confirm-donation" class="flex-1 purple-gradient-bg hover:opacity-90 text-white font-bold p-2 rounded-lg">Donar</button>
+                    <button id="cancel-donation" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg">Cancel</button>
+                    <button id="confirm-donation" class="flex-1 purple-gradient-bg hover:opacity-90 text-white font-bold p-2 rounded-lg">Donate</button>
                 </div>
             </div>
         </div>
@@ -324,21 +313,98 @@
 
 
     <div id="login-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in hidden">
-        <div class="bg-[var(--background-secondary)] p-8 rounded-2xl shadow-2xl w-full max-w-md border border-[var(--border-color)] text-center transform transition-all duration-300 scale-95">
+        <div class="bg-[var(--background-secondary)] p-8 rounded-2xl shadow-2xl w-full max-w-md border border-[var(--border-color)] text-center transform transition-all duration-300 scale-95 relative">
+            <button id="close-login-btn" class="absolute top-4 right-4 text-[var(--text-secondary)] hover:text-white"><i data-lucide="x"></i></button>
             <img src="https://i.postimg.cc/d1N7CQs2/photo-2025-09-19-11-13-33-2.jpg" alt="Logo" class="w-24 h-24 rounded-full mx-auto mb-4">
             <h1 class="text-4xl font-extrabold mb-4">
                 <span data-key="welcome_to">Welcome to</span> 
                 <span style="color: var(--brand-color-purple);">Live</span><span class="text-white">Payout</span>
             </h1>
-            <p class="text-[var(--text-secondary)] mb-8" data-key="login_prompt">Enter with your Solana wallet and password.</p>
+            <p class="text-[var(--text-secondary)] mb-6" data-key="login_prompt">Enter with your Solana wallet and password.</p>
+            
+            <!-- AUTO-FILL BUTTON REMOVED AS REQUESTED -->
+
             <form id="login-form" class="space-y-4">
-                <input type="text" id="wallet-address" placeholder="Solana Wallet (Ej: 5x...yZ)" class="w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-1)] transition-all">
+                <input type="text" id="wallet-address" placeholder="Solana Wallet (Ex: 5x...yZ)" class="w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-1)] transition-all">
                 <input type="password" id="login-password" placeholder="Password" class="w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-1)] transition-all">
-                <button type="submit" class="w-full purple-gradient-bg text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:btn-glow" data-key="login_button">
-                    Enter / Create Account
+                
+                <div class="flex items-center gap-2 justify-start py-2">
+                    <input type="checkbox" id="register-toggle" class="w-4 h-4 rounded border-gray-300 text-[var(--brand-color-purple)] focus:ring-[var(--brand-color-purple)]">
+                    <label for="register-toggle" class="text-sm text-white select-none cursor-pointer">I am a new user (Create Account)</label>
+                </div>
+                
+                <div id="security-fields" class="hidden space-y-4 animate-fade-in text-left">
+                    <div class="bg-[var(--background-tertiary)] p-3 rounded-lg border border-yellow-600/50">
+                        <p class="text-xs text-yellow-500 mb-1 font-bold">⚠️ IMPORTANT</p>
+                        <p class="text-xs text-[var(--text-secondary)]">If you forget your password, this question will be the <strong class="text-white">ONLY</strong> way to recover it. If you forget the answer, your account will be lost.</p>
+                    </div>
+                    <div>
+                        <label class="text-xs text-[var(--text-secondary)] font-bold mb-1 block">Security Question</label>
+                        <select id="security-question-select" class="w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-white text-sm">
+                            <option value="pet">What was the name of your first pet?</option>
+                            <option value="school">What was the name of your first school?</option>
+                            <option value="city">In which city were you born?</option>
+                            <option value="mom">What is your mother's middle name?</option>
+                            <option value="custom">Write my own question...</option>
+                        </select>
+                        <input type="text" id="custom-question" placeholder="Write your question..." class="hidden w-full mt-2 bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-white text-sm">
+                    </div>
+                    <div>
+                        <label class="text-xs text-[var(--text-secondary)] font-bold mb-1 block">Secret Answer</label>
+                        <input type="text" id="security-answer-input" placeholder="Your answer (Don't forget it)" class="w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-white text-sm">
+                    </div>
+                </div>
+
+                <button type="submit" id="login-submit-btn" class="w-full purple-gradient-bg text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:btn-glow" data-key="login_button">
+                    Log In
                 </button>
             </form>
+            
+            <button id="forgot-password-link" class="mt-4 text-sm text-[var(--brand-color-purple)] hover:underline hover:text-purple-300 transition-colors">
+                Forgot your password?
+            </button>
+            
             <p id="login-error" class="text-red-500 mt-4 text-sm h-5"></p>
+        </div>
+    </div>
+
+    <!-- Recovery Modal -->
+    <div id="recovery-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[55] hidden animate-fade-in">
+        <div class="bg-[var(--background-secondary)] p-6 rounded-2xl shadow-2xl w-full max-w-sm border border-[var(--brand-color-purple)] relative">
+            <button id="btn-close-recovery-x" class="absolute top-2 right-2 text-[var(--text-secondary)] hover:text-white"><i data-lucide="x"></i></button>
+            <h2 class="text-xl font-bold mb-2 text-center">Recover Password</h2>
+            <p class="text-sm text-[var(--text-secondary)] mb-4 text-center">Answer your security question to reveal your password.</p>
+            
+            <div id="recovery-step-1" class="space-y-3">
+                <label class="block text-xs uppercase text-[var(--text-secondary)] font-bold">Wallet</label>
+                <input type="text" id="recovery-wallet" class="w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg p-2 text-sm" placeholder="Enter your wallet...">
+                <button id="btn-find-account" class="w-full purple-gradient-bg text-white font-bold py-2 rounded-lg mt-2">
+                    Find Account
+                </button>
+            </div>
+
+            <div id="recovery-step-2" class="space-y-3 hidden">
+                <div class="p-3 bg-[var(--background-tertiary)] rounded-lg border border-[var(--brand-color-purple)]">
+                    <p class="text-xs text-[var(--text-secondary)]">Security Question:</p>
+                    <p class="font-bold text-white text-sm mt-1" id="recovery-question-display">...</p>
+                </div>
+                
+                <label class="block text-xs uppercase text-[var(--text-secondary)] font-bold">Your Answer</label>
+                <input type="text" id="recovery-answer" class="w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg p-2 text-sm" placeholder="Type your exact answer...">
+                
+                <label class="block text-xs uppercase text-[var(--text-secondary)] font-bold mt-2">New Password</label>
+                <input type="password" id="recovery-new-password" class="w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg p-2 text-sm" placeholder="Enter new custom password (min 6 chars)...">
+                
+                <button id="btn-reveal-password" class="w-full purple-gradient-bg text-white font-bold py-2 rounded-lg mt-2">
+                    Reset Password
+                </button>
+            </div>
+
+            <div id="recovery-result" class="mt-4 p-3 bg-green-900/30 border border-green-500 rounded-lg text-center hidden">
+                <!-- Contenido generado por JavaScript al tener éxito -->
+            </div>
+            
+            <p id="recovery-error" class="text-red-500 mt-2 text-xs text-center"></p>
         </div>
     </div>
 
@@ -357,22 +423,22 @@
     
     <div id="mod-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[101] hidden opacity-0 scale-95" role="dialog" aria-modal="true" aria-labelledby="mod-modal-title">
         <div id="mod-modal-content" class="bg-[var(--background-secondary)] p-6 rounded-2xl shadow-2xl w-full max-w-sm border border-[var(--border-color)] transform scale-100">
-            <h2 id="mod-modal-title" class="text-xl font-bold mb-2">Moderar Usuario</h2>
-            <p class="text-[var(--text-secondary)] mb-4" id="mod-modal-username">Vas a moderar a...</p>
+            <h2 id="mod-modal-title" class="text-xl font-bold mb-2">Moderate User</h2>
+            <p class="text-[var(--text-secondary)] mb-4" id="mod-modal-username">You are moderating...</p>
             <div class="grid grid-cols-2 gap-3">
                 <button class="mod-action-btn bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg" data-duration="5">Ban 5 Min</button>
                 <button class="mod-action-btn bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg" data-duration="10">Ban 10 Min</button>
-                <button class="mod-action-btn bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg" data-duration="60">Ban 1 Hora</button>
-                <button class="mod-action-btn bg-red-700 hover:bg-red-600 text-white p-2 rounded-lg" data-duration="perma">Ban Permanente</button>
+                <button class="mod-action-btn bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg" data-duration="60">Ban 1 Hour</button>
+                <button class="mod-action-btn bg-red-700 hover:bg-red-600 text-white p-2 rounded-lg" data-duration="perma">Perma Ban</button>
             </div>
-            <button id="mod-modal-cancel" class="mt-4 w-full bg-gray-500 hover:bg-gray-400 text-white p-2 rounded-lg">Cancelar</button>
+            <button id="mod-modal-cancel" class="mt-4 w-full bg-gray-500 hover:bg-gray-400 text-white p-2 rounded-lg">Cancel</button>
         </div>
     </div>
 
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
         import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, addDoc, serverTimestamp, updateDoc, increment, deleteDoc, getDocs, query, where, writeBatch, orderBy, limit, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
@@ -391,7 +457,7 @@
             'Just Chatting': 'https://i.scdn.co/image/ab6765630000ba8a1b9084981ea8acabb928955b', 'Crypto Raiders': 'https://assets.gam3s.gg/crypto_raiders_cover_3156b1065c/crypto_raiders_cover_3156b1065c.png', 'Axie Infinity': 'https://cdn.axieinfinity.com/axieinfinity-website/branding/axie-infinity-logo.png', 'Star Atlas': 'https://s2.coinmarketcap.com/static/img/coins/200x200/11212.png', 'Decentraland': 'https://www.shutterstock.com/image-vector/vector-image-crypto-currency-logo-600nw-2109327635.jpg', 'The Sandbox': 'https://altcoinsbox.com/wp-content/uploads/2023/03/full-the-sandbox-logo.webp', 'Gods Unchained': 'https://cdn1.epicgames.com/spt-assets/0668c386b36843ee816eccaa027005a8/gods-unchained-1cime.jpg', 'Music': 'https://png.pngtree.com/element_our/sm/20180415/sm_5ad31d9b53530.jpg', 'Gaming': 'https://img.freepik.com/vector-gratis/plantilla-logotipo-juegos-degradados_52683-132733.jpg?semt=ais_incoming&w=740&q=80', 'DeFi': 'https://images-platform.99static.com/DVhnqMGIzJRSQ_Jm4MxWYDGEVYg=/178x53:1458x1333/500x500/top/smart/99designs-contests-attachments/129/129813/attachment_129813968'
         };
         const VIP_EMOJIS = [
-            { id: 'penguinsip', url: 'https://i.postimg.cc/DwVTxSBC/40196-penguinsip.gif', price: 20 }, { id: 'pinguin', url: 'https://i.postimg.cc/VLmTvXZP/45541-pinguin.gif', price: 20 }, { id: 'minecraft', url: 'https://i.postimg.cc/Lss1xyx3/403691-minecraft.png', price: 25 }, { id: 'pengubitcoin', url: 'https://i.postimg.cc/tCBrgwVF/42410-pengubitcoin.gif', price: 30 }, { id: 'smart_vegeta', url: 'https://i.postimg.cc/FH2Vd4Fk/793771-smart-vegeta.png', price: 30 }, { id: 'mewgrey', url: 'https://i.postimg.cc/jjWjWB8m/44097-mewgrey.gif', price: 35 }, { id: 'peperain', url: 'https://i.postimg.cc/85CcTF8R/93659-pepemoneyrain.gif', price: 40 }, { id: 'pepemonster', url: 'https://i.postimg.cc/P5z5ZbTb/345529-pepemonster.png', price: 40 }, { id: 'star', url: 'https://i.postimg.cc/fTwT7V2x/990874-star.gif', price: 45 }, { id: 'pepecard', url: 'https://i.postimg.cc/ryr0sr0j/761219-pepe-credit-card.gif', price: 50 }, { id: 'pepecry', url: 'https://i.postimg.cc/sXZXMkXx/471114-pepecry.png', price: 50 }, { id: 'pepesipspin', url: 'https://i.postimg.cc/T2QX6C0D/75754-pepesipspin.gif', price: 55 }
+            { id: 'penguinsip', url: 'https://i.postimg.cc/DwVTxSBC/40196-penguinsip.gif', price: 20 }, { id: 'pinguin', url: 'https://i.postimg.cc/VLmTvXZP/45541-pinguin.gif', price: 20 }, { id: 'minecraft', url: 'https://i.postimg.cc/Lss1xyx3/403691-minecraft.png', price: 25 }, { id: 'pengubitcoin', url: 'https://i.postimg.cc/tCBrgwVF/42410-pengubitcoin.gif', price: 30 }, { id: 'smart_vegeta', url: 'https://i.postimg.cc/FH2Vd4Fk/793771-smart-vegeta.png', price: 30 }, { id: 'mewgrey', url: 'https://i.postimg.cc/jjWjWB8m/44097-mewgrey.gif', price: 35 }, { id: 'peperain', url: 'https://i.postimg.cc/85CcTF8R/93659-pepemoneyrain.gif', price: 40 }, { id: 'pepemonster', url: 'https://i.postimg.cc/P5z5ZbTb/345529-pepemonster.png', price: 40 }, { id: 'star', url: 'https://i.postimg.cc/fTwT7V2x/990874-star.gif', price: 45 }, { id: 'pepecard', url: 'https://i.postimg.cc/ryr0sr0j/761219-pepe-credit-card.gif', price: 50 }, { id: 'pepesipspin', url: 'https://i.postimg.cc/T2QX6C0D/75754-pepesipspin.gif', price: 55 }
         ];
         const REWARD_INTERVAL_MINUTES = 5;
         const REWARD_AMOUNT = 3000;
@@ -409,7 +475,6 @@
         let isSidebarCollapsed = false;
         let carouselTimer = null;
         
-        // --- NUEVO: Variable para el intervalo de inactividad ---
         let inactivityInterval = null;
 
         app = initializeApp(firebaseConfig);
@@ -438,6 +503,18 @@
         const modModalContent = document.getElementById('mod-modal-content');
         const modModalUsername = document.getElementById('mod-modal-username');
         const modModalCancel = document.getElementById('mod-modal-cancel');
+        
+        const forgotPasswordLink = document.getElementById('forgot-password-link');
+        const recoveryModal = document.getElementById('recovery-modal');
+        const closeLoginBtn = document.getElementById('close-login-btn');
+        const btnCloseRecoveryX = document.getElementById('btn-close-recovery-x');
+
+        const registerToggle = document.getElementById('register-toggle');
+        const securityFields = document.getElementById('security-fields');
+        const loginSubmitBtn = document.getElementById('login-submit-btn');
+        const securityQuestionSelect = document.getElementById('security-question-select');
+        const customQuestionInput = document.getElementById('custom-question');
+        const securityAnswerInput = document.getElementById('security-answer-input');
 
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
@@ -477,12 +554,56 @@
                 loader.classList.add('hidden');
             }
         });
+        
+        function cipher(text, key) {
+            if (!key) return null;
+            let result = '';
+            for (let i = 0; i < text.length; i++) {
+                result += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+            }
+            return btoa(result);
+        }
+
+        function decipher(encoded, key) {
+            if (!key) return null;
+            try {
+                let text = atob(encoded);
+                let result = '';
+                for (let i = 0; i < text.length; i++) {
+                    result += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+                }
+                return result;
+            } catch(e) { return null; }
+        }
+        
+        registerToggle.addEventListener('change', () => {
+            if (registerToggle.checked) {
+                securityFields.classList.remove('hidden');
+                loginSubmitBtn.textContent = "Create Secure Account";
+                loginSubmitBtn.classList.remove('purple-gradient-bg');
+                loginSubmitBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+            } else {
+                securityFields.classList.add('hidden');
+                loginSubmitBtn.textContent = "Log In";
+                loginSubmitBtn.classList.add('purple-gradient-bg');
+                loginSubmitBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+            }
+        });
+        
+        securityQuestionSelect.addEventListener('change', () => {
+            if (securityQuestionSelect.value === 'custom') {
+                customQuestionInput.classList.remove('hidden');
+            } else {
+                customQuestionInput.classList.add('hidden');
+            }
+        });
 
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             loginError.textContent = '';
             const walletAddress = walletAddressInput.value.trim();
             const password = passwordInput.value.trim();
+            const isRegistering = registerToggle.checked;
             
             if (walletAddress.length < 32 || walletAddress.length > 44) {
                 loginError.textContent = 'Please enter a valid Solana wallet address.';
@@ -493,34 +614,63 @@
                 return;
             }
 
+            let finalQuestion = '';
+            let finalAnswer = '';
+            if (isRegistering) {
+                const qVal = securityQuestionSelect.value;
+                if (qVal === 'custom') {
+                    finalQuestion = customQuestionInput.value.trim();
+                } else {
+                    finalQuestion = securityQuestionSelect.options[securityQuestionSelect.selectedIndex].text;
+                }
+                finalAnswer = securityAnswerInput.value.trim().toLowerCase();
+
+                if (!finalQuestion || !finalAnswer) {
+                    loginError.textContent = 'You must configure your security question and answer.';
+                    return;
+                }
+            }
+
             loader.classList.remove('hidden');
-            
             const fakeEmail = `${walletAddress}@livepayout.app`;
             
             try {
                 localStorage.setItem('walletAddress', walletAddress);
                 
-                try {
-                    await signInWithEmailAndPassword(auth, fakeEmail, password);
-                } catch (signInError) {
-                    if (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential' || signInError.code === 'auth/wrong-password') {
-                         try {
-                            await createUserWithEmailAndPassword(auth, fakeEmail, password);
-                        } catch (createError) {
-                            if (createError.code === 'auth/email-already-in-use') {
-                                loginError.textContent = 'Incorrect password for this wallet.';
-                            } else {
-                                throw createError;
-                            }
+                if (isRegistering) {
+                    try {
+                        await createUserWithEmailAndPassword(auth, fakeEmail, password);
+                        
+                        const encryptedPass = cipher(password, finalAnswer);
+                        await setDoc(doc(db, "users", walletAddress), {
+                             securityQuestion: finalQuestion,
+                             encryptedPassword: encryptedPass, 
+                             createdAt: serverTimestamp()
+                        }, { merge: true });
+                        
+                    } catch (createError) {
+                        if (createError.code === 'auth/email-already-in-use') {
+                            loginError.textContent = 'This account already exists. Uncheck "I am a new user" to log in.';
+                        } else {
+                            throw createError;
                         }
-                    } else {
-                        throw signInError;
+                    }
+                } else {
+                    try {
+                        await signInWithEmailAndPassword(auth, fakeEmail, password);
+                    } catch (signInError) {
+                        if (signInError.code === 'auth/user-not-found') {
+                            loginError.textContent = 'Account not found. Check "I am a new user" to register.';
+                        } else if (signInError.code === 'auth/wrong-password') {
+                            loginError.textContent = 'Incorrect password.';
+                        } else {
+                            throw signInError;
+                        }
                     }
                 }
-
             } catch (error) {
                 console.error("Login error:", error);
-                loginError.textContent = 'Error logging in: ' + error.message;
+                loginError.textContent = 'Error: ' + error.message;
                 localStorage.removeItem('walletAddress');
                 loader.classList.add('hidden');
             }
@@ -529,9 +679,18 @@
         async function setupUser(wallet) {
             const userRef = doc(db, "users", wallet);
             const userSnap = await getDoc(userRef);
+            
             if (!userSnap.exists()) {
                 await setDoc(userRef, {
-                    walletAddress: wallet, username: `Wallet...${wallet.substring(wallet.length - 4)}`, profilePicture: `https://placehold.co/128x128/1a1a1a/4ade80?text=${wallet.substring(0,1)}`, bitBalance: 1000, creatorRewardsBalance: 0, createdAt: serverTimestamp(), authUid: auth.currentUser.uid, followersCount: 0, followingCount: 0
+                    walletAddress: wallet, 
+                    username: `Wallet...${wallet.substring(wallet.length - 4)}`, 
+                    profilePicture: `https://placehold.co/128x128/1a1a1a/4ade80?text=${wallet.substring(0,1)}`, 
+                    bitBalance: 0, 
+                    creatorRewardsBalance: 0, 
+                    createdAt: serverTimestamp(), 
+                    authUid: auth.currentUser.uid, 
+                    followersCount: 0, 
+                    followingCount: 0
                 });
             } else {
                 if (!userSnap.data().username) await updateDoc(userRef, { username: `Wallet...${wallet.substring(wallet.length - 4)}` });
@@ -546,7 +705,13 @@
             let isInitialLoad = true;
             unsubscribeUser = onSnapshot(userRef, (docSnap) => {
                 if (docSnap.exists()) {
-                    currentUser = { ...docSnap.data(), walletAddress: docSnap.id };
+                    const data = docSnap.data();
+                    currentUser = { 
+                        ...data, 
+                        walletAddress: docSnap.id,
+                        bitBalance: typeof data.bitBalance === 'number' ? data.bitBalance : 0,
+                        creatorRewardsBalance: typeof data.creatorRewardsBalance === 'number' ? data.creatorRewardsBalance : 0
+                    };
                     if (isInitialLoad) {
                         currentLang = localStorage.getItem('lang') || 'en';
                         setLanguage(currentLang);
@@ -594,7 +759,7 @@
                 userProfileArea.innerHTML = `
                     <div class="flex items-center gap-1 md:gap-2 bg-[var(--background-tertiary)] px-2 md:px-3 py-1.5 rounded-full">
                         <img src="${BIT_COIN_LOGO_URL}" class="w-5 h-5 rounded-full object-cover">
-                        <span class="font-semibold text-white text-sm md:text-base">${currentUser.bitBalance.toLocaleString()} <span class="hidden sm:inline">BIT</span></span>
+                        <span class="font-semibold text-white text-sm md:text-base">${(currentUser.bitBalance || 0).toLocaleString()} <span class="hidden sm:inline">BIT</span></span>
                     </div>
                     <button id="profile-button" class="group flex items-center gap-2">
                         <img src="${currentUser.profilePicture}" alt="Profile Picture" class="w-9 h-9 md:w-10 md:h-10 rounded-full object-cover border-2 border-[var(--border-color)] group-hover:border-[var(--brand-color-purple)] transition-colors">
@@ -649,14 +814,12 @@
                 'studio': { render: renderStudioPage, pageKey: 'studio', auth: true }
             };
 
-            // Hacemos la función 'async' para poder esperar (await) a que se cierre el stream
             document.body.addEventListener('click', async (e) => {
                 const profileButton = e.target.closest('#profile-button');
                 if (profileButton) {
                     if (!requireAuth()) return;
                     e.preventDefault();
                     
-                    // Si estamos transmitiendo, esperamos a que se cierre antes de cambiar
                     if (currentPageRender === renderStudioPage && localStream) {
                         await stopStream(); 
                         showToast(translations[currentLang].stream_stopped);
@@ -670,19 +833,14 @@
                 const navAction = e.target.closest('.nav-action');
                 if (navAction) {
                     const targetPageKey = navAction.dataset.target;
-                    // No prevenir la acción si es un enlace externo como CLIPS
                     if (!targetPageKey && navAction.target === '_blank') return;
 
                     e.preventDefault();
 
-                    // --- NUEVO: DETECCIÓN Y CIERRE SEGURO ---
-                    // Si estás en el estudio y transmitiendo...
                     if (currentPageRender === renderStudioPage && localStream) {
-                        // ...ejecutamos stopStream y ESPERAMOS (await) a que termine de borrar en la base de datos
                         await stopStream();
-                        showToast("Stream cerrado correctamente.", true);
+                        showToast("Stream closed successfully.", true);
                     }
-                    // ----------------------------------------
 
                     const page = pages[targetPageKey];
                     if (page) {
@@ -697,7 +855,6 @@
             
             backButton.addEventListener('click', async () => {
                 if (navigationHistory.length > 0) {
-                    // También al volver atrás, si estábamos transmitiendo, cerramos y esperamos
                     if (currentPageRender === renderStudioPage && localStream) {
                         await stopStream();
                     }
@@ -816,7 +973,7 @@
             return `
                 <div class="stream-card-small group bg-[var(--background-secondary)] rounded-xl overflow-hidden border border-[var(--border-color)] hover:border-[var(--brand-color-purple)] transition-all transform hover:-translate-y-1 duration-300 cursor-pointer" data-streamer-wallet="${streamDoc.id}">
                     <div class="relative">
-                        <img src="${stream.thumbnailUrl || 'https://placehold.co/300x170/141418/2a2a32?text=En+Vivo'}" class="thumbnail w-full h-auto object-cover">
+                        <img src="${stream.thumbnailUrl || 'https://placehold.co/300x170/141418/2a2a32?text=LIVE'}" class="thumbnail w-full h-auto object-cover">
                         <div class="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md">LIVE</div>
                         <div class="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-md flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i> ${stream.viewerCount || 0}</div>
                     </div>
@@ -832,55 +989,36 @@
         }
 
        async function renderExplorePage(category = null) {
-            // 1. Guardar referencia para navegación
             currentPageRender = () => renderExplorePage(category);
             
-            // 2. Preparar consulta (buscar streams marcados como 'live')
             let streamsQuery = query(collection(db, "streams"), where("status", "==", "live"));
             if (category) {
                 streamsQuery = query(collection(db, "streams"), where("status", "==", "live"), where("category", "==", category));
             }
             
-            // 3. Obtener datos
             const querySnapshot = await getDocs(streamsQuery);
             let carouselHTML = '';
             let smallGridHTML = '';
             
-            // --- AQUÍ ESTÁ EL CAMBIO IMPORTANTE (FILTRO DE FANTASMAS) ---
-            // Filtramos los resultados antes de usarlos
             let streamDocs = querySnapshot.docs.filter(doc => {
                 const data = doc.data();
-                
-                // Si no tiene 'lastPing' (es un stream muy nuevo o versión vieja), lo mostramos por si acaso.
-                // Con el tiempo, todos tus streams tendrán lastPing.
                 if (!data.lastPing) return true; 
-
                 const now = Date.now();
                 const lastPingTime = data.lastPing.toDate().getTime();
-                const diffSeconds = (now - lastPingTime) / 1000; // Diferencia en segundos
-                
-                // Si la última señal de vida fue hace menos de 25 segundos, LO MOSTRAMOS.
-                // Si fue hace más, lo consideramos MUERTO y lo ocultamos.
+                const diffSeconds = (now - lastPingTime) / 1000; 
                 return diffSeconds < 25; 
             });
-            // ------------------------------------------------------------
             
-            // 4. Ordenar por espectadores (de mayor a menor)
             streamDocs.sort((a, b) => (b.data().viewerCount || 0) - (a.data().viewerCount || 0));
             
-            // 5. Generar HTML
             if (streamDocs.length === 0) {
-                // Mensaje si no hay nadie vivo (o todos fueron filtrados como fantasmas)
                 const msg = category ? 
                     translations[currentLang].no_one_live.replace('%s', category) : 
-                    "No hay nadie en vivo en este momento.";
+                    "No one is live right now.";
                 smallGridHTML = `<p class="text-center text-[var(--text-secondary)] col-span-full py-10">${msg}</p>`;
             } else {
-                // Separar los top 5 para el carrusel
-                // Nota: splice modifica el array original, así que 'streamDocs' se queda con el resto
-                const carouselDocs = streamDocs.slice(0, 5); // Tomamos los primeros 5 para carrusel
+                const carouselDocs = streamDocs.slice(0, 5); 
                 
-                // HTML del Carrusel
                 carouselDocs.forEach((doc, index) => {
                     carouselHTML += `
                         <div class="carousel-item p-2 ${index === 0 ? 'is-active' : ''}" data-index="${index}">
@@ -888,16 +1026,13 @@
                         </div>`;
                 });
                 
-                // HTML de la Cuadrícula (Mostramos TODOS, incluidos los del carrusel, o solo el resto, como prefieras. 
-                // Aquí mostramos todos para que la cuadrícula se vea llena)
                 streamDocs.forEach(doc => {
                     smallGridHTML += renderStreamCardSmall(doc);
                 });
             }
             
-            const title = category ? `Canales en Vivo - ${category}` : translations[currentLang].explore_title;
+            const title = category ? `Live Channels - ${category}` : translations[currentLang].explore_title;
             
-            // 6. Renderizar en pantalla
             renderPage(`
                 ${carouselHTML ? `
                 <div id="featured-carousel-container" class="relative mb-8 -mx-4 md:-mx-8">
@@ -913,7 +1048,6 @@
                     ${smallGridHTML}
                 </div>`, 'explore');
             
-            // 7. Agregar eventos de click (Navegación)
             let hoverTimer;
             document.querySelectorAll('.stream-card, .stream-card-small').forEach(card => {
                 const streamerWallet = card.dataset.streamerWallet;
@@ -924,7 +1058,6 @@
                     renderWatchStreamPage(streamerWallet);
                 });
 
-                // Previsualización al pasar el mouse (solo PC)
                 card.addEventListener('mouseenter', () => {
                     if (!isMobile) {
                         hoverTimer = setTimeout(() => {
@@ -939,7 +1072,6 @@
                 });
             });
             
-            // 8. Lógica del Carrusel (Movimiento y botones)
             const carousel = document.getElementById('featured-carousel');
             if (carousel && carouselHTML) {
                 const navPrev = document.querySelector('.carousel-nav.prev');
@@ -974,7 +1106,6 @@
                     navPrev.onclick = () => { slide(-1); resetTimer(); };
                     navNext.onclick = () => { slide(1); resetTimer(); };
                     
-                    // Detectar scroll manual
                     carousel.onscroll = () => {
                         const scrollLeft = carousel.scrollLeft;
                         const itemWidth = items[0].offsetWidth;
@@ -1030,7 +1161,7 @@
                         <div class="bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)]"><h3 class="font-semibold text-lg mb-4" data-key="settings">Settings</h3>
                             <label for="lang-select" class="font-semibold text-sm" data-key="language">Language</label>
                             <select id="lang-select" class="mt-1 w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg p-2">
-                                <option value="en" ${currentLang === 'en' ? 'selected' : ''}>English</option><option value="es" ${currentLang === 'es' ? 'selected' : ''}>Español</option>
+                                <option value="en" ${currentLang === 'en' ? 'selected' : ''}>English</option>
                             </select>
                         </div>
                         <div class="bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)]"><h3 class="font-semibold text-lg mb-4" data-key="edit_profile">Edit Profile</h3>
@@ -1046,10 +1177,10 @@
                         <div class="bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)]">
                             <h3 class="font-semibold text-lg mb-4 text-purple-400">Deposit</h3>
                             <div class="bg-[var(--background-tertiary)] p-6 rounded-lg text-center">
-                                <p class="text-sm text-[var(--text-secondary)] mb-3">Deposit - Only Solana Blockchain .</p>
+                                <p class="text-sm text-[var(--text-secondary)] mb-3">Deposit - Only Solana Blockchain.</p>
                                 
                                 <div class="flex items-center justify-center mb-4 min-h-[144px]">
-                                    <img id="solana-qr-img" src="" alt="QR de pago Solana" class="w-36 h-36 rounded-lg border border-[var(--border-color)] hidden opacity-0 transition-opacity duration-300">
+                                    <img id="solana-qr-img" src="" alt="Solana Pay QR" class="w-36 h-36 rounded-lg border border-[var(--border-color)] hidden opacity-0 transition-opacity duration-300">
                                 </div>
 
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
@@ -1062,10 +1193,10 @@
                                 
                                 <button id="solana-pay-button" class="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-2 mb-4 ${isMobile ? '' : 'hidden'}">
                                     <i data-lucide="wallet" class="w-5 h-5"></i>
-                                    <span>Pagar BITS</span>
+                                    <span>Pay BITS</span>
                                 </button>
                                 
-                                <p id="bits-status" class="text-sm text-gray-400 mt-3 h-5">Estado: esperando...</p>
+                                <p id="bits-status" class="text-sm text-gray-400 mt-3 h-5">Status: waiting...</p>
                             </div>
                         </div>
 
@@ -1073,7 +1204,7 @@
                             <h3 class="font-semibold text-lg mb-4" data-key="balance_withdrawal">Balance & Withdrawal</h3>
                             <div class="bg-[var(--background-tertiary)] p-6 rounded-lg mb-6">
                                 <p class="text-sm text-[var(--text-secondary)]" data-key="current_balance">Your Current Balance</p>
-                                <div class="flex items-center gap-2"><img src="${BIT_COIN_LOGO_URL}" class="w-10 h-10 rounded-full object-cover"><p class="text-4xl font-bold text-white">${currentUser.bitBalance.toLocaleString()} <span class="text-2xl font-normal text-purple-300">BIT</span></p></div>
+                                <div class="flex items-center gap-2"><img src="${BIT_COIN_LOGO_URL}" class="w-10 h-10 rounded-full object-cover"><p class="text-4xl font-bold text-white">${(currentUser.bitBalance || 0).toLocaleString()} <span class="text-2xl font-normal text-purple-300">BIT</span></p></div>
                                 <p class="text-lg text-green-400 h-7 mt-2" id="usd-equivalent-display">...</p>
                             </div>
                             <p class="text-sm text-[var(--text-secondary)]" id="withdrawal-info-text" data-key="withdrawal_minimum_bit">You need a minimum of ${WITHDRAWAL_MINIMUM_BIT.toLocaleString()} BIT to withdraw.</p>
@@ -1083,9 +1214,9 @@
                         </div>
                         
                         <div class="bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)]">
-                            <h3 class="font-semibold text-lg mb-4" data-key="transaction_history">Historial de Transacciones</h3>
+                            <h3 class="font-semibold text-lg mb-4" data-key="transaction_history">Transaction History</h3>
                             <div id="transaction-history-container" class="space-y-3 max-h-96 overflow-y-auto pr-2">
-                                <p id="transaction-history-loading" class="text-[var(--text-secondary)] text-sm">Cargando historial...</p>
+                                <p id="transaction-history-loading" class="text-[var(--text-secondary)] text-sm">Loading history...</p>
                             </div>
                         </div>
                     </div>
@@ -1137,10 +1268,11 @@
                     const el = document.createElement('div');
                     el.className = 'bg-[var(--background-tertiary)] p-3 rounded-lg flex justify-between items-center';
                     
-                    const date = tx.timestamp ? tx.timestamp.toDate().toLocaleString(currentLang.startsWith('es') ? 'es-ES' : 'en-US') : '...';
+                    const date = tx.timestamp ? tx.timestamp.toDate().toLocaleString('en-US') : '...';
                     let amountColor = tx.amount > 0 ? 'text-green-400' : 'text-red-400';
                     if (tx.type === 'reward_transfer') amountColor = 'text-purple-400';
-                    
+                    if (tx.type === 'welcome_bonus') amountColor = 'text-yellow-400'; 
+
                     let description = translations[currentLang][`tx_${tx.type}`] || tx.type;
                     if (tx.details?.username) {
                         description += ` (${tx.details.username})`;
@@ -1160,7 +1292,7 @@
                 
             }, (error) => {
                 console.error("Error loading transaction history:", error);
-                loadingText.textContent = "Error al cargar el historial.";
+                loadingText.textContent = "Error loading history.";
             });
         }
 
@@ -1190,18 +1322,18 @@ function initBitsDepositLogic() {
 
     function generatePayment(amount) {
         if (!amount || amount <= 0) {
-            status.textContent = "❌ Ingresa un monto válido.";
+            status.textContent = "❌ Enter a valid amount.";
             return;
         }
         if (!currentUser) {
-            status.textContent = "❌ Debes iniciar sesión primero.";
+            status.textContent = "❌ You must log in first.";
             return;
         }
 
         if (window.depositPollingInterval) clearInterval(window.depositPollingInterval);
 
         const reference = `LP${Date.now()}${Math.random().toString(36).substring(2, 8)}`;
-        const solanaPayUrl = `solana:${RECIPIENT_WALLET}?amount=${amount}&spl-token=${TOKEN_MINT_ADDRESS}&memo=${encodeURIComponent(reference)}&label=LivePayout&message=Depósito%20de%20${amount}%20BITS`;
+        const solanaPayUrl = `solana:${RECIPIENT_WALLET}?amount=${amount}&spl-token=${TOKEN_MINT_ADDRESS}&memo=${encodeURIComponent(reference)}&label=LivePayout&message=Deposit%20of%20${amount}%20BITS`;
 
         QRCode.toDataURL(solanaPayUrl, { width: 300, colorDark: "#14F195", colorLight: "#00000000" }, (err, dataUrl) => {
             if (!err) {
@@ -1211,7 +1343,7 @@ function initBitsDepositLogic() {
                 
                 makeQRClickeable(img, solanaPayUrl);
                 
-                btnSolanaPay.querySelector('span').textContent = `Pagar ${amount} BITS`;
+                btnSolanaPay.querySelector('span').textContent = `Pay ${amount} BITS`;
                 btnSolanaPay.onclick = () => {
                      if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) {
                         window.location.href = solanaPayUrl;
@@ -1226,7 +1358,7 @@ function initBitsDepositLogic() {
 
                 startQrPolling(reference, amount, solanaPayUrl);
             } else {
-                status.textContent = "❌ Error al generar QR.";
+                status.textContent = "❌ Error generating QR.";
             }
         });
     }
@@ -1250,7 +1382,7 @@ function initBitsDepositLogic() {
                     img.classList.add("hidden", "opacity-0");
                     btnSolanaPay.classList.add("hidden");
                     if (window.depositPollingInterval) clearInterval(window.depositPollingInterval);
-                    status.textContent = "Estado: esperando...";
+                    status.textContent = "Status: waiting...";
                 }
             }, 500); 
         });
@@ -1265,18 +1397,18 @@ function initBitsDepositLogic() {
     async function startQrPolling(reference, amount, solanaPayUrl) {
         if (window.depositPollingInterval) clearInterval(window.depositPollingInterval);
         
-        status.innerHTML = `Escanea el QR para pagar ${amount} BITS. Esperando pago... <div class="w-4 h-4 border-2 border-dashed rounded-full animate-spin inline-block ml-2"></div>`;
+        status.innerHTML = `Scan QR to pay ${amount} BITS. Waiting for payment... <div class="w-4 h-4 border-2 border-dashed rounded-full animate-spin inline-block ml-2"></div>`;
         
         let pollCount = 0;
         const maxPolls = 90; 
 
         window.depositPollingInterval = setInterval(async () => {
             pollCount++;
-            console.log(`[Tatum API] Buscando pago con referencia: ${reference} (Intento ${pollCount}/${maxPolls})`);
+            console.log(`[Tatum API] Searching payment with ref: ${reference} (Attempt ${pollCount}/${maxPolls})`);
 
             if (pollCount > maxPolls) {
                 clearInterval(window.depositPollingInterval);
-                status.textContent = "Tiempo de espera agotado. La transacción puede estar pendiente. Verifica tu wallet.";
+                status.textContent = "Timeout. Transaction might be pending. Check your wallet.";
                 return;
             }
             
@@ -1304,10 +1436,10 @@ function initBitsDepositLogic() {
                 );
 
                 if (foundSignature) {
-                    console.log("✅ Pago detectado con firma:", foundSignature.signature);
+                    console.log("✅ Payment detected with signature:", foundSignature.signature);
                     
                     if (processingSignature === foundSignature.signature) {
-                        console.log("⚠️ Transacción ya está siendo procesada, esperando...");
+                        console.log("⚠️ Transaction already processing, waiting...");
                         return;
                     }
                     processingSignature = foundSignature.signature;
@@ -1316,8 +1448,8 @@ function initBitsDepositLogic() {
                     const signatureDoc = await getDoc(signatureRef);
                     
                     if (signatureDoc.exists()) {
-                        console.log("⚠️ Transacción ya procesada anteriormente");
-                        status.textContent = "⚠️ Esta transacción ya fue procesada.";
+                        console.log("⚠️ Transaction already processed previously");
+                        status.textContent = "⚠️ This transaction has already been processed.";
                         clearInterval(window.depositPollingInterval);
                         processingSignature = null;
                         return;
@@ -1325,7 +1457,7 @@ function initBitsDepositLogic() {
 
                     clearInterval(window.depositPollingInterval);
                     
-                    status.textContent = `✅ ¡Pago detectado! Verificando transacción...`;
+                    status.textContent = `✅ Payment detected! Verifying transaction...`;
                     
                     const connection = new solanaWeb3.Connection(SOLANA_RPC_URL, {
                         commitment: 'confirmed',
@@ -1334,22 +1466,22 @@ function initBitsDepositLogic() {
                     });
 
                     try {
-                        status.textContent = `✅ Confirmando transacción (Esperando blockchains)...`;
+                        status.textContent = `✅ Confirming transaction (Waiting blockchains)...`;
                         
                         const confirmation = await connection.confirmTransaction(
                             foundSignature.signature, 
                             'confirmed'
                         );
                         
-                        console.log("✅ Transacción confirmada:", confirmation);
+                        console.log("✅ Transaction confirmed:", confirmation);
 
                         const txDetails = await connection.getParsedTransaction(foundSignature.signature, 'confirmed');
                         if (!txDetails || !txDetails.meta) {
-                            throw new Error("No se pudieron obtener los detalles de la transacción.");
+                            throw new Error("Could not get transaction details.");
                         }
                         
                         if (txDetails.meta.err) {
-                            throw new Error("La transacción falló: " + JSON.stringify(txDetails.meta.err));
+                            throw new Error("Transaction failed: " + JSON.stringify(txDetails.meta.err));
                         }
 
                         const postBalances = txDetails.meta.postTokenBalances?.find(tb => 
@@ -1363,15 +1495,15 @@ function initBitsDepositLogic() {
                         const postAmount = postBalances ? parseFloat(postBalances.uiTokenAmount.uiAmount) : 0;
                         const transferredAmount = postAmount - prevAmount;
 
-                        console.log("📊 Análisis de transacción:", {
+                        console.log("📊 Transaction Analysis:", {
                             prevAmount, postAmount, transferredAmount, expectedAmount: amount
                         });
 
                         if (transferredAmount >= amount) {
                             await processSuccessfulPayment(signatureRef, foundSignature.signature, amount, transferredAmount, reference, 'qr');
                         } else {
-                            status.textContent = `⚠️ Pago detectado pero el monto es incorrecto. Se transfirieron ${transferredAmount} BITS, se esperaban ${amount} BITS.`;
-                            console.warn("Monto de la transacción no coincide.", { 
+                            status.textContent = `⚠️ Payment detected but amount is incorrect. Transferred ${transferredAmount} BITS, expected ${amount} BITS.`;
+                            console.warn("Transaction amount mismatch.", { 
                                 expected: amount, 
                                 actual: transferredAmount 
                             });
@@ -1379,7 +1511,7 @@ function initBitsDepositLogic() {
                         }
 
                     } catch (confirmationError) {
-                        console.warn("Error en confirmación, verificando estado de la transacción:", confirmationError);
+                        console.warn("Error in confirmation, verifying transaction status:", confirmationError);
                         if (confirmationError.message.includes('timeout') || confirmationError.message.includes('not confirmed')) {
                             await handleUnconfirmedTransaction(connection, foundSignature.signature, signatureRef, amount, reference, 'qr');
                         } else {
@@ -1390,7 +1522,7 @@ function initBitsDepositLogic() {
 
                 }
             } catch (err) {
-                console.error("Error durante el sondeo de QR:", err);
+                console.error("Error during QR polling:", err);
                 status.textContent = `❌ Error: ${err.message}`;
                 processingSignature = null; 
             }
@@ -1398,7 +1530,7 @@ function initBitsDepositLogic() {
     }
 
     async function handleUnconfirmedTransaction(connection, signature, signatureRef, amount, reference, method) {
-        status.textContent = "⏳ La transacción está tomando más tiempo de lo esperado. Verificando estado...";
+        status.textContent = "⏳ Transaction is taking longer than expected. Verifying status...";
         
         try {
             const txDetails = await connection.getTransaction(signature, {
@@ -1415,7 +1547,7 @@ function initBitsDepositLogic() {
                     return;
                 }
                 
-                status.innerHTML = `⏳ Transacción pendiente. <a href="https://solscan.io/tx/${signature}" target="_blank" class="text-purple-400 underline">Ver en explorador</a>. Se verificará automáticamente.`;
+                status.innerHTML = `⏳ Transaction pending. <a href="https://solscan.io/tx/${signature}" target="_blank" class="text-purple-400 underline">View in explorer</a>. Will verify automatically.`;
                 continueBackgroundVerification(signature, amount, reference, method); 
                 return;
             }
@@ -1423,12 +1555,12 @@ function initBitsDepositLogic() {
             if (!txDetails.meta?.err) {
                 await processSuccessfulPayment(signatureRef, signature, amount, amount, reference, "confirmed", method); 
             } else {
-                throw new Error("Transacción fallida: " + JSON.stringify(txDetails.meta.err));
+                throw new Error("Transaction failed: " + JSON.stringify(txDetails.meta.err));
             }
             
         } catch (verificationError) {
-            console.error("Error en verificación de transacción:", verificationError);
-            status.innerHTML = `⚠️ No se pudo verificar el estado. <a href="https://solscan.io/tx/${signature}" target="_blank" class="text-purple-400 underline">Verifica manually</a> y contacta soporte si es necesario.`;
+            console.error("Error in transaction verification:", verificationError);
+            status.innerHTML = `⚠️ Could not verify status. <a href="https://solscan.io/tx/${signature}" target="_blank" class="text-purple-400 underline">Verify manually</a> and contact support if needed.`;
             processingSignature = null;
         }
     }
@@ -1439,7 +1571,7 @@ function initBitsDepositLogic() {
                 const signatureRef = doc(db, "users", currentUser.walletAddress, "usedSignatures", signature);
                 const signatureDoc = await getDoc(signatureRef);
                 if (signatureDoc.exists()) {
-                    console.log("Verificación BG: Transacción ya procesada.");
+                    console.log("BG Verification: Transaction already processed.");
                     clearInterval(backgroundInterval);
                     processingSignature = null;
                     return;
@@ -1455,10 +1587,10 @@ function initBitsDepositLogic() {
                 if (txDetails && !txDetails.meta?.err) {
                     clearInterval(backgroundInterval);
                     await processSuccessfulPayment(signatureRef, signature, amount, amount, reference, "finalized (background)", method);
-                    showToast(`¡Transacción confirmada! Se añadieron ${amount} BITS a tu cuenta.`);
+                    showToast(`Transaction confirmed! Added ${amount} BITS to your account.`);
                 }
             } catch (error) {
-                console.log("Verificación en segundo plano:", error.message);
+                console.log("Background verification:", error.message);
             }
         }, 10000); 
     }
@@ -1468,18 +1600,18 @@ function initBitsDepositLogic() {
         try {
             const signatureDoc = await getDoc(signatureRef);
             if (signatureDoc.exists()) {
-                console.warn(`Intento de doble procesamiento bloqueado para la firma: ${signature}`);
-                status.textContent = "⚠️ Esta transacción ya fue procesada.";
+                console.warn(`Double processing attempt blocked for signature: ${signature}`);
+                status.textContent = "⚠️ This transaction has already been processed.";
                 processingSignature = null;
                 return;
             }
         } catch (e) {
-            console.error("Error en doble chequeo:", e);
+            console.error("Error in double check:", e);
             processingSignature = null;
             return;
         }
 
-        status.textContent = `✅ ¡Transacción ${confirmationType}! Actualizando saldo...`;
+        status.textContent = `✅ Transaction ${confirmationType}! Updating balance...`;
         
         try {
             await setDoc(signatureRef, {
@@ -1498,20 +1630,20 @@ function initBitsDepositLogic() {
             
             await logTransaction('deposit', expectedAmount, { method: method, signature: signature });
 
-            showToast(`¡Se han añadido ${expectedAmount} BITS a tu cuenta!`);
-            status.innerHTML = `✅ Depósito exitoso (${confirmationType}). <a href="https://solscan.io/tx/${signature}" target="_blank" class="text-purple-400 underline">Ver en explorador</a>`;
+            showToast(`${expectedAmount} BITS have been added to your account!`);
+            status.innerHTML = `✅ Successful deposit (${confirmationType}). <a href="https://solscan.io/tx/${signature}" target="_blank" class="text-purple-400 underline">View in explorer</a>`;
             document.getElementById("bits-amount").value = '';
             document.getElementById("solana-qr-img").classList.add("hidden", "opacity-0");
             
             const payButton = document.getElementById("solana-pay-button");
             if (payButton) payButton.classList.add("hidden");
             
-            console.log("✅ Balance actualizado correctamente");
+            console.log("✅ Balance updated correctly");
             
         } catch (firebaseError) {
-            console.error("Error actualizando Firebase:", firebaseError);
-            status.textContent = "❌ Error al actualizar el balance. Contacta con soporte.";
-            showToast("Error al actualizar el balance. Contacta con soporte.", true);
+            console.error("Error updating Firebase:", firebaseError);
+            status.textContent = "❌ Error updating balance. Contact support.";
+            showToast("Error updating balance. Contact support.", true);
         } finally {
             processingSignature = null;
         }
@@ -1519,7 +1651,7 @@ function initBitsDepositLogic() {
 
     function makeQRClickeable(qrElement, solanaPayUrl) {
         qrElement.style.cursor = 'pointer';
-        qrElement.title = 'Haz clic para abrir Solana Pay';
+        qrElement.title = 'Click to open Solana Pay';
         
         qrElement.addEventListener('click', function() {
             if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) {
@@ -1693,7 +1825,7 @@ function initBitsDepositLogic() {
                     chatInput.value = '';
                 }
             });
-            // Lógica del Botón de Donar
+            
             document.getElementById('open-donation-btn').onclick = () => {
                 if (!requireAuth()) return;
                 document.getElementById('donation-modal').classList.remove('hidden');
@@ -1707,9 +1839,9 @@ function initBitsDepositLogic() {
                 const amount = parseInt(document.getElementById('donate-amount').value);
                 const text = document.getElementById('donate-message').value.trim();
                 
-                if (!amount || amount < 10) return showToast("Mínimo 10 BITS.", true);
-                if (!text) return showToast("Escribe un mensaje.", true);
-                if (currentUser.bitBalance < amount) return showToast("Saldo insuficiente.", true);
+                if (!amount || amount < 10) return showToast("Minimum 10 BITS.", true);
+                if (!text) return showToast("Write a message.", true);
+                if (currentUser.bitBalance < amount) return showToast("Insufficient balance.", true);
 
                 loader.classList.remove('hidden');
                 document.getElementById('donation-modal').classList.add('hidden');
@@ -1720,13 +1852,11 @@ function initBitsDepositLogic() {
                     await runTransaction(db, async (t) => {
                         const myUserRef = doc(db, "users", currentUser.walletAddress);
                         const myDoc = await t.get(myUserRef);
-                        if (myDoc.data().bitBalance < amount) throw "Saldo insuficiente";
+                        if (myDoc.data().bitBalance < amount) throw "Insufficient balance";
 
-                        // 1. Transferir dinero
                         t.update(myUserRef, { bitBalance: increment(-amount) });
                         t.update(streamerUserRef, { creatorRewardsBalance: increment(amount) });
 
-                        // 2. Registrar transacciones
                         const txTime = serverTimestamp();
                         t.set(doc(collection(db, "users", currentUser.walletAddress, "transactions")), {
                             type: 'donation_sent', amount: -amount, timestamp: txTime, details: { to: streamerWallet }
@@ -1736,24 +1866,23 @@ function initBitsDepositLogic() {
                         });
                     });
 
-                    // 3. Enviar mensaje especial al chat (isDonation: true)
                     await addDoc(collection(db, 'streams', streamerWallet, 'chat'), {
                         text: text,
                         userName: currentUser.username,
                         userWallet: currentUser.walletAddress,
-                        userColor: '#a855f7', // Color morado de donación
+                        userColor: '#a855f7', 
                         createdAt: serverTimestamp(),
-                        isDonation: true, // ESTO ACTIVA EL TTS
+                        isDonation: true, 
                         donationAmount: amount
                     });
 
                     document.getElementById('donate-amount').value = '';
                     document.getElementById('donate-message').value = '';
-                    showToast(`¡Donaste ${amount} BITS!`);
+                    showToast(`You donated ${amount} BITS!`);
 
                 } catch (e) {
                     console.error(e);
-                    showToast("Error en la donación.", true);
+                    showToast("Donation error.", true);
                 } finally {
                     loader.classList.add('hidden');
                 }
@@ -1791,8 +1920,8 @@ function initBitsDepositLogic() {
                          <div><label class="font-semibold text-sm" data-key="thumbnail_url">Thumbnail URL (Optional)</label><input id="stream-thumbnail-input" type="text" data-key-placeholder="thumbnail_placeholder" placeholder="https://example.com/image.png" class="mt-1 w-full bg-[var(--background-tertiary)] border border-[var(--border-color)] rounded-lg p-2"></div>
                          <div class="flex items-center justify-between bg-[var(--background-tertiary)] p-3 rounded-lg border border-[var(--border-color)]">
                             <div>
-                                <label class="font-bold text-sm block">Narrador de Donaciones (TTS)</label>
-                                <p class="text-xs text-[var(--text-secondary)]">El bot leerá los mensajes de donación.</p>
+                                <label class="font-bold text-sm block">Donation Narrator (TTS)</label>
+                                <p class="text-xs text-[var(--text-secondary)]">The bot will read donation messages.</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" id="tts-toggle" class="sr-only peer">
@@ -1872,7 +2001,7 @@ function initBitsDepositLogic() {
                     showToast(translations[currentLang].rewards_transferred.replace('%a', amount.toLocaleString()));
                 } catch (error) {
                     console.error("Error transferring rewards:", error);
-                    showToast("Error al transferir recompensas.", true);
+                    showToast("Error transferring rewards.", true);
                 } finally {
                     loader.classList.add("hidden");
                 }
@@ -1882,9 +2011,11 @@ function initBitsDepositLogic() {
         async function saveProfile() {
             const newPicUrl = document.getElementById("profile-pic-url").value.trim();
             const newUsername = document.getElementById("username-input").value.trim();
+            
             const updates = {};
             if (newPicUrl && newPicUrl !== currentUser.profilePicture) updates.profilePicture = newPicUrl;
             if (newUsername && newUsername !== currentUser.username) updates.username = newUsername;
+            
             if (Object.keys(updates).length > 0) {
                 loader.classList.remove("hidden");
                 await updateDoc(doc(db, "users", currentUser.walletAddress), updates);
@@ -1894,6 +2025,7 @@ function initBitsDepositLogic() {
         }
 
         const TOKEN_CONTRACT = "EU1CPckq2dRX2HXUdy7hZvhuwmx9DN3afSHL5wTopump";
+        
         async function updateWithdrawalStatus() {
             const usdEquivalentDisplay = document.getElementById("usd-equivalent-display");
             const tokenPriceInfo = document.getElementById("token-price-info");
@@ -2199,32 +2331,22 @@ function initBitsDepositLogic() {
             
             const streamRef = doc(db, 'streams', currentUser.walletAddress);
             loader.classList.remove('hidden');
-            // --- BLOQUE DE AUTO-DESTRUCCIÓN INMEDIATA ---
             const emergencyStop = () => {
                 if (localStream) {
-                    // 1. Apagar cámara (físico)
                     localStream.getTracks().forEach(t => t.stop());
-                    
-                    // 2. Intentar borrar de Firebase (Best Effort)
-                    // No usamos await aquí porque el navegador se va a cerrar
                     deleteDoc(doc(db, 'streams', currentUser.walletAddress));
                 }
             };
 
-            // Detectar cierre de pestaña / navegador / recarga
             window.addEventListener('beforeunload', (e) => {
                 emergencyStop();
-                // Esto fuerza al navegador a mostrar "¿Seguro que quieres salir?" a veces, dando tiempo al código
                 e.preventDefault();
                 e.returnValue = '';
             });
             
-            // Detectar cierre en móviles
             window.addEventListener('pagehide', emergencyStop);
-            // ---------------------------------------------
 
             try {
-                // Crear el documento del stream
                 await setDoc(streamRef, {
                     status: 'live',
                     title: document.getElementById('stream-title-input').value,
@@ -2235,53 +2357,35 @@ function initBitsDepositLogic() {
                     streamerUsername: currentUser.username,
                     viewerCount: 0
                 });
-                // --- NUEVO: Apagar si cierra la pestaña ---
                 window.addEventListener('beforeunload', (event) => {
                     stopStream();
-                    // Opcional: Mostrar advertencia estándar del navegador
                     event.preventDefault(); 
                     event.returnValue = '';
                 });
-                // --- INICIO CÓDIGO ANTI-FANTASMAS ---
                 
-                // 1. Detector universal de cierre/salida (PC y Móvil)
                 const handleExit = () => {
-                    // Si hay stream, lo borramos.
-                    // Nota: Usamos una lógica síncrona/rápida para intentar ganar al cierre del navegador
                     if (localStream) {
-                        // Paramos pistas locales inmediatamente
                         localStream.getTracks().forEach(track => track.stop());
-                        
-                        // Intentamos borrar el documento. 
-                        // En cierres bruscos, esto es "best-effort" (el navegador intenta enviarlo antes de morir).
-                        // Gracias a tus nuevas reglas de Firebase, esto está permitido.
-                        deleteDoc(streamRef).catch(err => console.error("Error borrando al salir:", err));
+                        deleteDoc(streamRef).catch(err => console.error("Error deleting on exit:", err));
                     }
                 };
 
-                // Evento para cuando cierras la pestaña o recargas (PC)
                 window.addEventListener('beforeunload', (e) => {
                     handleExit();
-                    // Esto a veces ayuda a que el navegador espere unos milisegundos más
                     e.preventDefault();
                     e.returnValue = ''; 
                 });
 
-                // Evento crítico para MÓVILES (iOS/Android) y cambios de pestaña
                 window.addEventListener('pagehide', handleExit);
 
-                // Evento para cuando la página se oculta (cambias de app en el móvil)
                 document.addEventListener('visibilitychange', () => {
                     if (document.visibilityState === 'hidden') {
-                        // Opcional: Si quieres que se corte al minimizar la app, descomenta la siguiente línea:
-                        // handleExit(); 
                     }
                 });
 
-                // Limpieza de seguridad: Si la ruta cambia internamente en la SPA
                 const originalPushState = history.pushState;
                 history.pushState = function () {
-                    if (localStream) stopStream(); // Usamos stopStream() normal si es navegación interna
+                    if (localStream) stopStream();
                     originalPushState.apply(this, arguments);
                 };
                 
@@ -2289,9 +2393,7 @@ function initBitsDepositLogic() {
                     if (localStream) stopStream();
                 });
 
-                // --- FIN CÓDIGO ANTI-FANTASMAS ---
 
-                // Escuchar nuevos espectadores
                 viewersUnsubscribe = onSnapshot(collection(streamRef, 'viewers'), (snapshot) => {
                     updateDoc(streamRef, { viewerCount: snapshot.size });
                     const studioViewerCount = document.getElementById('studio-viewer-count');
@@ -2301,31 +2403,24 @@ function initBitsDepositLogic() {
                         const viewerUid = change.doc.id;
                         const viewerData = change.doc.data();
 
-                        // 1. Si entra un nuevo espectador con una oferta
                         if (change.type === 'added' && viewerData.offer) {
-                            console.log("Nuevo espectador detectado:", viewerUid);
+                            console.log("New viewer detected:", viewerUid);
                             
-                            // Crear conexión
                             const pc = new RTCPeerConnection(iceServers);
                             peerConnections[viewerUid] = pc;
 
-                            // Añadir tracks locales (cámara/pantalla)
                             localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
 
-                            // Cola para guardar candidatos que lleguen antes de tiempo
                             const iceQueue = [];
 
-                            // Manejar candidatos que YO (Streamer) genero para enviarlos al Viewer
                             pc.onicecandidate = e => e.candidate && addDoc(collection(change.doc.ref, 'iceCandidates'), e.candidate.toJSON());
 
-                            // Escuchar candidatos del Viewer
                             onSnapshot(collection(change.doc.ref, 'iceCandidatesFromViewer'), snap => {
                                 snap.docChanges().forEach(c => {
                                     if (c.type === 'added') {
                                         const candidate = new RTCIceCandidate(c.doc.data());
-                                        // SI la conexión remota ya está lista, añadirlo. SI NO, guardarlo en cola.
                                         if (pc.remoteDescription) {
-                                            pc.addIceCandidate(candidate).catch(e => console.warn("Error agregando candidato ICE:", e));
+                                            pc.addIceCandidate(candidate).catch(e => console.warn("Error adding ICE candidate:", e));
                                         } else {
                                             iceQueue.push(candidate);
                                         }
@@ -2333,28 +2428,24 @@ function initBitsDepositLogic() {
                                 });
                             });
 
-                            // Procesar la Oferta
                             try {
                                 await pc.setRemoteDescription(new RTCSessionDescription(viewerData.offer));
                                 
-                                // Una vez procesada la oferta, vaciamos la cola de candidatos pendientes
                                 while (iceQueue.length > 0) {
                                     const c = iceQueue.shift();
-                                    pc.addIceCandidate(c).catch(e => console.warn("Error procesando cola ICE:", e));
+                                    pc.addIceCandidate(c).catch(e => console.warn("Error processing ICE queue:", e));
                                 }
 
                                 const answer = await pc.createAnswer();
                                 await pc.setLocalDescription(answer);
                                 
-                                // Enviar respuesta a Firestore
                                 await updateDoc(change.doc.ref, { answer });
                                 
                             } catch (err) {
-                                console.error("Error estableciendo conexión con viewer:", err);
+                                console.error("Error establishing connection with viewer:", err);
                             }
                         }
 
-                        // Limpieza si el espectador se va
                         if (change.type === 'removed' && peerConnections[viewerUid]) {
                             peerConnections[viewerUid].close();
                             delete peerConnections[viewerUid];
@@ -2362,16 +2453,12 @@ function initBitsDepositLogic() {
                     });
                 });
 
-               // Configurar Chat del Studio
-              // Configurar Chat del Studio con TTS (Narrador) MEJORADO
                 const studioChatMessages = document.getElementById('studio-chat-messages');
                 const chatRef = collection(streamRef, 'chat');
                 
-                // --- CONFIGURACIÓN DE VOZ ---
                 const ttsToggle = document.getElementById('tts-toggle');
                 let isTtsEnabled = false;
                 
-                // Cargar voces al inicio (Chrome a veces tarda en cargarlas)
                 let availableVoices = [];
                 window.speechSynthesis.onvoiceschanged = () => {
                     availableVoices = window.speechSynthesis.getVoices();
@@ -2381,11 +2468,10 @@ function initBitsDepositLogic() {
                     ttsToggle.addEventListener('change', (e) => {
                         isTtsEnabled = e.target.checked;
                         if (isTtsEnabled) {
-                            // TRUCO: Hablar inmediatamente al hacer clic para desbloquear el audio del navegador
-                            const testMsg = new SpeechSynthesisUtterance("Narrador activado");
-                            testMsg.lang = 'es-ES';
+                            const testMsg = new SpeechSynthesisUtterance("Narrator activated");
+                            testMsg.lang = 'en-US';
                             testMsg.volume = 1.0;
-                            window.speechSynthesis.cancel(); // Limpiar cola anterior
+                            window.speechSynthesis.cancel(); 
                             window.speechSynthesis.speak(testMsg);
                         }
                     });
@@ -2400,51 +2486,39 @@ function initBitsDepositLogic() {
                             const userNameBtn = `<button class="font-semibold mod-user-btn hover:underline" style="color: ${msg.userColor || '#FFF'}" data-wallet="${msg.userWallet}" data-name="${msg.userName}">${msg.userName}</button>`;
                             
                             if (msg.isDonation) {
-                                // Estilo Donación
                                 msgEl.className = 'p-2 my-1 rounded bg-purple-900/30 border border-purple-500 text-xs animate-fade-in';
                                 msgEl.innerHTML = `
                                     <div class="flex items-center gap-2 font-bold text-purple-300">
-                                        <i data-lucide="gift" class="w-4 h-4"></i> ${msg.userName} donó ${msg.donationAmount} BITS
+                                        <i data-lucide="gift" class="w-4 h-4"></i> ${msg.userName} donated ${msg.donationAmount} BITS
                                     </div>
                                     <p class="text-white mt-1 text-sm font-medium">${msg.text}</p>
                                 `;
                                 lucide.createIcons();
 
-                                // --- LÓGICA DE VOZ CORREGIDA ---
-                                // 1. Verificar si está activo
-                                // 2. Verificar que el mensaje sea reciente (menos de 30 seg) para no leer mensajes viejos al recargar
                                 const now = Date.now();
                                 const msgTime = msg.createdAt ? msg.createdAt.toDate().getTime() : now; 
                                 const isRecent = (now - msgTime) < 30000; 
 
                                 if (isTtsEnabled && isRecent) {
-                                    // Cancelar cualquier habla anterior para que no se atropellen
                                     window.speechSynthesis.cancel();
 
-                                    const utterance = new SpeechSynthesisUtterance(`${msg.userName} donó ${msg.donationAmount} bits y dice: ${msg.text}`);
+                                    const utterance = new SpeechSynthesisUtterance(`${msg.userName} donated ${msg.donationAmount} bits and says: ${msg.text}`);
                                     
-                                    // Configuración robusta de voz
-                                    utterance.lang = 'es-ES'; 
-                                    utterance.rate = 1.0;  // Velocidad normal
-                                    utterance.pitch = 1.0; // Tono normal
-                                    utterance.volume = 1.0; // Volumen máximo
+                                    utterance.lang = 'en-US'; 
+                                    utterance.rate = 1.0; 
+                                    utterance.pitch = 1.0; 
+                                    utterance.volume = 1.0; 
 
-                                    // Intentar forzar una voz en español si está disponible
-                                    if (availableVoices.length === 0) availableVoices = window.speechSynthesis.getVoices();
-                                    const spanishVoice = availableVoices.find(voice => voice.lang.includes('es'));
-                                    if (spanishVoice) utterance.voice = spanishVoice;
-
-                                    console.log("Narrando donación:", msg.text); // Debug en consola
+                                    console.log("Narrating donation:", msg.text);
                                     window.speechSynthesis.speak(utterance);
                                 }
-                                // -------------------------------
 
                             } else if (msg.userWallet === 'system') {
                                 msgEl.className = 'text-xs p-1 text-red-500 italic';
                                 msgEl.innerHTML = `<strong>${msg.userName}:</strong> ${msg.text}`;
                             } else if (msg.vipEmoji) {
                                 msgEl.className = 'super-chat text-xs'; 
-                                msgEl.innerHTML = `<div class="flex items-center gap-1 mb-1"><img src="${msg.vipEmoji.url}" class="w-6 h-6"><div class="font-bold">${userNameBtn} envió ${msg.vipEmoji.price} BIT</div></div><p>${msg.text}</p>`;
+                                msgEl.innerHTML = `<div class="flex items-center gap-1 mb-1"><img src="${msg.vipEmoji.url}" class="w-6 h-6"><div class="font-bold">${userNameBtn} sent ${msg.vipEmoji.price} BIT</div></div><p>${msg.text}</p>`;
                             } else { 
                                 msgEl.className = 'text-xs p-1'; 
                                 msgEl.innerHTML = `${userNameBtn}: ${msg.text}`; 
@@ -2455,12 +2529,11 @@ function initBitsDepositLogic() {
                     });
                     studioChatMessages.scrollTop = studioChatMessages.scrollHeight;
                 });
-                // UI Updates
+                
                 document.getElementById('stream-status-text').innerHTML = `<span class="text-red-500 font-bold flex items-center gap-2"><div class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>LIVE</span>`;
                 document.getElementById('start-stream-btn').disabled = true; 
                 document.getElementById('stop-stream-btn').disabled = false;
                 
-                // Timers y Rewards
                 let startTime = Date.now(), timerEl = document.getElementById('stream-timer');
                 streamTimerInterval = setInterval(() => { const e=Date.now()-startTime,s=Math.floor(e/1e3%60).toString().padStart(2,'0'),m=Math.floor(e/6e4%60).toString().padStart(2,'0'),h=Math.floor(e/36e5).toString().padStart(2,'0'); if(timerEl)timerEl.textContent=`${h}:${m}:${s}`}, 1000);
                 
@@ -2479,42 +2552,34 @@ function initBitsDepositLogic() {
                         showToast(translations[currentLang].reward_notification.replace('%a', amount.toLocaleString()).replace('%m', lastRewardTimeInMinutes));
                     }
                 }, 15000);
-                // --- NUEVO: SISTEMA DE LATIDOS (HEARTBEAT) ---
-                // Esto avisa a la base de datos cada 5 segundos que sigues vivo.
-                // Si cierras la pestaña de golpe, esto se detiene y el stream desaparece del inicio.
+                
                 let pulseInterval = setInterval(async () => {
                    if (auth.currentUser) {
                        try {
                            const activeStreamRef = doc(db, 'streams', currentUser.walletAddress);
-                           // Enviamos la hora actual del servidor
                            await updateDoc(activeStreamRef, { lastPing: serverTimestamp() });
                        } catch (e) {
-                           console.log("Error enviando latido:", e);
+                           console.log("Error sending heartbeat:", e);
                        }
                    }
-                }, 5000); // Cada 5 segundos
+                }, 5000); 
                 
-                // Aseguramos que se limpie al parar
                 const originalStopStream = stopStream;
                 stopStream = async () => {
-                    clearInterval(pulseInterval); // Detener latidos
+                    clearInterval(pulseInterval); 
                     await originalStopStream();
                 };
-                // ----------------------------------------------
-                // --- DETECTOR DE VIDEO (MATAR SI NO HAY IMAGEN) ---
+                
                 let secondsWithoutVideo = 0;
                 
-                // Limpiamos cualquier intervalo anterior por seguridad
                 if (inactivityInterval) clearInterval(inactivityInterval);
 
                 inactivityInterval = setInterval(() => {
                     let isVideoAlive = false;
 
-                    // 1. Verificamos si existe el stream local y está activo
                     if (localStream && localStream.active) {
                         const videoTracks = localStream.getVideoTracks();
                         
-                        // 2. Verificamos si hay al menos una pista de video y si su estado es 'live'
                         if (videoTracks.length > 0) {
                             const track = videoTracks[0];
                             if (track.readyState === 'live' && track.enabled && !track.muted) {
@@ -2525,30 +2590,25 @@ function initBitsDepositLogic() {
 
                     if (!isVideoAlive) {
                         secondsWithoutVideo++;
-                        console.warn(`⚠️ ALERTA: No hay señal de video (${secondsWithoutVideo}/10s)`);
+                        console.warn(`⚠️ WARNING: No video signal (${secondsWithoutVideo}/10s)`);
                         
-                        // Mostrar advertencia visual al usuario cada segundo
                         if (secondsWithoutVideo > 2) {
-                             showToast(`⚠️ No se detecta video. Cerrando en ${10 - secondsWithoutVideo}s...`, true);
+                             showToast(`⚠️ No video detected. Closing in ${10 - secondsWithoutVideo}s...`, true);
                         }
 
-                        // Si pasan 10 segundos sin video, CORTAMOS EL CUELLO AL STREAM
                         if (secondsWithoutVideo >= 10) {
-                            console.error("❌ MATANDO STREAM POR FALTA DE VIDEO");
+                            console.error("❌ KILLING STREAM DUE TO LACK OF VIDEO");
                             stopStream();
-                            showToast("El stream se cerró porque no se detectaba video.", true);
+                            showToast("Stream closed because no video was detected.", true);
                         }
                     } else {
-                        // Si el video vuelve, reseteamos el contador
                         secondsWithoutVideo = 0;
                     }
-                }, 1000); // Revisar cada 1 segundo
-                // --------------------------------------------------
+                }, 1000); 
 
                 if(adInterval) clearInterval(adInterval);
                 adInterval = setInterval(showAd, 120000);
                 
-                // Monitor de Inactividad
                 let inactiveSeconds = 0;
                 if (inactivityInterval) clearInterval(inactivityInterval);
                 inactivityInterval = setInterval(() => {
@@ -2580,7 +2640,6 @@ function initBitsDepositLogic() {
             if (rewardInterval) clearInterval(rewardInterval); 
             if (adInterval) clearInterval(adInterval);
             
-            // --- NUEVO: Limpiar intervalo de inactividad ---
             if (inactivityInterval) {
                 clearInterval(inactivityInterval);
                 inactivityInterval = null;
@@ -2616,10 +2675,9 @@ function initBitsDepositLogic() {
         }
 
       async function joinStream(streamerWallet) {
-            console.log("Iniciando conexión como espectador...");
+            console.log("Connecting as viewer...");
             const videoOverlay = document.getElementById('video-overlay');
             
-            // Verificamos que el stream exista
             const streamDoc = await getDoc(doc(db, "streams", streamerWallet));
             if (!streamDoc.exists()) {
                 if(videoOverlay) videoOverlay.textContent = "Stream Offline";
@@ -2633,12 +2691,10 @@ function initBitsDepositLogic() {
             const viewerRef = doc(db, 'streams', streamerWallet, 'viewers', myUid);
             const iceCandidateBuffer = [];
 
-            // 1. Manejo de conexión
             viewerPeerConnection.oniceconnectionstatechange = () => {
-                // Seguridad: Si la conexión es null, salimos
                 if (!viewerPeerConnection) return;
                 
-                console.log("Estado:", viewerPeerConnection.iceConnectionState);
+                console.log("Status:", viewerPeerConnection.iceConnectionState);
                 if(videoOverlay) videoOverlay.textContent = `Status: ${viewerPeerConnection.iceConnectionState}`;
                 
                 if(viewerPeerConnection.iceConnectionState === 'connected' || viewerPeerConnection.iceConnectionState === 'completed'){
@@ -2647,7 +2703,7 @@ function initBitsDepositLogic() {
                     if(adInterval) clearInterval(adInterval); 
                     adInterval = setInterval(showAd, 120000);
                 } else if (viewerPeerConnection.iceConnectionState === 'failed') {
-                     if(videoOverlay) videoOverlay.textContent = "Conexión fallida.";
+                     if(videoOverlay) videoOverlay.textContent = "Connection failed.";
                 }
             };
 
@@ -2661,12 +2717,10 @@ function initBitsDepositLogic() {
                 if (e.candidate) addDoc(collection(viewerRef, 'iceCandidatesFromViewer'), e.candidate.toJSON());
             };
 
-            // 2. Escuchar candidatos (CON SEGURIDAD ANTI-CRASH)
             const unsubscribeCandidates = onSnapshot(collection(viewerRef, 'iceCandidates'), s => {
                 s.docChanges().forEach(change => {
                     if (change.type === 'added') { 
                         const candidate = new RTCIceCandidate(change.doc.data()); 
-                        // AQUÍ ESTABA EL ERROR: Verificamos que viewerPeerConnection exista
                         if (viewerPeerConnection && viewerPeerConnection.remoteDescription) {
                             viewerPeerConnection.addIceCandidate(candidate).catch(e => console.warn(e));
                         } else {
@@ -2681,13 +2735,12 @@ function initBitsDepositLogic() {
                 viewerPeerConnection.addTransceiver('audio', { direction: 'recvonly' });
 
                 const offer = await viewerPeerConnection.createOffer();
-                if(!viewerPeerConnection) return; // Seguridad extra
+                if(!viewerPeerConnection) return; 
                 await viewerPeerConnection.setLocalDescription(offer);
                 await setDoc(viewerRef, { offer });
 
-                // 3. Escuchar respuesta (CON SEGURIDAD ANTI-CRASH)
                 const unsubscribeAnswer = onSnapshot(viewerRef, async (docSnap) => {
-                    if (!viewerPeerConnection) return; // Si ya cerramos, no hacer nada
+                    if (!viewerPeerConnection) return;
                     const data = docSnap.data();
                     
                     if (data && data.answer && !viewerPeerConnection.currentRemoteDescription) {
@@ -2698,7 +2751,6 @@ function initBitsDepositLogic() {
                     }
                 });
 
-                // Guardamos las desuscripciones para limpiarlas luego
                 viewerPeerConnection.cleanUp = () => {
                     unsubscribeCandidates();
                     unsubscribeAnswer();
@@ -2708,22 +2760,17 @@ function initBitsDepositLogic() {
                 console.error("Error joinStream:", err);
             }
 
-            // Limpieza al salir
             const leaveStream = () => { 
                 if(viewerPeerConnection) { 
                     if(viewerPeerConnection.cleanUp) viewerPeerConnection.cleanUp();
                     viewerPeerConnection.close(); 
-                    viewerPeerConnection = null; // Marcamos como null para evitar errores
+                    viewerPeerConnection = null; 
                     deleteDoc(viewerRef).catch(()=>{}); 
                 } 
                 if(adInterval) clearInterval(adInterval); 
             };
             window.addEventListener('pagehide', leaveStream, { once: true });
         }
-        
-     
-
-       
         
         async function banUser(streamerWallet, bannedUserWallet, bannedUserName, durationMinutes) {
             if (!streamerWallet || !bannedUserWallet) return;
@@ -2734,11 +2781,11 @@ function initBitsDepositLogic() {
             
             if (durationMinutes === null) {
                 expiresAt = null;
-                banMessage = `Usuario ${bannedUserName} ha sido baneado permanentemente.`;
+                banMessage = `User ${bannedUserName} has been permanently banned.`;
             } else {
                 const expiresDate = new Date(Date.now() + durationMinutes * 60 * 1000);
                 expiresAt = expiresDate; 
-                banMessage = `Usuario ${bannedUserName} ha sido baneado por ${durationMinutes} minuto(s).`;
+                banMessage = `User ${bannedUserName} has been banned for ${durationMinutes} minute(s).`;
             }
             
             try {
@@ -2753,15 +2800,15 @@ function initBitsDepositLogic() {
                 const chatRef = collection(db, 'streams', streamerWallet, 'chat');
                 await addDoc(chatRef, {
                     text: `[MOD] ${banMessage}`,
-                    userName: 'Sistema',
+                    userName: 'System',
                     userWallet: 'system',
-                    userColor: '#FF5555', // Color rojo
+                    userColor: '#FF5555', 
                     createdAt: serverTimestamp()
                 });
                 
             } catch (error) {
-                console.error("Error al banear usuario:", error);
-                showToast("Error al aplicar el ban.", true);
+                console.error("Error banning user:", error);
+                showToast("Error applying ban.", true);
             }
         }
 
@@ -2780,6 +2827,7 @@ function initBitsDepositLogic() {
                 tx_vip_emoji_reward: "VIP Emoji",
                 tx_reward_transfer: "Rewards Transfer",
                 tx_stream_reward: "Stream Reward",
+                tx_welcome_bonus: "Welcome Bonus",
                 stream_closed_inactivity: "Stream closed due to video inactivity.",
             },
             es: {
@@ -2795,6 +2843,7 @@ function initBitsDepositLogic() {
                 tx_vip_emoji_reward: "Emoji VIP",
                 tx_reward_transfer: "Transferencia de Recompensa",
                 tx_stream_reward: "Recompensa de Stream",
+                tx_welcome_bonus: "Bono de Bienvenida",
                 stream_closed_inactivity: "Stream cerrado por inactividad de video.",
             }
         };
@@ -2811,10 +2860,132 @@ function initBitsDepositLogic() {
             });
         }
         
-        // --- INICIALIZACIÓN ---
         setInterval(updateWithdrawalStatus, 30000);
         loader.classList.remove('hidden');
-        // --- FUNCIONES DEL MODAL DE MODERACIÓN (Añadir al final del script) ---
+        
+        if(closeLoginBtn) closeLoginBtn.onclick = () => loginModal.style.display = 'none';
+        
+        forgotPasswordLink.addEventListener('click', () => {
+            loginModal.style.display = 'none';
+            recoveryModal.classList.remove('hidden');
+            const currentInput = walletAddressInput.value;
+            if(currentInput) document.getElementById('recovery-wallet').value = currentInput;
+            
+            document.getElementById('recovery-step-1').classList.remove('hidden');
+            document.getElementById('recovery-step-2').classList.add('hidden');
+            document.getElementById('recovery-result').classList.add('hidden');
+            document.getElementById('recovery-error').textContent = '';
+        });
+
+        if(btnCloseRecoveryX) btnCloseRecoveryX.onclick = () => {
+             recoveryModal.classList.add('hidden');
+             loginModal.style.display = 'flex';
+        };
+
+        const btnFindAccount = document.getElementById('btn-find-account');
+        const btnRevealPassword = document.getElementById('btn-reveal-password');
+        const recoveryQuestionDisplay = document.getElementById('recovery-question-display');
+        const recoveryAnswerInput = document.getElementById('recovery-answer');
+        const recoveryFinalPassword = document.getElementById('recovery-final-password');
+        const recoveryError = document.getElementById('recovery-error');
+
+        let targetWalletForRecovery = null;
+        let encryptedPasswordStore = null;
+
+        btnFindAccount.addEventListener('click', async () => {
+            const wallet = document.getElementById('recovery-wallet').value.trim();
+            if(!wallet) return;
+            
+            recoveryError.textContent = "Searching...";
+            try {
+                const userSnap = await getDoc(doc(db, "users", wallet));
+                if(userSnap.exists()) {
+                    const data = userSnap.data();
+                    if(data.securityQuestion && data.encryptedPassword) {
+                        targetWalletForRecovery = wallet;
+                        encryptedPasswordStore = data.encryptedPassword;
+                        
+                        document.getElementById('recovery-step-1').classList.add('hidden');
+                        document.getElementById('recovery-step-2').classList.remove('hidden');
+                        recoveryQuestionDisplay.textContent = data.securityQuestion;
+                        recoveryError.textContent = "";
+                    } else {
+                        recoveryError.textContent = "This account has no security configured. Impossible to recover.";
+                    }
+                } else {
+                    recoveryError.textContent = "Account not found.";
+                }
+            } catch(e) {
+                console.error(e);
+                recoveryError.textContent = "Connection error.";
+            }
+        });
+
+        btnRevealPassword.addEventListener('click', async () => {
+            const answer = recoveryAnswerInput.value.trim().toLowerCase();
+            const newPass = document.getElementById('recovery-new-password').value.trim();
+            
+            if(!answer) return;
+            if(newPass.length < 6) {
+                recoveryError.textContent = "New password must be at least 6 characters.";
+                return;
+            }
+            
+            recoveryError.textContent = "Verifying answer and resetting...";
+            btnRevealPassword.disabled = true;
+            
+            const oldPasswordCandidate = decipher(encryptedPasswordStore, answer);
+            
+            if(!oldPasswordCandidate) {
+                recoveryError.textContent = "Error processing. Incorrect answer.";
+                btnRevealPassword.disabled = false;
+                return;
+            }
+            
+            try {
+                const fakeEmail = `${targetWalletForRecovery}@livepayout.app`;
+                // Iniciar sesión internamente con la clave descifrada para validar la respuesta secreta
+                await signInWithEmailAndPassword(auth, fakeEmail, oldPasswordCandidate);
+                
+                // Si llegamos aquí, la respuesta era 100% correcta. Cambiamos la clave en Firebase Auth.
+                await updatePassword(auth.currentUser, newPass);
+                
+                // Encriptar la nueva clave con la respuesta secreta y actualizar base de datos
+                const newEncryptedPass = cipher(newPass, answer);
+                await updateDoc(doc(db, "users", targetWalletForRecovery), {
+                    encryptedPassword: newEncryptedPass
+                });
+                
+                // Cerrar sesión para obligar a entrar con la nueva clave
+                await auth.signOut();
+                
+                document.getElementById('recovery-step-2').classList.add('hidden');
+                const resultDiv = document.getElementById('recovery-result');
+                resultDiv.classList.remove('hidden');
+                resultDiv.innerHTML = `
+                    <p class="text-sm text-green-400 font-bold mb-2">Password reset successfully!</p>
+                    <button id="btn-back-to-login" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg">Go to Login</button>
+                `;
+                
+                document.getElementById('btn-back-to-login').onclick = () => {
+                     recoveryModal.classList.add('hidden');
+                     loginModal.style.display = 'flex';
+                     walletAddressInput.value = targetWalletForRecovery;
+                     passwordInput.value = '';
+                     showToast("You can now log in with your new password.");
+                };
+                
+            } catch(e) {
+                console.error(e);
+                if(e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+                    recoveryError.textContent = "Incorrect secret answer.";
+                } else {
+                    recoveryError.textContent = "Error resetting password.";
+                }
+            } finally {
+                btnRevealPassword.disabled = false;
+            }
+        });
 
         function setupModModalListeners() {
             if (!modModal) return;
@@ -2852,7 +3023,7 @@ function initBitsDepositLogic() {
             if (userWallet === currentUser.walletAddress) return;
             
             modModalTargetUser = { wallet: userWallet, name: userName };
-            modModalUsername.textContent = `Baneando a: ${userName}`;
+            modModalUsername.textContent = `Banning: ${userName}`;
             
             modModal.classList.remove('hidden');
             setTimeout(() => {
@@ -2875,13 +3046,3 @@ function initBitsDepositLogic() {
 </body>
 
 </html>
-
-
-
-
-
-
-
-
-
-
