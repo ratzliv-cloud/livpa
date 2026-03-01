@@ -1337,7 +1337,6 @@
                 musicGrid.innerHTML = '';
             });
 
-            // ANTI-BLOCK HACK APLICADO AQUÍ
             window.playMusicTrack = (trackName, artistName, queryId = null, isPlaylist = false) => {
                 playerTrackName.textContent = trackName;
                 playerArtistName.textContent = artistName;
@@ -1350,9 +1349,8 @@
                     iframeUrl = `https://www.youtube-nocookie.com/embed/videoseries?list=${queryId}&autoplay=1`;
                     fallbackUrl = `https://www.youtube.com/playlist?list=${queryId}`;
                 } else {
-                    // Para la búsqueda: Excluimos canales VEVO/Oficiales ("-topic" "-official video") 
-                    // Y forzamos "lyrics" para que salte directo a un video de la comunidad (que nunca bloquean el embed)
-                    const safeSearch = `"${trackName}" "${artistName}" lyrics -topic -"official video" -"official audio"`;
+                    // Para la búsqueda: Búsqueda natural y directa, sin filtros que puedan causar errores
+                    const safeSearch = `${trackName} ${artistName}`;
                     const ytQuery = encodeURIComponent(safeSearch);
                     
                     iframeUrl = `https://www.youtube-nocookie.com/embed?listType=search&list=${ytQuery}&autoplay=1`;
