@@ -1170,17 +1170,18 @@
         function renderMusicPage() {
             currentPageRender = renderMusicPage;
             
+            // Usando IDs de Playlists Reales para evitar bloqueos
             const curatedMixes = [
-                { title: "Rap & Hip-Hop Fire", desc: "Top trending rap hits", query: "top rap hip hop hits 2024 audio mix", icon: "flame", color: "text-orange-500", bg: "bg-orange-500/20" },
-                { title: "Global Pop Hits", desc: "The most listened songs", query: "global pop hits 2024 audio mix", icon: "globe", color: "text-blue-500", bg: "bg-blue-500/20" },
-                { title: "Electronic & Dance", desc: "Club and festival anthems", query: "electronic dance edm festival audio mix", icon: "zap", color: "text-yellow-500", bg: "bg-yellow-500/20" },
-                { title: "Rock Classics", desc: "Legendary rock anthems", query: "rock classics legendary audio mix", icon: "guitar", color: "text-red-500", bg: "bg-red-500/20" },
-                { title: "R&B & Chill", desc: "Smooth relaxing vibes", query: "r&b chill vibes audio mix", icon: "moon", color: "text-indigo-500", bg: "bg-indigo-500/20" },
-                { title: "Lo-Fi Beats", desc: "Study and relax", query: "lofi hip hop beats study relax audio mix", icon: "coffee", color: "text-amber-700", bg: "bg-amber-700/20" }
+                { title: "Rap & Hip-Hop Fire", desc: "Top trending rap hits", query: "PLetgZkKbg_ym3L1_e8R_kM7dZ7N7J-U1U", type: "playlist", icon: "flame", color: "text-orange-500", bg: "bg-orange-500/20" },
+                { title: "Global Pop Hits", desc: "The most listened songs", query: "PLDcnymzs18LWrXQhbS_oY2P3Lq1kF2h9S", type: "playlist", icon: "globe", color: "text-blue-500", bg: "bg-blue-500/20" },
+                { title: "Electronic & Dance", desc: "Club and festival anthems", query: "PLw-VjHDlEOgs658kAHR_LAaILBXb-sILT", type: "playlist", icon: "zap", color: "text-yellow-500", bg: "bg-yellow-500/20" },
+                { title: "Rock Classics", desc: "Legendary rock anthems", query: "PL59A9448C17F1054C", type: "playlist", icon: "guitar", color: "text-red-500", bg: "bg-red-500/20" },
+                { title: "R&B & Chill", desc: "Smooth relaxing vibes", query: "PL848F2CAFBEE81AE4", type: "playlist", icon: "moon", color: "text-indigo-500", bg: "bg-indigo-500/20" },
+                { title: "Lo-Fi Beats", desc: "Study and relax", query: "PLOzDu-MXXLliO9fBNZOQTBDddoA3FzZUo", type: "playlist", icon: "coffee", color: "text-amber-700", bg: "bg-amber-700/20" }
             ];
 
             const mixesHTML = curatedMixes.map((mix, index) => `
-                <div class="bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)] hover:border-[var(--brand-color-purple)] transition-all duration-300 hover:-translate-y-2 cursor-pointer group shadow-lg animate-fade-in-up" onclick="window.playMusicTrack('${mix.title}', 'Trending Mix', '${mix.query}')" style="animation-delay: ${index * 0.1 + 0.2}s">
+                <div class="bg-[var(--background-secondary)] p-6 rounded-2xl border border-[var(--border-color)] hover:border-[var(--brand-color-purple)] transition-all duration-300 hover:-translate-y-2 cursor-pointer group shadow-lg animate-fade-in-up" onclick="window.playMusicTrack('${mix.title}', 'Trending Mix', '${mix.query}', true)" style="animation-delay: ${index * 0.1 + 0.2}s">
                     <div class="w-14 h-14 rounded-full ${mix.bg} ${mix.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-inner">
                         <i data-lucide="${mix.icon}" class="w-7 h-7"></i>
                     </div>
@@ -1336,23 +1337,33 @@
                 musicGrid.innerHTML = '';
             });
 
-            window.playMusicTrack = (trackName, artistName, customQuery = null) => {
+            // ANTI-BLOCK HACK APLICADO AQUÍ
+            window.playMusicTrack = (trackName, artistName, queryId = null, isPlaylist = false) => {
                 playerTrackName.textContent = trackName;
                 playerArtistName.textContent = artistName;
                 
-                let ytQuery = '';
-                if (customQuery && customQuery !== 'undefined') {
-                    ytQuery = encodeURIComponent(customQuery);
+                let iframeUrl = '';
+                let fallbackUrl = '';
+                
+                if (isPlaylist && queryId) {
+                    // Para los mixes: Usamos una URL directa de Playlist para que no haga búsqueda
+                    iframeUrl = `https://www.youtube-nocookie.com/embed/videoseries?list=${queryId}&autoplay=1`;
+                    fallbackUrl = `https://www.youtube.com/playlist?list=${queryId}`;
                 } else {
-                    // Forzamos "lyrics" o "audio" para evadir el bloqueo de derechos de autor de VEVO
-                    ytQuery = encodeURIComponent(`${trackName} ${artistName} lyrics`);
+                    // Para la búsqueda: Excluimos canales VEVO/Oficiales ("-topic" "-official video") 
+                    // Y forzamos "lyrics" para que salte directo a un video de la comunidad (que nunca bloquean el embed)
+                    const safeSearch = `"${trackName}" "${artistName}" lyrics -topic -"official video" -"official audio"`;
+                    const ytQuery = encodeURIComponent(safeSearch);
+                    
+                    iframeUrl = `https://www.youtube-nocookie.com/embed?listType=search&list=${ytQuery}&autoplay=1`;
+                    fallbackUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(trackName + ' ' + artistName)}`;
                 }
 
-                playerIframe.src = `https://www.youtube-nocookie.com/embed?listType=search&list=${ytQuery}&autoplay=1`;
+                playerIframe.src = iframeUrl;
                 
                 const fallbackLink = document.getElementById('youtube-fallback-link');
                 if (fallbackLink) {
-                    fallbackLink.href = `https://www.youtube.com/results?search_query=${ytQuery}`;
+                    fallbackLink.href = fallbackUrl;
                 }
                 
                 playerModal.classList.remove('hidden');
